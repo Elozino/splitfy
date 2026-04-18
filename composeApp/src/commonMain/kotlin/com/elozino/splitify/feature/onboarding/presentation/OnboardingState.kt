@@ -6,17 +6,17 @@ data class OnboardingState(
     val image: String = "",
 )
 
-val onboardingSlides = listOf<OnboardingState>(
+val onboardingSlides = listOf(
     OnboardingState(
-        title = "Seamless payments, Effortless splits",
-        subtitle = "Splitify makes it easy to manage shared expenses with friends and family.",
+        title = "Track shared expenses effortlessly",
+        subtitle = "Add bills, split costs, and keep everything organized in one place."
     ),
     OnboardingState(
-        title = "Seamless payments, Effortless splits",
-        subtitle = "Splitify makes it easy to manage shared expenses with friends and family.",
+        title = "Know who owes what, instantly",
+        subtitle = "No more confusion — Splitify calculates balances for you in real time."
     ),
     OnboardingState(
-        title = "Seamless payments, Effortless splits",
-        subtitle = "Splitify makes it easy to manage shared expenses with friends and family.",
+        title = "Settle up with confidence",
+        subtitle = "Simplify debts and close payments quickly without stress or awkward reminders."
     )
 )
