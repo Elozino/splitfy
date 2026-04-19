@@ -52,6 +52,8 @@ kotlin {
             implementation(libs.coil.network.ktor3)
             implementation(libs.coil.svg)
 
+            // Material icons
+            implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

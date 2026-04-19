@@ -9,10 +9,22 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     object Onboarding : Route("onboarding", false)
 
     @Serializable
-    object Auth : Route("login", false)
+    object Auth : Route("auth", false)
 
     @Serializable
-    object Register : Route("register", false)
+    object Login : Route("login", false)
+
+    @Serializable
+    object Signup : Route("signup", false)
+
+    @Serializable
+    object ForgotPassword : Route("forgot_password", false)
+
+    @Serializable
+    object NewPassword : Route("new_password", false)
+
+    @Serializable
+    object Otp : Route("otp", false)
 
     @Serializable
     object Home : Route("home", true)
