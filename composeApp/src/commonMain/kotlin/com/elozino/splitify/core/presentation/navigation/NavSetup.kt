@@ -14,6 +14,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.elozino.splitify.core.presentation.component.MainBottomNavigation
 import com.elozino.splitify.feature.account.AccountScreen
+import com.elozino.splitify.feature.activity.ActivityScreen
 import com.elozino.splitify.feature.auth.AuthScreen
 import com.elozino.splitify.feature.auth.ForgotPasswordScreen
 import com.elozino.splitify.feature.auth.LoginScreen
@@ -22,13 +23,12 @@ import com.elozino.splitify.feature.auth.OtpScreen
 import com.elozino.splitify.feature.auth.SignUpScreen
 import com.elozino.splitify.feature.contact.ContactScreen
 import com.elozino.splitify.feature.home.HomeScreen
+import com.elozino.splitify.feature.notification.NotificationScreen
 import com.elozino.splitify.feature.onboarding.presentation.OnboardingScreen
 import com.elozino.splitify.feature.split.GroupsScreen
 
 @Composable
-fun NavSetup(
-    modifier: Modifier = Modifier
-) {
+fun NavSetup() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -44,10 +44,10 @@ fun NavSetup(
         bottomBar = {
             if (showBottomBar) {
                 val selectedTab = when {
-                    currentDestination?.hasRoute(Route.Home::class) == true -> 0
-                    currentDestination?.hasRoute(Route.Groups::class) == true -> 1
-                    currentDestination?.hasRoute(Route.Contact::class) == true -> 2
-                    currentDestination?.hasRoute(Route.Account::class) == true -> 3
+                    currentDestination.hasRoute(Route.Home::class) -> 0
+                    currentDestination.hasRoute(Route.Groups::class) -> 1
+                    currentDestination.hasRoute(Route.Contact::class) -> 2
+                    currentDestination.hasRoute(Route.Account::class) -> 3
                     else -> 0
                 }
                 MainBottomNavigation(
@@ -71,10 +71,11 @@ fun NavSetup(
                 )
             }
         }
-    ) { innerPadding ->
+    ) { _ ->
         NavHost(
             navController = navController,
             startDestination = if (isAuthenticated) Route.Home else Route.Onboarding,
+            modifier = Modifier.fillMaxSize()
         ) {
             composable<Route.Onboarding> {
                 OnboardingScreen(
@@ -124,7 +125,20 @@ fun NavSetup(
                 )
             }
             composable<Route.Home> {
-                HomeScreen()
+                HomeScreen(
+                    onNavigateToNotification = { navController.navigate(Route.Notification) },
+                    onNavigateToActivity = { navController.navigate(Route.Activity) }
+                )
+            }
+            composable<Route.Notification> {
+                NotificationScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable<Route.Activity> {
+                ActivityScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
             composable<Route.Groups> {
                 GroupsScreen()

@@ -1,6 +1,7 @@
 package com.elozino.splitify.feature.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,8 +28,7 @@ fun ForgotPasswordScreen(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding(),
+            .statusBarsPadding(),
         topBar = {
             IconButton(
                 onClick = onNavigateBack,

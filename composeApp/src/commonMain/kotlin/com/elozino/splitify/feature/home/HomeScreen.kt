@@ -19,58 +19,78 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        HeaderSection()
-        ActivitySection(modifier = Modifier.weight(1f))
+@Preview(showBackground = true, showSystemUi = true)
+fun HomeScreen(
+    onNavigateToNotification: () -> Unit = {},
+    onNavigateToActivity: () -> Unit = {}
+) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Splitify",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                },
+                navigationIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Category,
+                        contentDescription = "Logo",
+                        modifier = Modifier.padding(start = 16.dp).size(28.dp),
+                        tint = Color.Black
+                    )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToNotification) {
+                        Icon(
+                            imageVector = Icons.Outlined.Notifications,
+                            contentDescription = "Notifications",
+                            modifier = Modifier.size(28.dp),
+                            tint = Color.Black
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFFEBB1B)
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            BalanceHeader()
+            ActivitySection(
+                modifier = Modifier.weight(1f),
+                onViewAllClick = onNavigateToActivity
+            )
+        }
     }
 }
 
 @Composable
-fun HeaderSection() {
+fun BalanceHeader() {
     Surface(
         color = Color(0xFFFEBB1B)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Logo placeholder - matching the slanted 'S' look with Category icon as best fit from standard icons
-                Icon(
-                    imageVector = Icons.Default.Category,
-                    contentDescription = "Logo",
-                    modifier = Modifier.size(28.dp),
-                    tint = Color.Black
-                )
-                Text(
-                    text = "Splitify",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notifications",
-                    modifier = Modifier.size(28.dp),
-                    tint = Color.Black
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 verticalAlignment = Alignment.Top,
@@ -150,7 +170,10 @@ fun ActionItem(icon: ImageVector, label: String) {
 }
 
 @Composable
-fun ActivitySection(modifier: Modifier = Modifier) {
+fun ActivitySection(
+    modifier: Modifier = Modifier,
+    onViewAllClick: () -> Unit
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -169,7 +192,7 @@ fun ActivitySection(modifier: Modifier = Modifier) {
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { }
+                modifier = Modifier.clickable { onViewAllClick() }
             ) {
                 Text(
                     text = "View All",
@@ -230,16 +253,13 @@ fun ActivitySection(modifier: Modifier = Modifier) {
                    )
                 }
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             Text(
                 text = "No Transactions",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "You haven't made any transactions.",
                 fontSize = 16.sp,

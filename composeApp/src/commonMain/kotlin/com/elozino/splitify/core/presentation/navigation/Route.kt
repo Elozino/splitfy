@@ -37,4 +37,10 @@ sealed class Route(val name: String, val isProtected: Boolean) {
 
     @Serializable
     object Contact : Route("contact", true)
+
+    @Serializable
+    object Notification : Route("notification", true)
+
+    @Serializable
+    object Activity : Route("activity", true)
 }
