@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.sp
 @Preview(showBackground = true, showSystemUi = true)
 fun HomeScreen(
     onNavigateToNotification: () -> Unit = {},
-    onNavigateToActivity: () -> Unit = {}
+    onNavigateToActivity: () -> Unit = {},
+    onNavigateToPay: () -> Unit = {},
+    onNavigateToRequest: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -70,7 +72,10 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            BalanceHeader()
+            BalanceHeader(
+                onSendClick = onNavigateToPay,
+                onRequestClick = onNavigateToRequest
+            )
             ActivitySection(
                 modifier = Modifier.weight(1f),
                 onViewAllClick = onNavigateToActivity
@@ -80,7 +85,10 @@ fun HomeScreen(
 }
 
 @Composable
-fun BalanceHeader() {
+fun BalanceHeader(
+    onSendClick: () -> Unit = {},
+    onRequestClick: () -> Unit = {}
+) {
     Surface(
         color = Color(0xFFFEBB1B)
     ) {
@@ -124,8 +132,8 @@ fun BalanceHeader() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                ActionItem(icon = Icons.Default.NearMe, label = "Send")
-                ActionItem(icon = Icons.Default.ArrowCircleDown, label = "Request")
+                ActionItem(icon = Icons.Default.NearMe, label = "Send", onClick = onSendClick)
+                ActionItem(icon = Icons.Default.ArrowCircleDown, label = "Request", onClick = onRequestClick)
                 ActionItem(icon = Icons.Default.Download, label = "Top Up")
                 ActionItem(icon = Icons.AutoMirrored.Filled.Logout, label = "Withdraw")
                 ActionItem(icon = Icons.Default.History, label = "History")
@@ -137,7 +145,7 @@ fun BalanceHeader() {
 }
 
 @Composable
-fun ActionItem(icon: ImageVector, label: String) {
+fun ActionItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width(64.dp)
@@ -147,7 +155,7 @@ fun ActionItem(icon: ImageVector, label: String) {
                 .size(52.dp)
                 .border(1.2.dp, Color.Black.copy(alpha = 0.6f), CircleShape)
                 .clip(CircleShape)
-                .clickable { }
+                .clickable { onClick() }
                 .padding(12.dp),
             contentAlignment = Alignment.Center
         ) {

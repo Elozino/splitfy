@@ -1,32 +1,54 @@
 package com.elozino.splitify.feature.activity
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.elozino.splitify.feature.activity.model.ActivityItemData
+import com.elozino.splitify.feature.activity.model.ActivitySection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToPay: () -> Unit = {},
+    onNavigateToRequest: () -> Unit = {}
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("All", "You Owe", "Owe to you")
 
     Scaffold(
-        modifier = Modifier.navigationBarsPadding(),
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Activity", fontWeight = FontWeight.Bold) },
@@ -138,6 +160,22 @@ fun ActivityScreen(
                             amount = "$479.25",
                             actionLabel = "Paid",
                             isCompleted = true
+                        ),
+                        ActivityItemData(
+                            name = "Darron Kulikowski",
+                            status = "owes",
+                            target = "Andrew Ainsley (You)",
+                            amount = "$208.40",
+                            actionLabel = "Request",
+                            isCompleted = true
+                        ),
+                        ActivityItemData(
+                            name = "Andrew Ainsley (You)",
+                            status = "owes",
+                            target = "Geoffrey Mott",
+                            amount = "$534.75",
+                            actionLabel = "Pay",
+                            isCompleted = true
                         )
                     )
                 )
@@ -155,7 +193,13 @@ fun ActivityScreen(
                         )
                     }
                     items(section.items) { item ->
-                        ActivityItem(item)
+                        ActivityItem(
+                            data = item,
+                            onActionClick = {
+                                if (item.actionLabel == "Pay") onNavigateToPay()
+                                else if (item.actionLabel == "Request") onNavigateToRequest()
+                            }
+                        )
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 24.dp),
                             color = Color.LightGray.copy(alpha = 0.3f)
@@ -168,7 +212,7 @@ fun ActivityScreen(
 }
 
 @Composable
-fun ActivityItem(data: ActivityItemData) {
+fun ActivityItem(data: ActivityItemData, onActionClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,7 +242,7 @@ fun ActivityItem(data: ActivityItemData) {
         )
 
         Button(
-            onClick = { },
+            onClick = onActionClick,
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (data.isCompleted) Color.Transparent else Color(0xFFFEBB1B),
                 contentColor = Color.Black
@@ -217,14 +261,3 @@ fun ActivityItem(data: ActivityItemData) {
         }
     }
 }
-
-data class ActivitySection(val date: String, val items: List<ActivityItemData>)
-data class ActivityItemData(
-    val name: String,
-    val status: String,
-    val target: String,
-    val amount: String,
-    val actionLabel: String,
-    val isOwed: Boolean = false,
-    val isCompleted: Boolean = false
-)

@@ -35,7 +35,6 @@ fun NotificationScreen(
     onNavigateBack: () -> Unit = {}
 ) {
     Scaffold(
-        modifier = Modifier.navigationBarsPadding(),
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Notification", fontWeight = FontWeight.Bold) },

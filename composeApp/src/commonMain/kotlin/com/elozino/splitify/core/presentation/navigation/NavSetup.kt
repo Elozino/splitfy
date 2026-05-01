@@ -1,7 +1,6 @@
 package com.elozino.splitify.core.presentation.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +24,9 @@ import com.elozino.splitify.feature.contact.ContactScreen
 import com.elozino.splitify.feature.home.HomeScreen
 import com.elozino.splitify.feature.notification.NotificationScreen
 import com.elozino.splitify.feature.onboarding.presentation.OnboardingScreen
+import com.elozino.splitify.feature.pay.PayScreenWrapper
+import com.elozino.splitify.feature.request.RequestScreenWrapper
+import com.elozino.splitify.feature.scan.ScanScreen
 import com.elozino.splitify.feature.split.GroupsScreen
 
 @Composable
@@ -33,7 +35,7 @@ fun NavSetup() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    val isAuthenticated = false
+    val isAuthenticated = true
 
     val mainRoutes = listOf(Route.Home, Route.Groups, Route.Contact, Route.Account)
     val showBottomBar = currentDestination?.hierarchy?.any { dest ->
@@ -67,6 +69,9 @@ fun NavSetup() {
                             launchSingleTop = true
                             restoreState = true
                         }
+                    },
+                    onScanClick = {
+                        navController.navigate(Route.Scan)
                     }
                 )
             }
@@ -127,7 +132,19 @@ fun NavSetup() {
             composable<Route.Home> {
                 HomeScreen(
                     onNavigateToNotification = { navController.navigate(Route.Notification) },
-                    onNavigateToActivity = { navController.navigate(Route.Activity) }
+                    onNavigateToActivity = { navController.navigate(Route.Activity) },
+                    onNavigateToPay = { navController.navigate(Route.Pay) },
+                    onNavigateToRequest = { navController.navigate(Route.Request) }
+                )
+            }
+            composable<Route.Pay> {
+                PayScreenWrapper(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable<Route.Request> {
+                RequestScreenWrapper(
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable<Route.Notification> {
@@ -137,7 +154,9 @@ fun NavSetup() {
             }
             composable<Route.Activity> {
                 ActivityScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToPay = { navController.navigate(Route.Pay) },
+                    onNavigateToRequest = { navController.navigate(Route.Request) }
                 )
             }
             composable<Route.Groups> {
@@ -148,6 +167,11 @@ fun NavSetup() {
             }
             composable<Route.Contact> {
                 ContactScreen()
+            }
+            composable<Route.Scan> {
+                ScanScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
         }
     }

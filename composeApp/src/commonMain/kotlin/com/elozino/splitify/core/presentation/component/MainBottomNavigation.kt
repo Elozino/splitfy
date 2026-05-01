@@ -30,7 +30,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun MainBottomNavigation(
     selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    onScanClick: () -> Unit = {}
 ) {
     NavigationBar(
         containerColor = Color.White,
@@ -80,7 +81,7 @@ fun MainBottomNavigation(
                 shadowElevation = 4.dp
             ) {
                 Box(
-                    modifier = Modifier.clickable { },
+                    modifier = Modifier.clickable { onScanClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

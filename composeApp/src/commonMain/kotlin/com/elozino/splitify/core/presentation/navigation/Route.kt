@@ -43,4 +43,13 @@ sealed class Route(val name: String, val isProtected: Boolean) {
 
     @Serializable
     object Activity : Route("activity", true)
+
+    @Serializable
+    object Pay : Route("pay", true)
+
+    @Serializable
+    object Request : Route("request", true)
+
+    @Serializable
+    object Scan : Route("scan", true)
 }
