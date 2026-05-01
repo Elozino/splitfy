@@ -46,10 +46,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.elozino.splitify.feature.transaction.model.TransactionType
@@ -100,7 +102,10 @@ internal fun TransactionScreen(
         )
     }
 
+    val blurBackground = showConfirmation || showSuccess
+
     Scaffold(
+        modifier = Modifier.blur(if (blurBackground) 16.dp else 0.dp),
         topBar = {
             TransactionTopBar(
                 title = if (type == TransactionType.PAY) "Pay" else "Request",
@@ -276,6 +281,7 @@ private fun TransactionConfirmationSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
         sheetState = sheetState,
+        scrimColor = Color.Black.copy(alpha = 0.32f)
     ) {
         TransactionConfirmationContent(
             type = type,
@@ -445,7 +451,10 @@ private fun PaymentSuccessScreen(
     user: TransactionUser,
     onDismiss: () -> Unit
 ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -513,13 +522,12 @@ private fun RequestSuccessSheet(onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        modifier = Modifier.fillMaxHeight(),
         containerColor = MaterialTheme.colorScheme.surface,
-        scrimColor = Color.Transparent
+        scrimColor = Color.Black.copy(alpha = 0.32f)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -532,6 +540,23 @@ private fun RequestSuccessSheet(onDismiss: () -> Unit) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(40.dp))
+            
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                shape = RoundedCornerShape(100.dp)
+            ) {
+                Text(
+                    text = "Done",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
