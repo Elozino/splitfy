@@ -26,6 +26,9 @@ import com.elozino.splitify.feature.notification.NotificationScreen
 import com.elozino.splitify.feature.onboarding.presentation.OnboardingScreen
 import com.elozino.splitify.feature.pay.PayScreenWrapper
 import com.elozino.splitify.feature.request.RequestScreenWrapper
+import com.elozino.splitify.feature.wallet.TopUpScreen
+import com.elozino.splitify.feature.wallet.WithdrawScreen
+import com.elozino.splitify.feature.transaction.TransactionHistoryScreen
 import com.elozino.splitify.feature.scan.ScanScreen
 import com.elozino.splitify.feature.split.GroupsScreen
 
@@ -134,7 +137,10 @@ fun NavSetup() {
                     onNavigateToNotification = { navController.navigate(Route.Notification) },
                     onNavigateToActivity = { navController.navigate(Route.Activity) },
                     onNavigateToPay = { navController.navigate(Route.Pay) },
-                    onNavigateToRequest = { navController.navigate(Route.Request) }
+                    onNavigateToRequest = { navController.navigate(Route.Request) },
+                    onNavigateToTopUp = { navController.navigate(Route.TopUp) },
+                    onNavigateToWithdraw = { navController.navigate(Route.Withdraw) },
+                    onNavigateToTransactionHistory = { navController.navigate(Route.TransactionHistory) }
                 )
             }
             composable<Route.Pay> {
@@ -144,6 +150,21 @@ fun NavSetup() {
             }
             composable<Route.Request> {
                 RequestScreenWrapper(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable<Route.TopUp> {
+                TopUpScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable<Route.Withdraw> {
+                WithdrawScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable<Route.TransactionHistory> {
+                TransactionHistoryScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

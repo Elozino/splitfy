@@ -30,7 +30,10 @@ fun HomeScreen(
     onNavigateToNotification: () -> Unit = {},
     onNavigateToActivity: () -> Unit = {},
     onNavigateToPay: () -> Unit = {},
-    onNavigateToRequest: () -> Unit = {}
+    onNavigateToRequest: () -> Unit = {},
+    onNavigateToTopUp: () -> Unit = {},
+    onNavigateToWithdraw: () -> Unit = {},
+    onNavigateToTransactionHistory: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -74,7 +77,10 @@ fun HomeScreen(
         ) {
             BalanceHeader(
                 onSendClick = onNavigateToPay,
-                onRequestClick = onNavigateToRequest
+                onRequestClick = onNavigateToRequest,
+                onTopUpClick = onNavigateToTopUp,
+                onWithdrawClick = onNavigateToWithdraw,
+                onHistoryClick = onNavigateToTransactionHistory
             )
             ActivitySection(
                 modifier = Modifier.weight(1f),
@@ -87,7 +93,10 @@ fun HomeScreen(
 @Composable
 fun BalanceHeader(
     onSendClick: () -> Unit = {},
-    onRequestClick: () -> Unit = {}
+    onRequestClick: () -> Unit = {},
+    onTopUpClick: () -> Unit = {},
+    onWithdrawClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {}
 ) {
     Surface(
         color = Color(0xFFFEBB1B)
@@ -134,9 +143,9 @@ fun BalanceHeader(
             ) {
                 ActionItem(icon = Icons.Default.NearMe, label = "Send", onClick = onSendClick)
                 ActionItem(icon = Icons.Default.ArrowCircleDown, label = "Request", onClick = onRequestClick)
-                ActionItem(icon = Icons.Default.Download, label = "Top Up")
-                ActionItem(icon = Icons.AutoMirrored.Filled.Logout, label = "Withdraw")
-                ActionItem(icon = Icons.Default.History, label = "History")
+                ActionItem(icon = Icons.Default.Download, label = "Top Up", onClick = onTopUpClick)
+                ActionItem(icon = Icons.AutoMirrored.Filled.Logout, label = "Withdraw", onClick = onWithdrawClick)
+                ActionItem(icon = Icons.Default.History, label = "History", onClick = onHistoryClick)
             }
             
             Spacer(modifier = Modifier.height(16.dp))

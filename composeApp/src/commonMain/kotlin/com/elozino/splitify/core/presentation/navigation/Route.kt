@@ -51,5 +51,14 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     object Request : Route("request", true)
 
     @Serializable
+    object TopUp : Route("top_up", true)
+
+    @Serializable
+    object Withdraw : Route("withdraw", true)
+
+    @Serializable
+    object TransactionHistory : Route("transaction_history", true)
+
+    @Serializable
     object Scan : Route("scan", true)
 }

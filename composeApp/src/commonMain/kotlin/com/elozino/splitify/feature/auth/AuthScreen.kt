@@ -32,7 +32,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import org.jetbrains.compose.resources.painterResource
 import splitify.composeapp.generated.resources.Res
 import splitify.composeapp.generated.resources.ic_apple
 

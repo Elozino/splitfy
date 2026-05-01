@@ -1,6 +1,13 @@
 package com.elozino.splitify.feature.transaction.model
 
 /**
- * Transaction flow types: [PAY] for sending money and [REQUEST] for requesting it.
+ * Transaction flow types.
  */
-enum class TransactionType { PAY, REQUEST }
+enum class TransactionType { 
+    ALL,
+    PAY, 
+    REQUEST, 
+    TOPUP, 
+    WITHDRAW, 
+    EXPENSE 
+}
