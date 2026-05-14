@@ -231,45 +231,13 @@ fun ActivitySection(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Empty state illustration
-            Box(
-                modifier = Modifier.size(200.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Back Clipboard
-                Box(
-                    modifier = Modifier
-                        .size(100.dp, 130.dp)
-                        .offset(x = (-20).dp, y = (-10).dp)
-                        .border(1.dp, Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                        .background(Color.White, RoundedCornerShape(8.dp))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .offset(y = (-8).dp)
-                            .size(40.dp, 12.dp)
-                            .background(Color(0xFFFEBB1B).copy(alpha = 0.4f), RoundedCornerShape(4.dp))
-                    )
-                }
-                
-                // Front Clipboard
-                Box(
-                    modifier = Modifier
-                        .size(110.dp, 140.dp)
-                        .offset(x = 10.dp, y = 10.dp)
-                        .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                        .background(Color.White, RoundedCornerShape(8.dp))
-                ) {
-                   Box(
-                       modifier = Modifier
-                           .align(Alignment.TopCenter)
-                           .offset(y = (-10).dp)
-                           .size(50.dp, 15.dp)
-                           .background(Color(0xFFFEBB1B), RoundedCornerShape(4.dp))
-                   )
-                }
-            }
+            Icon(
+                imageVector = Icons.Default.Inbox,
+                contentDescription = null,
+                modifier = Modifier.size(80.dp),
+                tint = Color.LightGray
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "No Transactions",
                 fontSize = 22.sp,

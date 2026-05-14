@@ -52,6 +52,10 @@ kotlin {
             implementation(libs.coil.network.ktor3)
             implementation(libs.coil.svg)
 
+            // Peekaboo Camera
+            implementation(libs.peekaboo.ui)
+            implementation(libs.peekaboo.image.picker)
+
             // Material icons
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
         }

@@ -1,6 +1,7 @@
 package com.elozino.splitify.core.presentation.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +32,8 @@ import com.elozino.splitify.feature.wallet.WithdrawScreen
 import com.elozino.splitify.feature.transaction.TransactionHistoryScreen
 import com.elozino.splitify.feature.scan.ScanScreen
 import com.elozino.splitify.feature.split.GroupsScreen
+import com.elozino.splitify.feature.split.NewGroupScreen
+import com.elozino.splitify.feature.split.SelectParticipantsScreen
 
 @Composable
 fun NavSetup() {
@@ -41,9 +44,10 @@ fun NavSetup() {
     val isAuthenticated = true
 
     val mainRoutes = listOf(Route.Home, Route.Groups, Route.Contact, Route.Account)
-    val showBottomBar = currentDestination?.hierarchy?.any { dest ->
-        mainRoutes.any { route -> dest.hasRoute(route::class) }
-    } == true
+    val showBottomBar = currentDestination?.hasRoute(Route.Home::class) == true ||
+            currentDestination?.hasRoute(Route.Groups::class) == true ||
+            currentDestination?.hasRoute(Route.Contact::class) == true ||
+            currentDestination?.hasRoute(Route.Account::class) == true
 
     Scaffold(
         bottomBar = {
@@ -79,7 +83,7 @@ fun NavSetup() {
                 )
             }
         }
-    ) { _ ->
+    ) {
         NavHost(
             navController = navController,
             startDestination = if (isAuthenticated) Route.Home else Route.Onboarding,
@@ -181,7 +185,25 @@ fun NavSetup() {
                 )
             }
             composable<Route.Groups> {
-                GroupsScreen()
+                GroupsScreen(
+                    onNavigateToNewGroup = { navController.navigate(Route.NewGroup) }
+                )
+            }
+            composable<Route.NewGroup> {
+                NewGroupScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onContinue = { navController.navigate(Route.SelectParticipants) }
+                )
+            }
+            composable<Route.SelectParticipants> {
+                SelectParticipantsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onFinish = {
+                        navController.navigate(Route.Groups) {
+                            popUpTo(Route.Groups) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable<Route.Account> {
                 AccountScreen()

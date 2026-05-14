@@ -60,5 +60,11 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     object TransactionHistory : Route("transaction_history", true)
 
     @Serializable
+    object NewGroup : Route("new_group", true)
+
+    @Serializable
+    object SelectParticipants : Route("select_participants", true)
+
+    @Serializable
     object Scan : Route("scan", true)
 }

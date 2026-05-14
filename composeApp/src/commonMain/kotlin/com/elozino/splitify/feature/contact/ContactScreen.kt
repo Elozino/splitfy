@@ -38,7 +38,10 @@ fun ContactScreen() {
                 onClick = { /* TODO: Add Contact */ },
                 containerColor = Color(0xFFFEBB1B),
                 contentColor = Color.Black,
-                shape = CircleShape
+                shape = CircleShape,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(bottom = 16.dp)
             ) {
                 Icon(Icons.Default.PersonAdd, contentDescription = "Add Contact")
             }
