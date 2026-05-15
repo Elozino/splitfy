@@ -111,9 +111,11 @@ private fun ContactListScreen(
                     IconButton(onClick = onSearchClick) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddContactClick,
@@ -280,9 +282,11 @@ private fun SearchContactScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             if (query.isEmpty()) {
@@ -340,9 +344,11 @@ private fun ContactDetailScreen(
                     IconButton(onClick = { /* TODO: Favorite */ }) {
                         Icon(Icons.Default.StarBorder, contentDescription = "Favorite")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -470,9 +476,11 @@ private fun AddContactScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -553,9 +561,11 @@ private fun SearchResultScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Row(
                 modifier = Modifier

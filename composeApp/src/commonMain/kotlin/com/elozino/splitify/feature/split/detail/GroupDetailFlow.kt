@@ -83,11 +83,10 @@ fun GroupDetailScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Surface(
                 color = Color.White,
@@ -427,9 +426,11 @@ fun ExpenseDetailScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         Column(
             modifier = Modifier

@@ -66,9 +66,11 @@ private fun GroupsListScreen(
                     IconButton(onClick = { /* TODO */ }) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreateGroupClick,
@@ -195,9 +197,11 @@ fun NewGroupScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -407,9 +411,11 @@ fun SelectParticipantsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Row(
                 modifier = Modifier

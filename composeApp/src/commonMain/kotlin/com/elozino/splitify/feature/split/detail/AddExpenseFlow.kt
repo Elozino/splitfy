@@ -101,9 +101,11 @@ private fun ExpenseDetailsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -434,9 +436,11 @@ private fun SplitWithScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.Close, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Row(
                 modifier = Modifier

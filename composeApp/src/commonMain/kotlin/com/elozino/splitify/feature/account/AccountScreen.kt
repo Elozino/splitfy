@@ -66,7 +66,8 @@ fun AccountScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -272,9 +273,11 @@ fun PersonalInfoScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
@@ -340,9 +343,11 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         val settings = listOf(
             "Bill updates",
@@ -382,9 +387,11 @@ fun SecuritySettingsScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         val items = listOf(
             "Remember me",
@@ -431,9 +438,11 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Surface(
@@ -481,9 +490,11 @@ fun LinkedAccountsScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         val accounts = listOf(
             "Google" to Icons.Default.Email,
@@ -521,9 +532,11 @@ fun DataAnalyticsScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Text("Data Usage", fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -559,9 +572,11 @@ fun AppAppearanceScreen(onNavigateBack: () -> Unit, onNavigateToLanguage: () -> 
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Row(
@@ -644,9 +659,11 @@ fun AppLanguageScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         val languages = listOf("English (US)", "English (UK)", "Mandarin", "Spanish", "Hindi", "French", "Arabic", "Bengali", "Russian", "Japanese")
         var selectedLanguage by remember { mutableStateOf("English (US)") }
@@ -682,9 +699,11 @@ fun HelpSupportScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         val items = listOf(
             "FAQ" to onNavigateToFAQ,
@@ -726,9 +745,11 @@ fun FAQScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             var selectedCategory by remember { mutableStateOf("General") }
@@ -784,9 +805,11 @@ fun ContactSupportScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         val items = listOf(
             "Customer Service" to Icons.Default.HeadsetMic,
@@ -822,9 +845,11 @@ fun PrivacyPolicyScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp).verticalScroll(rememberScrollState())) {
             Text("1. Information We Collect", fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -850,9 +875,11 @@ fun TermsOfServiceScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        containerColor = Color.White
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp).verticalScroll(rememberScrollState())) {
             Text("1. Acceptance of Terms", fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -883,9 +910,11 @@ fun AddPaymentMethodScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
@@ -940,9 +969,11 @@ fun UpgradePlanScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
@@ -1064,9 +1095,11 @@ fun PaymentMethodsScreen(
                     IconButton(onClick = onNavigateToAddPayment) {
                         Icon(Icons.Default.Add, contentDescription = "Add")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
+        containerColor = Color.White,
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
