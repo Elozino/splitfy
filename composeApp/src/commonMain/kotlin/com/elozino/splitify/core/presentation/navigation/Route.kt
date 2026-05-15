@@ -66,5 +66,68 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     object SelectParticipants : Route("select_participants", true)
 
     @Serializable
+    data class GroupDetail(val groupId: String) : Route("group_detail", true)
+
+    @Serializable
+    data class AddExpense(val groupId: String) : Route("add_expense", true)
+
+    @Serializable
+    data class ExpenseDetail(val expenseId: String) : Route("expense_detail", true)
+
+    @Serializable
+    data class SplitDetail(val groupId: String) : Route("split_detail", true)
+
+    @Serializable
+    object UpgradePlan : Route("upgrade_plan", true)
+
+    @Serializable
+    object PaymentMethods : Route("payment_methods", true)
+
+    @Serializable
+    object AddPaymentMethod : Route("add_payment_method", true)
+
+    @Serializable
+    object UpgradeSuccess : Route("upgrade_success", true)
+
+    @Serializable
+    object PersonalInfo : Route("personal_info", true)
+
+    @Serializable
+    object NotificationSettings : Route("notification_settings", true)
+
+    @Serializable
+    object SecuritySettings : Route("security_settings", true)
+
+    @Serializable
+    object BillingSubscriptions : Route("billing_subscriptions", true)
+
+    @Serializable
+    object LinkedAccounts : Route("linked_accounts", true)
+
+    @Serializable
+    object DataAnalytics : Route("data_analytics", true)
+
+    @Serializable
+    object AppAppearance : Route("app_appearance", true)
+
+    @Serializable
+    object AppLanguage : Route("app_language", true)
+
+    @Serializable
+    object HelpSupport : Route("help_support", true)
+
+    @Serializable
+    object FAQ : Route("faq", true)
+
+    @Serializable
+    object ContactSupport : Route("contact_support", true)
+
+    @Serializable
+    object PrivacyPolicy : Route("privacy_policy", true)
+
+    @Serializable
+    object TermsOfService : Route("terms_of_service", true)
+
+    @Serializable
     object Scan : Route("scan", true)
 }

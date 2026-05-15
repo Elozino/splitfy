@@ -29,10 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elozino.splitify.ui.theme.primaryLight
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupsScreen(
-    onNavigateToNewGroup: () -> Unit
+    onNavigateToNewGroup: () -> Unit,
+    onNavigateToGroupDetail: (String) -> Unit
 ) {
     // Current groups list logic
     val groups = remember { 
@@ -46,7 +46,8 @@ fun GroupsScreen(
 
     GroupsListScreen(
         groups = groups,
-        onCreateGroupClick = onNavigateToNewGroup
+        onCreateGroupClick = onNavigateToNewGroup,
+        onGroupClick = { onNavigateToGroupDetail("1") } // Using mock ID
     )
 }
 
@@ -54,7 +55,8 @@ fun GroupsScreen(
 @Composable
 private fun GroupsListScreen(
     groups: List<GroupItemData>,
-    onCreateGroupClick: () -> Unit
+    onCreateGroupClick: () -> Unit,
+    onGroupClick: (GroupItemData) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -92,7 +94,7 @@ private fun GroupsListScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(groups) { group ->
-                    GroupItem(group)
+                    GroupItem(group, onClick = { onGroupClick(group) })
                 }
             }
         }
@@ -563,9 +565,11 @@ data class GroupItemData(
 )
 
 @Composable
-fun GroupItem(data: GroupItemData) {
+fun GroupItem(data: GroupItemData, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
