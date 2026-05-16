@@ -80,19 +80,26 @@ fun AccountScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(Color.LightGray))
+                    Box(
+                        modifier = Modifier.size(60.dp).clip(CircleShape)
+                            .background(Color.LightGray)
+                    )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Andrew Ainsley", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                         Text("andrew_ainsley@gmail.com", color = Color.Gray, fontSize = 14.sp)
                     }
                     IconButton(onClick = onNavigateToPersonalInfo) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile", tint = primaryLight)
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit Profile",
+                            tint = primaryLight
+                        )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -105,39 +112,75 @@ fun AccountScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.3f), CircleShape),
+                            modifier = Modifier.size(44.dp)
+                                .background(Color.White.copy(alpha = 0.3f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Default.Star, contentDescription = null, tint = Color.White)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Upgrade Plan to Unlock More!", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                            Text("Get full access with Splitify premium plans", fontSize = 11.sp, color = Color.Black.copy(alpha = 0.7f))
+                            Text(
+                                "Upgrade Plan to Unlock More!",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                            Text(
+                                "Get full access with Splitify premium plans",
+                                fontSize = 11.sp,
+                                color = Color.Black.copy(alpha = 0.7f)
+                            )
                         }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null
+                        )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
             val menuItems = listOf(
                 AccountMenuItem("Personal Info", Icons.Default.Person, onNavigateToPersonalInfo),
-                AccountMenuItem("Notification", Icons.Default.Notifications, onNavigateToNotification),
+                AccountMenuItem(
+                    "Notification",
+                    Icons.Default.Notifications,
+                    onNavigateToNotification
+                ),
                 AccountMenuItem("Account & Security", Icons.Default.Security, onNavigateToSecurity),
-                AccountMenuItem("Payment Methods", Icons.Default.Payment, onNavigateToPaymentMethods),
-                AccountMenuItem("Billing & Subscriptions", Icons.AutoMirrored.Filled.ReceiptLong, onNavigateToBilling),
+                AccountMenuItem(
+                    "Payment Methods",
+                    Icons.Default.Payment,
+                    onNavigateToPaymentMethods
+                ),
+                AccountMenuItem(
+                    "Billing & Subscriptions",
+                    Icons.AutoMirrored.Filled.ReceiptLong,
+                    onNavigateToBilling
+                ),
                 AccountMenuItem("Linked Accounts", Icons.Default.Link, onNavigateToLinkedAccounts),
-                AccountMenuItem("App Appearance", Icons.Default.RemoveRedEye, onNavigateToAppearance),
-                AccountMenuItem("Data & Analytics", Icons.Default.BarChart, onNavigateToDataAnalytics),
-                AccountMenuItem("Help & Support", Icons.AutoMirrored.Filled.HelpOutline, onNavigateToHelpSupport)
+                AccountMenuItem(
+                    "App Appearance",
+                    Icons.Default.RemoveRedEye,
+                    onNavigateToAppearance
+                ),
+                AccountMenuItem(
+                    "Data & Analytics",
+                    Icons.Default.BarChart,
+                    onNavigateToDataAnalytics
+                ),
+                AccountMenuItem(
+                    "Help & Support",
+                    Icons.AutoMirrored.Filled.HelpOutline,
+                    onNavigateToHelpSupport
+                )
             )
 
             items(menuItems) { item ->
                 AccountRow(item)
             }
-            
+
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
@@ -147,9 +190,19 @@ fun AccountScreen(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Color.Red, modifier = Modifier.size(24.dp))
+                    Icon(
+                        Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null,
+                        tint = Color.Red,
+                        modifier = Modifier.size(24.dp)
+                    )
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text("Logout", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(
+                        "Logout",
+                        color = Color.Red,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
                 }
                 Spacer(modifier = Modifier.height(100.dp))
             }
@@ -178,15 +231,33 @@ private fun AccountRow(item: AccountMenuItem) {
             modifier = Modifier.size(40.dp).background(Color(0xFFF5F5F5), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(item.icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.Black)
+            Icon(
+                item.icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = Color.Black
+            )
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Text(item.title, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+        Text(
+            item.title,
+            modifier = Modifier.weight(1f),
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color.Gray
+        )
     }
 }
 
-private data class AccountMenuItem(val title: String, val icon: ImageVector, val onClick: () -> Unit)
+private data class AccountMenuItem(
+    val title: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -203,9 +274,19 @@ fun MyQrCodeDialog(onDismiss: () -> Unit) {
                 Text("Close", color = Color.Black, fontWeight = FontWeight.Bold)
             }
         },
-        title = { Text("My QR Code", fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+        title = {
+            Text(
+                "My QR Code",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
         text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Box(
                     modifier = Modifier
                         .size(200.dp)
@@ -214,10 +295,20 @@ fun MyQrCodeDialog(onDismiss: () -> Unit) {
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.QrCode, contentDescription = null, modifier = Modifier.fillMaxSize(), tint = Color.Black)
+                    Icon(
+                        Icons.Default.QrCode,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        tint = Color.Black
+                    )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("QR Code Personal: scan user for quick wallet payments.", textAlign = TextAlign.Center, fontSize = 12.sp, color = Color.Gray)
+                Text(
+                    "QR Code Personal: scan user for quick wallet payments.",
+                    textAlign = TextAlign.Center,
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
             }
         },
         containerColor = Color.White,
@@ -229,8 +320,22 @@ fun MyQrCodeDialog(onDismiss: () -> Unit) {
 fun LogoutDialog(onDismiss: () -> Unit, onLogout: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Logout", fontWeight = FontWeight.Bold, color = Color.Red, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-        text = { Text("Are you sure you want to logout?", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        title = {
+            Text(
+                "Logout",
+                fontWeight = FontWeight.Bold,
+                color = Color.Red,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                "Are you sure you want to logout?",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
         confirmButton = {
             Button(
                 onClick = onLogout,
@@ -291,24 +396,35 @@ fun PersonalInfoScreen(onNavigateBack: () -> Unit) {
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray)) {
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Box(
-                        modifier = Modifier.align(Alignment.BottomEnd).size(28.dp).background(primaryLight, CircleShape).border(2.dp, Color.White, CircleShape),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier.size(100.dp).clip(CircleShape)
+                            .background(Color.LightGray)
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Box(
+                            modifier = Modifier.align(Alignment.BottomEnd).size(28.dp)
+                                .background(primaryLight, CircleShape)
+                                .border(2.dp, Color.White, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                InfoField("Full Name", fullName) { fullName = it }
+                InfoField("Email", email) { email = it }
+                InfoField("Phone Number", phone) { phone = it }
+                InfoField("Date of Birth", dob) { dob = it }
+                InfoField("Gender", gender) { gender = it }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            InfoField("Full Name", fullName) { fullName = it }
-            InfoField("Email", email) { email = it }
-            InfoField("Phone Number", phone) { phone = it }
-            InfoField("Date of Birth", dob) { dob = it }
-            InfoField("Gender", gender) { gender = it }
         }
     }
 }
@@ -369,7 +485,14 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(setting, fontWeight = FontWeight.Medium)
-                    Switch(checked = true, onCheckedChange = {}, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = primaryLight))
+                    Switch(
+                        checked = true,
+                        onCheckedChange = {},
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = primaryLight
+                        )
+                    )
                 }
             }
         }
@@ -411,17 +534,36 @@ fun SecuritySettingsScreen(onNavigateBack: () -> Unit) {
                 ) {
                     Text(item, fontWeight = FontWeight.Medium)
                     if (item == "Change Password" || item == "Device Management") {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = Color.Gray
+                        )
                     } else {
-                        Switch(checked = true, onCheckedChange = {}, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = primaryLight))
+                        Switch(
+                            checked = true,
+                            onCheckedChange = {},
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = primaryLight
+                            )
+                        )
                     }
                 }
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Deactivate Account", color = Color.Red, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { })
+                Text(
+                    "Deactivate Account",
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { })
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Delete Account", color = Color.Red, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { })
+                Text(
+                    "Delete Account",
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { })
             }
         }
     }
@@ -450,13 +592,29 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
                 shape = RoundedCornerShape(24.dp),
                 border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
             ) {
-                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Splitify Premium", fontWeight = FontWeight.Bold, color = primaryLight)
-                    Text("$49.99 / year", fontSize = 36.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 16.dp))
-                    
+                    Text(
+                        "$49.99 / year",
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+
                     benefitListShort().forEach { benefit ->
-                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = primaryLight, modifier = Modifier.size(18.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = primaryLight,
+                                modifier = Modifier.size(18.dp)
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(benefit, fontSize = 14.sp, color = Color.Gray)
                         }
@@ -464,8 +622,13 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Your subscription will expire on Dec 27, 2024. Please renew your subscription to continue using premium benefits.", textAlign = TextAlign.Center, fontSize = 12.sp, color = Color.Gray)
-            
+            Text(
+                "Your subscription will expire on Dec 27, 2024. Please renew your subscription to continue using premium benefits.",
+                textAlign = TextAlign.Center,
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+
             Spacer(modifier = Modifier.weight(1f))
             Button(
                 onClick = { },
@@ -514,7 +677,11 @@ fun LinkedAccountsScreen(onNavigateBack: () -> Unit) {
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(name, fontWeight = FontWeight.Bold)
                     }
-                    Text(if(name == "Google") "Connected" else "Disconnect", color = if(name == "Google") primaryLight else Color.Gray, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (name == "Google") "Connected" else "Disconnect",
+                        color = if (name == "Google") primaryLight else Color.Gray,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -540,21 +707,52 @@ fun DataAnalyticsScreen(onNavigateBack: () -> Unit) {
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Text("Data Usage", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("Control how your data is used for analytics and personalized experience.", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
-            
+            Text(
+                "Control how your data is used for analytics and personalized experience.",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text("Ad Preference", fontWeight = FontWeight.Bold)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = Color.Gray
+                )
             }
-            Text("Manage your personalized settings for ads and announcements.", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
-            
+            Text(
+                "Manage your personalized settings for ads and announcements.",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text("Download My Data", fontWeight = FontWeight.Bold)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = Color.Gray
+                )
             }
-            Text("Request a copy of your data for your own information and portability.", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
+            Text(
+                "Request a copy of your data for your own information and portability.",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         }
     }
 }
@@ -580,23 +778,33 @@ fun AppAppearanceScreen(onNavigateBack: () -> Unit, onNavigateToLanguage: () -> 
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth().clickable { showThemeSheet = true }.padding(vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().clickable { showThemeSheet = true }
+                    .padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("Theme", fontWeight = FontWeight.Bold)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Light", color = Color.Gray)
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = Color.Gray
+                    )
                 }
             }
             Row(
-                modifier = Modifier.fillMaxWidth().clickable { onNavigateToLanguage() }.padding(vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().clickable { onNavigateToLanguage() }
+                    .padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("App Language", fontWeight = FontWeight.Bold)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("English (US)", color = Color.Gray)
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = Color.Gray
+                    )
                 }
             }
         }
@@ -617,29 +825,53 @@ fun ThemeSelectionSheet(onDismiss: () -> Unit) {
         containerColor = Color.White
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
-            Text("Theme", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Text(
+                "Theme",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
-            
+
             val themes = listOf("System Default", "Light", "Dark")
             var selectedTheme by remember { mutableStateOf("Light") }
-            
+
             themes.forEach { theme ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { selectedTheme = theme }.padding(vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { selectedTheme = theme }
+                        .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    RadioButton(selected = selectedTheme == theme, onClick = { selectedTheme = theme }, colors = RadioButtonDefaults.colors(selectedColor = primaryLight))
+                    RadioButton(
+                        selected = selectedTheme == theme,
+                        onClick = { selectedTheme = theme },
+                        colors = RadioButtonDefaults.colors(selectedColor = primaryLight)
+                    )
                     Text(theme, fontWeight = FontWeight.Medium)
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(100.dp), border = BorderStroke(1.dp, primaryLight)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    shape = RoundedCornerShape(100.dp),
+                    border = BorderStroke(1.dp, primaryLight)
+                ) {
                     Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
-                Button(onClick = onDismiss, modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(100.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryLight)) {
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    shape = RoundedCornerShape(100.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                ) {
                     Text("OK", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
@@ -665,17 +897,33 @@ fun AppLanguageScreen(onNavigateBack: () -> Unit) {
         },
         containerColor = Color.White
     ) { padding ->
-        val languages = listOf("English (US)", "English (UK)", "Mandarin", "Spanish", "Hindi", "French", "Arabic", "Bengali", "Russian", "Japanese")
+        val languages = listOf(
+            "English (US)",
+            "English (UK)",
+            "Mandarin",
+            "Spanish",
+            "Hindi",
+            "French",
+            "Arabic",
+            "Bengali",
+            "Russian",
+            "Japanese"
+        )
         var selectedLanguage by remember { mutableStateOf("English (US)") }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             items(languages) { lang ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { selectedLanguage = lang }.padding(vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { selectedLanguage = lang }
+                        .padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(lang, fontWeight = FontWeight.Medium)
-                    RadioButton(selected = selectedLanguage == lang, onClick = { selectedLanguage = lang }, colors = RadioButtonDefaults.colors(selectedColor = primaryLight))
+                    RadioButton(
+                        selected = selectedLanguage == lang,
+                        onClick = { selectedLanguage = lang },
+                        colors = RadioButtonDefaults.colors(selectedColor = primaryLight)
+                    )
                 }
             }
         }
@@ -722,12 +970,17 @@ fun HelpSupportScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             items(items) { (title, onClick) ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 16.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { onClick() }
+                        .padding(vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = Color.Gray
+                    )
                 }
             }
         }
@@ -754,8 +1007,11 @@ fun FAQScreen(onNavigateBack: () -> Unit) {
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             var selectedCategory by remember { mutableStateOf("General") }
             val categories = listOf("General", "Account", "Payment", "Group")
-            
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 categories.forEach { cat ->
                     FilterChip(
                         selected = selectedCategory == cat,
@@ -766,7 +1022,7 @@ fun FAQScreen(onNavigateBack: () -> Unit) {
                     )
                 }
             }
-            
+
             val faqs = listOf(
                 "What is Splitify?" to "Splitify is a bill-splitting app that helps you manage group expenses effectively.",
                 "How does Splitify work?" to "Create a group, add expenses, and Splitify automatically calculates who owes whom.",
@@ -774,17 +1030,30 @@ fun FAQScreen(onNavigateBack: () -> Unit) {
                 "Can I split bills with multiple friends?" to "Absolutely! You can create groups with as many people as you want.",
                 "How do I receive payments?" to "Connect your wallet or bank account to receive payments directly."
             )
-            
+
             LazyColumn {
                 items(faqs) { (q, a) ->
                     var expanded by remember { mutableStateOf(false) }
-                    Column(modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 12.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }
+                        .padding(vertical = 12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(q, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            Icon(if(expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null, tint = primaryLight)
+                            Icon(
+                                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = primaryLight
+                            )
                         }
                         if (expanded) {
-                            Text(a, color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
+                            Text(
+                                a,
+                                color = Color.Gray,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
                         }
                     }
                     HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
@@ -851,15 +1120,33 @@ fun PrivacyPolicyScreen(onNavigateBack: () -> Unit) {
         },
         containerColor = Color.White
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp).verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
             Text("1. Information We Collect", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("We collect your personal information to provide and improve our services...", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-            
+            Text(
+                "We collect your personal information to provide and improve our services...",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+            )
+
             Text("2. How We Use Your Information", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("Personal information is used for account management, splitting calculations, and communication...", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-            
+            Text(
+                "Personal information is used for account management, splitting calculations, and communication...",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+            )
+
             Text("3. Data Security", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("We employ industry-standard measures to safeguard your data...", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
+            Text(
+                "We employ industry-standard measures to safeguard your data...",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+            )
         }
     }
 }
@@ -881,15 +1168,33 @@ fun TermsOfServiceScreen(onNavigateBack: () -> Unit) {
         },
         containerColor = Color.White
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp).verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
             Text("1. Acceptance of Terms", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("By using Splitify, you agree to comply with these terms and our privacy policy.", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-            
+            Text(
+                "By using Splitify, you agree to comply with these terms and our privacy policy.",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+            )
+
             Text("2. User Responsibilities", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("Users are responsible for the accuracy of information and maintaining the confidentiality of their account.", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-            
+            Text(
+                "Users are responsible for the accuracy of information and maintaining the confidentiality of their account.",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+            )
+
             Text("3. Bill Management", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("Splitify calculates bill splits based on user input. Users are responsible for reviewing and confirming payments.", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
+            Text(
+                "Splitify calculates bill splits based on user input. Users are responsible for reviewing and confirming payments.",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+            )
         }
     }
 }
@@ -932,8 +1237,11 @@ fun AddPaymentMethodScreen(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
             InfoField("Account Holder Name", cardHolder) { cardHolder = it }
             InfoField("Card Number", cardNumber) { cardNumber = it }
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Box(modifier = Modifier.weight(1f)) {
                     InfoField("Expiry Date", expiry) { expiry = it }
                 }
@@ -941,13 +1249,28 @@ fun AddPaymentMethodScreen(onNavigateBack: () -> Unit) {
                     InfoField("CVV", cvv) { cvv = it }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
             Text("Supported Payments", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Row(modifier = Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Icon(Icons.Default.CreditCard, contentDescription = null, modifier = Modifier.size(32.dp))
-                Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(32.dp))
-                Icon(Icons.Default.AccountBalance, contentDescription = null, modifier = Modifier.size(32.dp))
+            Row(
+                modifier = Modifier.padding(top = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    Icons.Default.CreditCard,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
+                Icon(
+                    Icons.Default.Payment,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
+                Icon(
+                    Icons.Default.AccountBalance,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
             }
         }
     }
@@ -960,7 +1283,7 @@ fun UpgradePlanScreen(
     onNavigateToPayment: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
-    
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -982,7 +1305,11 @@ fun UpgradePlanScreen(
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
                 ) {
-                    Text("Continue - ${if(selectedTab == 0) "$4.99" else "$49.99"}", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Continue - ${if (selectedTab == 0) "$4.99" else "$49.99"}",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -993,7 +1320,8 @@ fun UpgradePlanScreen(
                 .padding(padding)
         ) {
             Surface(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp).fillMaxWidth().height(48.dp),
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp).fillMaxWidth()
+                    .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 color = Color(0xFFF5F5F5)
             ) {
@@ -1009,7 +1337,10 @@ fun UpgradePlanScreen(
                                 .clickable { selectedTab = index },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(title, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
+                            Text(
+                                title,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            )
                         }
                     }
                 }
@@ -1020,24 +1351,47 @@ fun UpgradePlanScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Splitify Premium", fontWeight = FontWeight.Bold, color = primaryLight, fontSize = 18.sp)
-                
-                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(vertical = 16.dp)) {
-                    Text(if(selectedTab == 0) "$4.99" else "$49.99", fontSize = 48.sp, fontWeight = FontWeight.Bold)
-                    Text(if(selectedTab == 0) " / month" else " / year", fontSize = 16.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 12.dp))
+                Text(
+                    "Splitify Premium",
+                    fontWeight = FontWeight.Bold,
+                    color = primaryLight,
+                    fontSize = 18.sp
+                )
+
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                ) {
+                    Text(
+                        if (selectedTab == 0) "$4.99" else "$49.99",
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        if (selectedTab == 0) " / month" else " / year",
+                        fontSize = 16.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
                 }
-                
+
                 if (selectedTab == 1) {
                     Surface(
                         color = Color(0xFFFFF9C4),
                         shape = RoundedCornerShape(100.dp)
                     ) {
-                        Text("Save 15%", color = Color(0xFFFBC02D), fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                        Text(
+                            "Save 15%",
+                            color = Color(0xFFFBC02D),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
-                
+
                 val benefits = listOf(
                     "All basic benefits plus",
                     "Ad-free experience",
@@ -1046,10 +1400,18 @@ fun UpgradePlanScreen(
                     "Unlimited bill-sharing groups",
                     "Early access to new features"
                 )
-                
+
                 benefits.forEach { benefit ->
-                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Check, contentDescription = null, tint = primaryLight, modifier = Modifier.size(24.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = primaryLight,
+                            modifier = Modifier.size(24.dp)
+                        )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(benefit, fontSize = 14.sp, color = Color.DarkGray)
                     }
@@ -1085,9 +1447,14 @@ fun PaymentMethodsScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(if(step == 0) "Payment Methods" else "Review Summary", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        if (step == 0) "Payment Methods" else "Review Summary",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { if(step == 0) onNavigateBack() else step = 0 }) {
+                    IconButton(onClick = { if (step == 0) onNavigateBack() else step = 0 }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -1103,12 +1470,16 @@ fun PaymentMethodsScreen(
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
-                    onClick = { if(step == 0) step = 1 else isProcessing = true },
+                    onClick = { if (step == 0) step = 1 else isProcessing = true },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
                 ) {
-                    Text(if(step == 0) "Continue" else "Confirm Payment", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (step == 0) "Continue" else "Confirm Payment",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -1123,7 +1494,7 @@ fun PaymentMethodsScreen(
                     "•••• •••• •••• 5567" to Icons.Default.CreditCard,
                     "•••• •••• •••• 8632" to Icons.Default.CreditCard
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
                 methods.forEachIndexed { index, (label, icon) ->
                     PaymentMethodItem(
@@ -1140,20 +1511,36 @@ fun PaymentMethodsScreen(
                     shape = RoundedCornerShape(24.dp),
                     border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
                 ) {
-                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text("Splitify Premium", fontWeight = FontWeight.Bold, color = primaryLight)
-                        Text("$49.99 / year", fontSize = 36.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 16.dp))
-                        
+                        Text(
+                            "$49.99 / year",
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+
                         benefitListShort().forEach { benefit ->
-                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = primaryLight, modifier = Modifier.size(18.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = primaryLight,
+                                    modifier = Modifier.size(18.dp)
+                                )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(benefit, fontSize = 14.sp, color = Color.Gray)
                             }
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
                 Text("Selected Payment Method", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(16.dp))
@@ -1162,11 +1549,23 @@ fun PaymentMethodsScreen(
                     shape = RoundedCornerShape(24.dp),
                     color = Color(0xFFF5F5F5)
                 ) {
-                    Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(Icons.Default.CreditCard, contentDescription = null)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("•••• •••• •••• 4679", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        Text("Change", color = primaryLight, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.clickable { step = 0 })
+                        Text(
+                            "•••• •••• •••• 4679",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            "Change",
+                            color = primaryLight,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            modifier = Modifier.clickable { step = 0 })
                     }
                 }
             }
@@ -1175,18 +1574,32 @@ fun PaymentMethodsScreen(
 }
 
 @Composable
-private fun PaymentMethodItem(label: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
+private fun PaymentMethodItem(
+    label: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .border(1.2.dp, if (isSelected) primaryLight else Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+            .border(
+                1.2.dp,
+                if (isSelected) primaryLight else Color.LightGray.copy(alpha = 0.3f),
+                RoundedCornerShape(20.dp)
+            )
             .clip(RoundedCornerShape(20.dp))
             .clickable { onClick() }
             .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = if (label.contains("Pay")) Color.Unspecified else Color.Black, modifier = Modifier.size(28.dp))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (label.contains("Pay")) Color.Unspecified else Color.Black,
+            modifier = Modifier.size(28.dp)
+        )
         Spacer(modifier = Modifier.width(16.dp))
         Text(label, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), fontSize = 16.sp)
         RadioButton(
@@ -1213,7 +1626,11 @@ private fun ProcessingPaymentOverlay() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    CircularProgressIndicator(color = primaryLight, strokeWidth = 4.dp, modifier = Modifier.size(48.dp))
+                    CircularProgressIndicator(
+                        color = primaryLight,
+                        strokeWidth = 4.dp,
+                        modifier = Modifier.size(48.dp)
+                    )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text("Processing Payment...", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
@@ -1230,32 +1647,58 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(modifier = Modifier.fillMaxWidth()) {
-                IconButton(onClick = onDone) { Icon(Icons.Default.Close, contentDescription = "Close") }
+                IconButton(onClick = onDone) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Close"
+                    )
+                }
             }
-            
+
             Spacer(modifier = Modifier.weight(0.15f))
-            
-            Box(modifier = Modifier.size(120.dp).background(primaryLight, CircleShape), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Star, contentDescription = null, tint = Color.Black, modifier = Modifier.size(60.dp))
+
+            Box(
+                modifier = Modifier.size(120.dp).background(primaryLight, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color.Black,
+                    modifier = Modifier.size(60.dp)
+                )
             }
-            
+
             Spacer(modifier = Modifier.height(40.dp))
             Text("Congratulations!", fontWeight = FontWeight.Bold, fontSize = 28.sp)
-            Text("Welcome to Splitify Premium!", color = Color.Gray, modifier = Modifier.padding(top = 12.dp), fontSize = 16.sp)
-            
+            Text(
+                "Welcome to Splitify Premium!",
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 12.dp),
+                fontSize = 16.sp
+            )
+
             Spacer(modifier = Modifier.height(48.dp))
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text("Benefits Unlocked:", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(modifier = Modifier.height(20.dp))
                 benefitListShort().forEach { benefit ->
-                    Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Check, contentDescription = null, tint = primaryLight, modifier = Modifier.size(24.dp))
+                    Row(
+                        modifier = Modifier.padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = primaryLight,
+                            modifier = Modifier.size(24.dp)
+                        )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(benefit, fontSize = 15.sp, color = Color.DarkGray)
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(40.dp))
             Text(
                 "Enjoy an ad-free experience, priority support, and much more throughout the year. Thank you for choosing to elevate your Splitify experience.",
@@ -1264,9 +1707,9 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
-            
+
             Spacer(modifier = Modifier.weight(0.2f))
-            
+
             Button(
                 onClick = onDone,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
