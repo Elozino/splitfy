@@ -38,15 +38,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.auth.presentation.AuthViewModel
 import kotlinx.coroutines.delay
 
 @Composable
 fun OtpScreen(
+    viewModel: AuthViewModel,
     onNavigateBack: () -> Unit = {},
     onOtpVerified: () -> Unit = {}
 ) {
-    var otpValues by remember { mutableStateOf(listOf("", "", "", "")) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var timeLeft by remember { mutableStateOf(55) }
+
+    // Six boxes because the backend issues a six-digit code.
+    val otpValues = List(OTP_LENGTH) { index -> state.otpCode.getOrNull(index)?.toString() ?: "" }
+
+    // Only move on once the server has exchanged the code for a reset token.
+    LaunchedEffect(state.resetToken) {
+        if (state.resetToken != null) onOtpVerified()
+    }
 
     LaunchedEffect(Unit) {
         while (timeLeft > 0) {
@@ -97,9 +108,9 @@ fun OtpScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             val emailText = buildAnnotatedString {
-                append("We have sent an OTP code to your email and")
+                append("We have sent an OTP code to ")
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Black)) {
-                    append("*******ley@gmail.com")
+                    append(maskEmail(state.email))
                 }
                 append(". Enter the OTP code below to verify.")
             }
@@ -138,9 +149,16 @@ fun OtpScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            AuthFieldError(state.errorMessage)
+
             Text(
-                text = "You can resend code in $timeLeft s",
-                modifier = Modifier.fillMaxWidth(),
+                text = if (timeLeft > 0) "You can resend code in $timeLeft s" else "Tap to resend the code",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = timeLeft == 0) {
+                        timeLeft = 55
+                        viewModel.requestPasswordReset()
+                    },
                 textAlign = TextAlign.Center,
                 fontSize = 16.sp,
                 color = Color.Black
@@ -151,29 +169,28 @@ fun OtpScreen(
             // Custom Number Keyboard (Simplified)
             NumberKeyboard(
                 onNumberClick = { num ->
-                    val emptyIndex = otpValues.indexOfFirst { it.isEmpty() }
-                    if (emptyIndex != -1) {
-                        val newList = otpValues.toMutableList()
-                        newList[emptyIndex] = num
-                        otpValues = newList
-                        if (newList.all { it.isNotEmpty() }) {
-                            onOtpVerified()
-                        }
+                    if (state.otpCode.length < OTP_LENGTH) {
+                        val updated = state.otpCode + num
+                        viewModel.onOtpChange(updated)
+                        // Verify automatically once the code is complete.
+                        if (updated.length == OTP_LENGTH) viewModel.verifyOtp()
                     }
                 },
-                onDeleteClick = {
-                    val lastIndex = otpValues.indexOfLast { it.isNotEmpty() }
-                    if (lastIndex != -1) {
-                        val newList = otpValues.toMutableList()
-                        newList[lastIndex] = ""
-                        otpValues = newList
-                    }
-                }
+                onDeleteClick = { viewModel.onOtpChange(state.otpCode.dropLast(1)) }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+}
+
+private const val OTP_LENGTH = 6
+
+/** `ada@example.com` -> `a**@example.com`; never show the full address back. */
+private fun maskEmail(email: String): String {
+    val at = email.indexOf('@')
+    if (at <= 1) return email
+    return email.first() + "*".repeat((at - 1).coerceAtMost(6)) + email.substring(at)
 }
 
 @Composable

@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import org.jetbrains.compose.resources.Font
-import splitify.composeapp.generated.resources.*
+import com.elozino.splitify.resources.*
 
 @Composable
 fun bodyFontFamily() = FontFamily(

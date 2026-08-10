@@ -72,7 +72,7 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     data class AddExpense(val groupId: String) : Route("add_expense", true)
 
     @Serializable
-    data class ExpenseDetail(val expenseId: String) : Route("expense_detail", true)
+    data class ExpenseDetail(val groupId: String, val expenseId: String) : Route("expense_detail", true)
 
     @Serializable
     data class SplitDetail(val groupId: String) : Route("split_detail", true)

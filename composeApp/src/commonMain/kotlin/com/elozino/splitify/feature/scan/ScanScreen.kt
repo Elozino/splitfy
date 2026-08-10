@@ -27,23 +27,47 @@ import com.elozino.splitify.checkPermission
 import com.elozino.splitify.openAppSettings
 import com.elozino.splitify.rememberPermissionLauncher
 import com.elozino.splitify.ui.theme.onSurfaceDark
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.transaction.presentation.TransactionViewModel
+import com.elozino.splitify.shared.api.dto.Contact
+import com.elozino.splitify.shared.domain.model.Money
+import com.elozino.splitify.shared.domain.model.TransferKind
 import com.elozino.splitify.ui.theme.primaryLight
+import org.koin.compose.viewmodel.koinViewModel
 import com.preat.peekaboo.image.picker.SelectionMode
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
 import com.preat.peekaboo.ui.camera.PeekabooCamera
 import com.preat.peekaboo.ui.camera.rememberPeekabooCameraState
 
 @Composable
-fun ScanScreen(onNavigateBack: () -> Unit) {
+fun ScanScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: TransactionViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var currentStep by remember { mutableStateOf(ScanStep.SCAN) }
-    var amount by remember { mutableStateOf("200.00") }
+    var amount by remember { mutableStateOf("") }
+    var recipient by remember { mutableStateOf<Contact?>(null) }
+
+    val parsed = Money.parse(amount, state.balance.currency)
+    val clientRequestId = remember(recipient) { "scan-pay-${'$'}{recipient?.userId?.value.orEmpty()}" }
+
+    // The success screen appears only once the transfer has been recorded.
+    LaunchedEffect(state.lastTransfer) {
+        if (state.lastTransfer != null) currentStep = ScanStep.SUCCESS
+    }
 
     when (currentStep) {
         ScanStep.SCAN -> ScanQRCodeScreen(
+            contacts = state.contacts,
             onNavigateBack = onNavigateBack,
-            onScanSuccess = { currentStep = ScanStep.PROFILE }
+            onRecipientPicked = {
+                recipient = it
+                currentStep = ScanStep.PROFILE
+            }
         )
         ScanStep.PROFILE -> ProfileScanScreen(
+            recipient = recipient,
             onNavigateBack = { currentStep = ScanStep.SCAN },
             onPayClick = { currentStep = ScanStep.AMOUNT }
         )
@@ -55,13 +79,31 @@ fun ScanScreen(onNavigateBack: () -> Unit) {
         )
         ScanStep.CONFIRMATION -> ScanConfirmationScreen(
             amount = amount,
-            onConfirm = { currentStep = ScanStep.SUCCESS },
+            recipient = recipient,
+            isSubmitting = state.isSubmitting,
+            errorMessage = state.errorMessage,
+            onConfirm = {
+                val payee = recipient
+                if (payee != null && parsed != null && parsed.isPositive) {
+                    viewModel.send(
+                        kind = TransferKind.PAYMENT,
+                        counterparty = payee,
+                        amount = parsed,
+                        note = "Scan to pay",
+                        clientRequestId = clientRequestId,
+                    )
+                }
+            },
             onCancel = { currentStep = ScanStep.AMOUNT },
             onNavigateBack = { currentStep = ScanStep.AMOUNT }
         )
         ScanStep.SUCCESS -> ScanSuccessScreen(
             amount = amount,
-            onDone = onNavigateBack
+            transfer = state.lastTransfer,
+            onDone = {
+                viewModel.consumeLastTransfer()
+                onNavigateBack()
+            }
         )
     }
 }
@@ -72,8 +114,13 @@ private enum class ScanStep {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ScanQRCodeScreen(onNavigateBack: () -> Unit, onScanSuccess: () -> Unit) {
+private fun ScanQRCodeScreen(
+    contacts: List<Contact>,
+    onNavigateBack: () -> Unit,
+    onRecipientPicked: (Contact) -> Unit,
+) {
     val scope = rememberCoroutineScope()
+    var showPicker by remember { mutableStateOf(false) }
     var cameraPermissionStatus by remember { mutableStateOf(checkPermission(PermissionType.CAMERA)) }
     
     val cameraLauncher = rememberPermissionLauncher(PermissionType.CAMERA) { status ->
@@ -82,9 +129,10 @@ private fun ScanQRCodeScreen(onNavigateBack: () -> Unit, onScanSuccess: () -> Un
 
     val cameraState = rememberPeekabooCameraState(
         onCapture = { byteArray ->
-            if (byteArray != null) {
-                onScanSuccess()
-            }
+            // The camera frame is captured here, but turning it into a payload needs a
+            // QR decoder, which this project does not depend on yet. Until one is
+            // added the recipient is chosen explicitly rather than guessed.
+            if (byteArray != null) showPicker = true
         }
     )
 
@@ -92,11 +140,20 @@ private fun ScanQRCodeScreen(onNavigateBack: () -> Unit, onScanSuccess: () -> Un
         selectionMode = SelectionMode.Single,
         scope = scope,
         onResult = { byteArrays: List<ByteArray> ->
-            if (byteArrays.isNotEmpty()) {
-                onScanSuccess()
-            }
+            if (byteArrays.isNotEmpty()) showPicker = true
         }
     )
+
+    if (showPicker) {
+        RecipientPickerSheet(
+            contacts = contacts,
+            onDismiss = { showPicker = false },
+            onPick = { contact ->
+                showPicker = false
+                onRecipientPicked(contact)
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -251,9 +308,60 @@ private fun ScanQRCodeScreen(onNavigateBack: () -> Unit, onScanSuccess: () -> Un
     }
 }
 
+/**
+ * Confirms who the scanned code belongs to.
+ *
+ * Also the fallback while QR decoding is unimplemented: paying the wrong person is
+ * unrecoverable, so the recipient is always confirmed against real contacts.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ProfileScanScreen(onNavigateBack: () -> Unit, onPayClick: () -> Unit) {
+private fun RecipientPickerSheet(
+    contacts: List<Contact>,
+    onDismiss: () -> Unit,
+    onPick: (Contact) -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
+        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+            Text("Who are you paying?", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (contacts.isEmpty()) {
+                Text(
+                    "No contacts yet — join a group to pay someone.",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
+
+            contacts.forEach { contact ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPick(contact) }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(contact.displayName, fontWeight = FontWeight.Bold)
+                        Text(contact.email, color = Color.Gray, fontSize = 12.sp)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProfileScanScreen(
+    recipient: Contact?,
+    onNavigateBack: () -> Unit,
+    onPayClick: () -> Unit,
+) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -272,20 +380,26 @@ private fun ProfileScanScreen(onNavigateBack: () -> Unit, onPayClick: () -> Unit
         ) {
             Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray))
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Japanese Grocery Shop", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Text("japan_grocery@yourdomain.com", color = Color.Gray, fontSize = 14.sp)
-            Text("Splitify Merchant", color = Color.Gray, fontSize = 12.sp)
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            Text("This account is not in your contacts yet", color = Color.Gray, fontSize = 14.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedButton(
-                onClick = {},
-                shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, primaryLight)
-            ) {
-                Text("Add to My Contact", color = Color.Black)
+            Text(recipient?.displayName.orEmpty(), fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text(recipient?.email.orEmpty(), color = Color.Gray, fontSize = 14.sp)
+            recipient?.netBalance?.takeIf { !it.isZero }?.let { balance ->
+                Text(
+                    text = if (balance.isPositive) {
+                        "owes you ${'$'}{balance.toPlainString()}"
+                    } else {
+                        "you owe ${'$'}{balance.abs().toPlainString()}"
+                    },
+                    color = Color.Gray,
+                    fontSize = 12.sp
+                )
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = "${'$'}{recipient?.sharedGroupCount ?: 0} shared group(s)",
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
             
             Spacer(modifier = Modifier.weight(1f))
             
@@ -375,9 +489,12 @@ private fun ScanAmountScreen(
 @Composable
 private fun ScanConfirmationScreen(
     amount: String,
+    recipient: Contact?,
+    isSubmitting: Boolean,
+    errorMessage: String?,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -398,8 +515,8 @@ private fun ScanConfirmationScreen(
                 Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text("Japanese Grocery Shop", fontWeight = FontWeight.Bold)
-                    Text("japan_grocery@yourdomain.com", color = Color.Gray, fontSize = 12.sp)
+                    Text(recipient?.displayName.orEmpty(), fontWeight = FontWeight.Bold)
+                    Text(recipient?.email.orEmpty(), color = Color.Gray, fontSize = 12.sp)
                 }
             }
             
@@ -411,7 +528,7 @@ private fun ScanConfirmationScreen(
                 color = Color.LightGray.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("$$amount", modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(amount, modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -422,9 +539,14 @@ private fun ScanConfirmationScreen(
                 color = Color.LightGray.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Japanese Grocery Payments.", modifier = Modifier.padding(16.dp))
+                Text("Scan to pay", modifier = Modifier.padding(16.dp), color = Color.Gray)
             }
-            
+
+            errorMessage?.let { message ->
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+            }
+
             Spacer(modifier = Modifier.weight(1f))
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -438,11 +560,16 @@ private fun ScanConfirmationScreen(
                 }
                 Button(
                     onClick = onConfirm,
+                    enabled = !isSubmitting && recipient != null,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
                 ) {
-                    Text("Pay Now", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (isSubmitting) "Paying…" else "Pay Now",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -450,7 +577,11 @@ private fun ScanConfirmationScreen(
 }
 
 @Composable
-private fun ScanSuccessScreen(amount: String, onDone: () -> Unit) {
+private fun ScanSuccessScreen(
+    amount: String,
+    transfer: com.elozino.splitify.shared.domain.model.Transfer?,
+    onDone: () -> Unit,
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         Column(modifier = Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -461,25 +592,29 @@ private fun ScanSuccessScreen(amount: String, onDone: () -> Unit) {
                 Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(40.dp))
             }
             Spacer(modifier = Modifier.height(24.dp))
-            Text("$$amount", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-            Text("Paid to Japanese Grocery Shop", color = Color.Gray)
-            Text("japan_grocery@yourdomain.com", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Text(
+                text = transfer?.amount?.toPlainString() ?: amount,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text("Payment sent", color = Color.Gray)
+            Text(transfer?.toName.orEmpty(), fontWeight = FontWeight.Medium, fontSize = 14.sp)
             
             Spacer(modifier = Modifier.height(32.dp))
             HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
             Spacer(modifier = Modifier.height(24.dp))
             
-            SuccessRow("You have paid", "$$amount")
-            SuccessRow("To", "Japanese Grocery Shop")
-            SuccessRow("Email", "japan_grocery@yourdomain.com")
-            SuccessRow("Date", "Dec 20, 2023 - 09:37 AM")
-            SuccessRow("Transaction ID", "201220230937")
-            SuccessRow("Reference ID", "H34K2L93")
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text("Notes", color = Color.Gray, fontSize = 12.sp)
-                Text("Japanese Grocery Payments.", fontSize = 14.sp)
+            SuccessRow("You have paid", transfer?.amount?.toPlainString() ?: amount)
+            SuccessRow("To", transfer?.toName.orEmpty())
+            SuccessRow("Date", transfer?.createdAt?.toString()?.replace('T', ' ')?.take(16).orEmpty())
+            SuccessRow("Reference", transfer?.id?.take(8).orEmpty())
+
+            transfer?.note?.let { note ->
+                Spacer(modifier = Modifier.height(24.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("Notes", color = Color.Gray, fontSize = 12.sp)
+                    Text(note, fontSize = 14.sp)
+                }
             }
             
             Spacer(modifier = Modifier.weight(1f))

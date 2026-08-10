@@ -27,34 +27,51 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.split.presentation.GroupsViewModel
+import com.elozino.splitify.feature.split.presentation.NewGroupViewModel
+import com.elozino.splitify.shared.api.dto.Contact
+import com.elozino.splitify.shared.api.dto.GroupSummary
+import com.elozino.splitify.shared.domain.model.CurrencyCode
+import com.elozino.splitify.shared.domain.model.GroupCategory
 import com.elozino.splitify.ui.theme.primaryLight
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun GroupsScreen(
+    viewModel: GroupsViewModel = koinViewModel(),
     onNavigateToNewGroup: () -> Unit,
     onNavigateToGroupDetail: (String) -> Unit
 ) {
-    // Current groups list logic
-    val groups = remember { 
-        mutableStateListOf(
-            GroupItemData("Trip to Bali", "4 members", "$120.50", true),
-            GroupItemData("House Rent", "3 members", "$450.00", false),
-            GroupItemData("Dinner Party", "6 members", "$85.20", true),
-            GroupItemData("Gym Subscription", "2 members", "$30.00", false)
-        )
-    }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Re-read on every entry: a group created or settled elsewhere must show here.
+    LaunchedEffect(Unit) { viewModel.load() }
 
     GroupsListScreen(
-        groups = groups,
+        groups = state.groups.map { it.toItem() },
+        isLoading = state.isLoading,
+        errorMessage = state.errorMessage,
         onCreateGroupClick = onNavigateToNewGroup,
-        onGroupClick = { onNavigateToGroupDetail("1") } // Using mock ID
+        onGroupClick = { item -> onNavigateToGroupDetail(item.id) }
     )
 }
+
+/** Maps the API summary onto what the row renders. */
+private fun GroupSummary.toItem() = GroupItemData(
+    id = group.id.value,
+    name = group.name,
+    members = "${group.members.size} member" + if (group.members.size == 1) "" else "s",
+    balance = yourBalance.abs().toPlainString() + " " + yourBalance.currency.code,
+    isOwed = yourBalance.isPositive
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GroupsListScreen(
     groups: List<GroupItemData>,
+    isLoading: Boolean,
+    errorMessage: String?,
     onCreateGroupClick: () -> Unit,
     onGroupClick: (GroupItemData) -> Unit
 ) {
@@ -85,7 +102,14 @@ private fun GroupsListScreen(
             }
         }
     ) { padding ->
-        if (groups.isEmpty()) {
+        if (isLoading && groups.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = primaryLight)
+            }
+        } else if (groups.isEmpty()) {
             EmptyGroupsState(onCreateGroupClick, padding)
         } else {
             LazyColumn(
@@ -95,7 +119,17 @@ private fun GroupsListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(groups) { group ->
+                errorMessage?.let { message ->
+                    item {
+                        Text(
+                            text = message,
+                            color = Color(0xFFD32F2F),
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
+                items(groups, key = { it.id }) { group ->
                     GroupItem(group, onClick = { onGroupClick(group) })
                 }
             }
@@ -179,15 +213,18 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NewGroupScreen(
+    viewModel: NewGroupViewModel,
     onNavigateBack: () -> Unit,
     onContinue: () -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("Trip") }
-    var selectedCurrency by remember { mutableStateOf("USD") }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var showCurrencyMenu by remember { mutableStateOf(false) }
-    val currencies = listOf("USD", "EUR", "NGN")
+
+    val title = state.name
+    val description = state.description
+    val selectedCategory = state.category
+    val selectedCurrency = state.currency.code
+    val currencies = listOf("NGN", "USD", "EUR", "GBP")
 
     Scaffold(
         topBar = {
@@ -218,7 +255,8 @@ fun NewGroupScreen(
                     Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = onContinue,
+                    onClick = { if (viewModel.validateDetails()) onContinue() },
+                    enabled = state.canContinue,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
@@ -267,7 +305,7 @@ fun NewGroupScreen(
                 Text("Title", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 TextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = viewModel::onNameChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     placeholder = { Text("Title", color = Color.Gray) },
                     shape = RoundedCornerShape(12.dp),
@@ -286,7 +324,7 @@ fun NewGroupScreen(
                 Text("Description", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 TextField(
                     value = description,
-                    onValueChange = { description = it },
+                    onValueChange = viewModel::onDescriptionChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 100.dp),
                     placeholder = { Text("Description", color = Color.Gray) },
                     shape = RoundedCornerShape(12.dp),
@@ -327,7 +365,7 @@ fun NewGroupScreen(
                             DropdownMenuItem(
                                 text = { Text(currency) },
                                 onClick = {
-                                    selectedCurrency = currency
+                                    viewModel.onCurrencyChange(CurrencyCode(currency))
                                     showCurrencyMenu = false
                                 }
                             )
@@ -340,13 +378,14 @@ fun NewGroupScreen(
 
             item {
                 Text("Category", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                // Labels are UI copy; the value sent to the API is the shared enum.
                 val categories = listOf(
-                    "Trip" to "✈️", 
-                    "Family" to "👨‍👩‍👧‍👦", 
-                    "Couple" to "💑", 
-                    "Event" to "🗓️", 
-                    "Project" to "💼", 
-                    "Other" to "🧩"
+                    GroupCategory.TRIP to "Trip ✈️",
+                    GroupCategory.HOME to "Home 👨‍👩‍👧‍👦",
+                    GroupCategory.COUPLE to "Couple 💑",
+                    GroupCategory.EVENT to "Event 🗓️",
+                    GroupCategory.PROJECT to "Project 💼",
+                    GroupCategory.OTHER to "Other 🧩"
                 )
                 
                 FlowRow(
@@ -355,12 +394,12 @@ fun NewGroupScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     maxItemsInEachRow = 3
                 ) {
-                    categories.forEach { (name, emoji) ->
-                        val isSelected = selectedCategory == name
+                    categories.forEach { (category, label) ->
+                        val isSelected = selectedCategory == category
                         FilterChip(
                             selected = isSelected,
-                            onClick = { selectedCategory = name },
-                            label = { Text("$name $emoji") },
+                            onClick = { viewModel.onCategoryChange(category) },
+                            label = { Text(label) },
                             shape = RoundedCornerShape(100.dp),
                             colors = FilterChipDefaults.filterChipColors(
                                 containerColor = Color.White,
@@ -387,21 +426,23 @@ fun NewGroupScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectParticipantsScreen(
+    viewModel: NewGroupViewModel,
     onNavigateBack: () -> Unit,
     onFinish: () -> Unit
 ) {
-    var searchQuery by remember { mutableStateOf("") }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableStateOf(0) }
-    val contacts = listOf(
-        Contact("Alexia Hershey", "alexia_hershey@gmail.com"),
-        Contact("Alfonzo Schuessler", "alfonzo.schuessler@gmail.com"),
-        Contact("Augustina Midgett", "augustina.midgett@gmail.com"),
-        Contact("Charlotte Hanlin", "charlotte.hanlin@gmail.com"),
-        Contact("Darron Kulikowski", "darron.kulikowski@gmail.com"),
-        Contact("Florencio Dorrance", "florencio.dorrance@gmail.com"),
-        Contact("Geoffrey Mott", "geoffrey.mott@gmail.com")
-    )
-    val selectedContacts = remember { mutableStateListOf<Contact>() }
+
+    val searchQuery = state.searchQuery
+    val contacts = state.visibleContacts(favoritesOnly = selectedTab == 1)
+
+    // Leave the flow only once the group actually exists on the server.
+    LaunchedEffect(state.createdGroup) {
+        if (state.createdGroup != null) {
+            viewModel.reset()
+            onFinish()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -432,12 +473,17 @@ fun SelectParticipantsScreen(
                     Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = onFinish,
+                    onClick = viewModel::create,
+                    enabled = !state.isSaving,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
                 ) {
-                    Text("Save", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (state.isSaving) "Saving…" else "Save",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -451,7 +497,7 @@ fun SelectParticipantsScreen(
                     // Search Bar
                     TextField(
                         value = searchQuery,
-                        onValueChange = { searchQuery = it },
+                        onValueChange = viewModel::onSearchChange,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
                         placeholder = { Text("Search contact", color = Color.Gray) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
@@ -465,6 +511,7 @@ fun SelectParticipantsScreen(
                     )
                 }
 
+                val selectedContacts = state.contacts.filter { state.isSelected(it) }
                 if (selectedContacts.isNotEmpty()) {
                     item {
                         // Selected horizontal list
@@ -472,11 +519,15 @@ fun SelectParticipantsScreen(
                             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(selectedContacts) { contact ->
+                            items(selectedContacts, key = { it.userId.value }) { contact ->
                                 Box(contentAlignment = Alignment.BottomEnd) {
                                     Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Color.LightGray))
                                     Box(
-                                        modifier = Modifier.size(18.dp).background(Color.Black, CircleShape).border(1.dp, Color.White, CircleShape),
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .background(Color.Black, CircleShape)
+                                            .border(1.dp, Color.White, CircleShape)
+                                            .clickable { viewModel.toggleParticipant(contact) },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(Icons.Default.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
@@ -520,22 +571,41 @@ fun SelectParticipantsScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                items(contacts) { contact ->
-                    val isSelected = selectedContacts.contains(contact)
+                if (state.isLoadingContacts) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = primaryLight)
+                        }
+                    }
+                }
+
+                if (!state.isLoadingContacts && contacts.isEmpty()) {
+                    item {
+                        Text(
+                            text = "No contacts yet. You can add people to the group later.",
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            color = Color.Gray,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+
+                items(contacts, key = { it.userId.value }) { contact ->
+                    val isSelected = state.isSelected(contact)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 8.dp)
-                            .clickable { 
-                                if (isSelected) selectedContacts.remove(contact)
-                                else selectedContacts.add(contact)
-                            },
+                            .clickable { viewModel.toggleParticipant(contact) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.LightGray))
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(contact.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(contact.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Text(contact.email, fontSize = 12.sp, color = Color.Gray)
                         }
                         if (isSelected) {
@@ -561,9 +631,8 @@ fun SelectParticipantsScreen(
     }
 }
 
-private data class Contact(val name: String, val email: String)
-
 data class GroupItemData(
+    val id: String,
     val name: String,
     val members: String,
     val balance: String,

@@ -42,30 +42,35 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elozino.splitify.feature.auth.component.AuthTextField
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitify.feature.auth.component.PrimaryButton
+import com.elozino.splitify.feature.auth.presentation.AuthViewModel
 import com.elozino.splitify.feature.auth.component.SuccessDialog
 import kotlinx.coroutines.delay
 
 @Composable
 fun SignUpScreen(
+    viewModel: AuthViewModel,
     onNavigateBack: () -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
     onSignUpSuccess: () -> Unit = {}
 ) {
-    var fullName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
-    var showSuccessDialog by remember { mutableStateOf(false) }
 
-    if (showSuccessDialog) {
+    val fullName = state.displayName
+    val email = state.email
+    val password = state.password
+
+    // Success is driven by the account actually existing, not by the tap.
+    if (state.isAuthenticated) {
         SuccessDialog(
-            onDismissRequest = { showSuccessDialog = false },
+            onDismissRequest = {},
             title = "Account Created!",
             message = "Your account has been created successfully. Please wait while we redirect you."
         )
         LaunchedEffect(Unit) {
-            delay(2000)
+            delay(1200)
             onSignUpSuccess()
         }
     }
@@ -122,7 +127,7 @@ fun SignUpScreen(
 
             AuthTextField(
                 value = fullName,
-                onValueChange = { fullName = it },
+                onValueChange = viewModel::onDisplayNameChange,
                 label = "Full Name",
                 placeholder = "Full Name",
                 leadingIcon = Icons.Default.Person,
@@ -133,7 +138,7 @@ fun SignUpScreen(
 
             AuthTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = viewModel::onEmailChange,
                 label = "Email",
                 placeholder = "Email",
                 leadingIcon = Icons.Default.Email,
@@ -144,7 +149,7 @@ fun SignUpScreen(
 
             AuthTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = viewModel::onPasswordChange,
                 label = "Password",
                 placeholder = "Password",
                 leadingIcon = Icons.Default.Lock,
@@ -161,12 +166,17 @@ fun SignUpScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
+            AuthFieldError(state.fieldErrors["displayName"])
+            AuthFieldError(state.fieldErrors["email"])
+            AuthFieldError(state.fieldErrors["password"])
+            AuthFieldError(state.errorMessage)
+
             Spacer(modifier = Modifier.weight(1f))
 
             PrimaryButton(
-                text = "Sign up",
-                onClick = { showSuccessDialog = true },
-                enabled = fullName.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()
+                text = if (state.isSubmitting) "Creating account…" else "Sign up",
+                onClick = viewModel::signUp,
+                enabled = state.canSubmitSignUp
             )
 
             Spacer(modifier = Modifier.height(24.dp))

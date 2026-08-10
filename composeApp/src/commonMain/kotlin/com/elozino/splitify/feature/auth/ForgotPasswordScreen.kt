@@ -16,14 +16,24 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elozino.splitify.feature.auth.component.AuthTextField
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitify.feature.auth.component.PrimaryButton
+import com.elozino.splitify.feature.auth.presentation.AuthViewModel
 
 @Composable
 fun ForgotPasswordScreen(
+    viewModel: AuthViewModel,
     onNavigateBack: () -> Unit = {},
     onOtpSent: () -> Unit = {}
 ) {
-    var email by remember { mutableStateOf("") }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val email = state.email
+
+    // Advance only once the backend has accepted the request.
+    LaunchedEffect(state.resetCodeSent) {
+        if (state.resetCodeSent) onOtpSent()
+    }
 
     Scaffold(
         modifier = Modifier
@@ -77,7 +87,7 @@ fun ForgotPasswordScreen(
 
             AuthTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = viewModel::onEmailChange,
                 label = "Email",
                 placeholder = "Email",
                 leadingIcon = Icons.Default.Email,
@@ -86,10 +96,13 @@ fun ForgotPasswordScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            AuthFieldError(state.fieldErrors["email"])
+            AuthFieldError(state.errorMessage)
+
             PrimaryButton(
-                text = "Continue",
-                onClick = onOtpSent,
-                enabled = email.isNotEmpty()
+                text = if (state.isSubmitting) "Sending…" else "Continue",
+                onClick = viewModel::requestPasswordReset,
+                enabled = email.isNotEmpty() && !state.isSubmitting
             )
             
             Spacer(modifier = Modifier.height(24.dp))

@@ -1,0 +1,56 @@
+package com.elozino.splitify.server.plugins
+
+import com.elozino.splitify.shared.api.ApiRoutes
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
+
+@Serializable
+data class HealthResponse(
+    val status: String,
+    val checks: Map<String, String> = emptyMap(),
+)
+
+/**
+ * Liveness and readiness probes.
+ *
+ * `/health` answers "is the process alive" — it must never touch a dependency, or a
+ * database blip would make the orchestrator kill otherwise-healthy pods.
+ * `/ready` answers "can this instance serve traffic", which does require the
+ * database, so a failing instance is pulled from the load balancer instead.
+ */
+fun Route.healthRoutes(database: Database) {
+    val logger = LoggerFactory.getLogger("HealthCheck")
+
+    get(ApiRoutes.System.HEALTH) {
+        call.respond(HttpStatusCode.OK, HealthResponse(status = "UP"))
+    }
+
+    get(ApiRoutes.System.READY) {
+        val databaseUp = runCatching {
+            withContext(Dispatchers.IO) {
+                transaction(database) { exec("SELECT 1") {} }
+            }
+            true
+        }.getOrElse {
+            logger.warn("Readiness probe failed: database unreachable", it)
+            false
+        }
+
+        val response = HealthResponse(
+            status = if (databaseUp) "UP" else "DOWN",
+            checks = mapOf("database" to if (databaseUp) "UP" else "DOWN"),
+        )
+        call.respond(
+            if (databaseUp) HttpStatusCode.OK else HttpStatusCode.ServiceUnavailable,
+            response,
+        )
+    }
+}

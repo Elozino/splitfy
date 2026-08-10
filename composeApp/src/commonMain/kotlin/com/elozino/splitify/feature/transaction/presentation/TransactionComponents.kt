@@ -28,7 +28,8 @@ fun TransactionConfirmationSheet(
     type: TransactionType,
     user: TransactionUser,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    isSubmitting: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     
@@ -76,12 +77,17 @@ fun TransactionConfirmationSheet(
                 }
                 Button(
                     onClick = onConfirm,
+                    enabled = !isSubmitting,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(25.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(
-                        text = if (type == TransactionType.PAY) "Pay Now" else "Request Now",
+                        text = when {
+                            isSubmitting -> "Working…"
+                            type == TransactionType.PAY -> "Pay Now"
+                            else -> "Request Now"
+                        },
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
@@ -228,9 +234,7 @@ private fun PaymentReceiptDetails(user: TransactionUser) {
     DetailRow("You have paid", user.amount)
     DetailRow("To", user.name)
     DetailRow("Email", user.email)
-    DetailRow("Date", user.date)
-    DetailRow("Transaction ID", "201220230941")
-    DetailRow("Reference ID", "H375K7D9")
+    DetailRow("Reference", user.userId.value.take(8))
 }
 
 @Composable

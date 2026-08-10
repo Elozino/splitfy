@@ -23,74 +23,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitify.feature.transaction.model.Transaction
 import com.elozino.splitify.feature.transaction.model.TransactionType
+import com.elozino.splitify.feature.transaction.presentation.TransactionViewModel
+import org.koin.compose.viewmodel.koinViewModel
 import com.elozino.splitify.ui.theme.primaryLight
-import splitify.composeapp.generated.resources.Res
+import com.elozino.splitify.resources.Res
 
 @Composable
-fun TransactionHistoryScreen(onNavigateBack: () -> Unit) {
-    var selectedType by remember { mutableStateOf(TransactionType.ALL) }
+fun TransactionHistoryScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: TransactionViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedTransaction by remember { mutableStateOf<Transaction?>(null) }
     var showReceipt by remember { mutableStateOf(false) }
 
-    val transactions = remember {
-        listOf(
-            Transaction(
-                id = "1",
-                type = TransactionType.PAY,
-                title = "Alfonzo Schuessler",
-                subtitle = "Today | 09:41 AM",
-                amount = "- $365.50",
-                date = "Dec 20, 2023 - 09:41 AM",
-                notes = "Dinner Delights Group Payments"
-            ),
-            Transaction(
-                id = "2",
-                type = TransactionType.REQUEST,
-                title = "Maryland Winkles",
-                subtitle = "Today | 09:39 AM",
-                amount = "+ $642.50",
-                date = "Dec 20, 2023 - 09:39 AM",
-                notes = "Beyond Expense Explorer Group Payments"
-            ),
-            Transaction(
-                id = "3",
-                type = TransactionType.TOPUP,
-                title = "Top Up",
-                subtitle = "Today | 09:39 AM",
-                amount = "+ $1,000.00",
-                date = "Dec 20, 2023 - 09:39 AM",
-                brandIcon = "drawable/ic_mastercard.svg",
-                notes = "Top Up Splitify Balance."
-            ),
-            Transaction(
-                id = "4",
-                type = TransactionType.WITHDRAW,
-                title = "Withdraw",
-                subtitle = "Today | 09:38 AM",
-                amount = "- $2,500.00",
-                date = "Dec 20, 2023 - 09:38 AM",
-                brandIcon = "drawable/ic_visa.svg",
-                notes = "Withdraw to VISA Account."
-            ),
-            Transaction(
-                id = "5",
-                type = TransactionType.EXPENSE,
-                title = "Japanese Grocery Shop",
-                subtitle = "Today | 09:37 AM",
-                amount = "- $200.00",
-                date = "Dec 20, 2023 - 09:37 AM",
-                notes = "Japanese Grocery Payments."
-            )
-        )
-    }
+    val selectedType = state.filter
 
-    val filteredTransactions = if (selectedType == TransactionType.ALL) {
-        transactions
-    } else {
-        transactions.filter { it.type == selectedType }
-    }
+    // The statement is the wallet ledger; filtering happens server-side so paging
+    // stays correct rather than filtering only the page already in memory.
+    val filteredTransactions = state.entries.map(Transaction::from)
 
     when {
         (showReceipt && selectedTransaction != null) -> {
@@ -118,13 +72,35 @@ fun TransactionHistoryScreen(onNavigateBack: () -> Unit) {
                 ) {
                     TransactionFilters(
                         selectedType = selectedType,
-                        onTypeSelected = { selectedType = it }
+                        onTypeSelected = viewModel::onFilterChange
                     )
-                    
-                    TransactionList(
-                        transactions = filteredTransactions,
-                        onTransactionClick = { selectedTransaction = it }
-                    )
+
+                    when {
+                        state.isLoading -> Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = primaryLight)
+                        }
+
+                        filteredTransactions.isEmpty() -> Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No transactions yet",
+                                color = Color.Gray,
+                                fontSize = 16.sp
+                            )
+                        }
+
+                        else -> TransactionList(
+                            transactions = filteredTransactions,
+                            onTransactionClick = { selectedTransaction = it },
+                            onLoadMore = viewModel::loadMore,
+                            hasMore = state.hasMore
+                        )
+                    }
                 }
             }
         }
@@ -185,7 +161,9 @@ private fun TransactionFilters(
 @Composable
 private fun TransactionList(
     transactions: List<Transaction>,
-    onTransactionClick: (Transaction) -> Unit
+    onTransactionClick: (Transaction) -> Unit,
+    onLoadMore: () -> Unit = {},
+    hasMore: Boolean = false
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -200,8 +178,19 @@ private fun TransactionList(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
-        items(transactions) { transaction ->
+        items(transactions, key = { it.id }) { transaction ->
             TransactionItem(transaction, onClick = { onTransactionClick(transaction) })
+        }
+
+        if (hasMore) {
+            item {
+                TextButton(
+                    onClick = onLoadMore,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Load more", color = primaryLight, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }
@@ -333,7 +322,7 @@ private fun TransactionDetailScreen(
                         color = Color.Black
                     )
                     Text(
-                        text = if (transaction.type == TransactionType.PAY || transaction.type == TransactionType.REQUEST) "andrew.ainsley@gmail.com" else if (transaction.type == TransactionType.TOPUP) "Splitify Balance" else "**** **** **** 5567",
+                        text = transaction.notes ?: transaction.title,
                         fontSize = 12.sp,
                         color = Color.Black.copy(alpha = 0.7f)
                     )
@@ -458,7 +447,7 @@ private fun ReceiptScreen(
                     
                     DetailRow("You have paid", transaction.amount.replace("- ", "").replace("+ ", ""))
                     DetailRow(if (transaction.type == TransactionType.PAY || transaction.type == TransactionType.REQUEST) "To" else if (transaction.type == TransactionType.TOPUP) "From" else "Account", transaction.title)
-                    DetailRow("Email", "andrew.ainsley@gmail.com")
+                    DetailRow("Balance after", transaction.balanceAfter)
                     DetailRow("Date", transaction.date)
                     DetailRow("Transaction ID", "2012202309${transaction.id}")
                     DetailRow("Reference ID", "H375K7D${transaction.id}")

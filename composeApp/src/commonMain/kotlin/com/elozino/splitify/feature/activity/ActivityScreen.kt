@@ -2,6 +2,7 @@ package com.elozino.splitify.feature.activity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,18 +37,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitify.feature.activity.model.ActivityItemData
+import com.elozino.splitify.feature.activity.presentation.ActivityViewModel
+import com.elozino.splitify.shared.api.dto.ActivityFilter
+import com.elozino.splitify.shared.api.dto.DebtEntry
+import org.koin.compose.viewmodel.koinViewModel
 import com.elozino.splitify.feature.activity.model.ActivitySection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityScreen(
+    viewModel: ActivityViewModel = koinViewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToPay: () -> Unit = {},
     onNavigateToRequest: () -> Unit = {}
 ) {
-    var selectedTabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("All", "You Owe", "Owe to you")
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val tabs = listOf(
+        ActivityFilter.ALL to "All",
+        ActivityFilter.YOU_OWE to "You Owe",
+        ActivityFilter.OWED_TO_YOU to "Owe to you",
+    )
+    val selectedTabIndex = tabs.indexOfFirst { it.first == state.filter }.coerceAtLeast(0)
 
     Scaffold(
         topBar = {
@@ -77,10 +90,10 @@ fun ActivityScreen(
                     .padding(horizontal = 24.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                tabs.forEachIndexed { index, title ->
+                tabs.forEachIndexed { index, (filter, title) ->
                     val isSelected = selectedTabIndex == index
                     Button(
-                        onClick = { selectedTabIndex = index },
+                        onClick = { viewModel.onFilterChange(filter) },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isSelected) Color(0xFFFEBB1B) else Color.Transparent,
                             contentColor = if (isSelected) Color.Black else Color.Gray
@@ -99,87 +112,24 @@ fun ActivityScreen(
                 }
             }
 
-            val activities = listOf(
-                ActivitySection(
-                    date = "Today",
-                    items = listOf(
-                        ActivityItemData(
-                            name = "Andrew Ainsley (You)",
-                            status = "owes",
-                            target = "Alfonzo Schuessler",
-                            amount = "$365.50",
-                            actionLabel = "Pay",
-                            isOwed = false
-                        ),
-                        ActivityItemData(
-                            name = "Maryland Winkles",
-                            status = "owes",
-                            target = "Andrew Ainsley (You)",
-                            amount = "$642.50",
-                            actionLabel = "Request",
-                            isOwed = true
-                        )
-                    )
-                ),
-                ActivitySection(
-                    date = "Yesterday",
-                    items = listOf(
-                        ActivityItemData(
-                            name = "Darron Kulikowski",
-                            status = "owes",
-                            target = "Andrew Ainsley (You)",
-                            amount = "$208.40",
-                            actionLabel = "Request",
-                            isOwed = true
-                        ),
-                        ActivityItemData(
-                            name = "Andrew Ainsley (You)",
-                            status = "owes",
-                            target = "Geoffrey Mott",
-                            amount = "$534.75",
-                            actionLabel = "Pay",
-                            isOwed = false
-                        ),
-                        ActivityItemData(
-                            name = "Rania Ehrman",
-                            status = "owes",
-                            target = "Andrew Ainsley (You)",
-                            amount = "$167.50",
-                            actionLabel = "Paid",
-                            isCompleted = true
-                        )
-                    )
-                ),
-                ActivitySection(
-                    date = "Dec 18, 2023",
-                    items = listOf(
-                        ActivityItemData(
-                            name = "Andrew Ainsley (You)",
-                            status = "owes",
-                            target = "Ronald Richards",
-                            amount = "$479.25",
-                            actionLabel = "Paid",
-                            isCompleted = true
-                        ),
-                        ActivityItemData(
-                            name = "Darron Kulikowski",
-                            status = "owes",
-                            target = "Andrew Ainsley (You)",
-                            amount = "$208.40",
-                            actionLabel = "Request",
-                            isCompleted = true
-                        ),
-                        ActivityItemData(
-                            name = "Andrew Ainsley (You)",
-                            status = "owes",
-                            target = "Geoffrey Mott",
-                            amount = "$534.75",
-                            actionLabel = "Pay",
-                            isCompleted = true
-                        )
-                    )
-                )
-            )
+            // Grouped by day, newest first; every line comes from the ledger.
+            val activities = state.entries
+                .groupBy { it.lastActivityAt.toString().take(10) }
+                .map { (day, entries) -> ActivitySection(day, entries.map { it.toItem(state.currentUserId) }) }
+
+            if (state.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFFFEBB1B))
+                }
+                return@Column
+            }
+
+            if (state.isEmpty) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Nothing outstanding 🎉", color = Color.Gray, fontSize = 16.sp)
+                }
+                return@Column
+            }
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 activities.forEach { section ->
@@ -209,6 +159,27 @@ fun ActivityScreen(
             }
         }
     }
+}
+
+/**
+ * Turns a debt line into the row model, phrased from the viewer's point of view.
+ */
+private fun DebtEntry.toItem(currentUserId: String?): ActivityItemData {
+    val youArePayer = fromUserId.value == currentUserId
+    val youArePayee = toUserId.value == currentUserId
+    return ActivityItemData(
+        name = if (youArePayer) "$fromName (You)" else fromName,
+        status = "owes",
+        target = if (youArePayee) "$toName (You)" else toName,
+        amount = amount.toPlainString() + " " + amount.currency.code,
+        actionLabel = when {
+            isSettled -> "Paid"
+            youArePayer -> "Pay"
+            else -> "Request"
+        },
+        isOwed = youArePayee,
+        isCompleted = isSettled,
+    )
 }
 
 @Composable

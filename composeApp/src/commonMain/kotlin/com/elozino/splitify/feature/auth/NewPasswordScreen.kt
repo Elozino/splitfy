@@ -20,30 +20,34 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elozino.splitify.feature.auth.component.AuthTextField
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitify.feature.auth.component.PrimaryButton
+import com.elozino.splitify.feature.auth.presentation.AuthViewModel
 import com.elozino.splitify.feature.auth.component.SuccessDialog
 import kotlinx.coroutines.delay
 
 @Composable
 fun NewPasswordScreen(
+    viewModel: AuthViewModel,
     onNavigateBack: () -> Unit = {},
     onPasswordChanged: () -> Unit = {}
 ) {
-    var newPassword by remember { mutableStateOf("") }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var confirmPassword by remember { mutableStateOf("") }
     var newPasswordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    var showSuccessDialog by remember { mutableStateOf(false) }
 
-    if (showSuccessDialog) {
+    val newPassword = state.newPassword
+
+    if (state.passwordReset) {
         SuccessDialog(
-            onDismissRequest = { showSuccessDialog = false },
+            onDismissRequest = {},
             icon = Icons.Default.Lock,
             title = "Reset Password Successful!",
             message = "Please wait...\nYou will be directed to the homepage."
         )
         LaunchedEffect(Unit) {
-            delay(2000)
+            delay(1200)
             onPasswordChanged()
         }
     }
@@ -100,7 +104,7 @@ fun NewPasswordScreen(
 
             AuthTextField(
                 value = newPassword,
-                onValueChange = { newPassword = it },
+                onValueChange = viewModel::onNewPasswordChange,
                 label = "New Password",
                 placeholder = "New Password",
                 leadingIcon = Icons.Default.Lock,
@@ -140,10 +144,22 @@ fun NewPasswordScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            AuthFieldError(state.fieldErrors["newPassword"])
+            AuthFieldError(
+                if (confirmPassword.isNotEmpty() && confirmPassword != newPassword) {
+                    "Passwords do not match"
+                } else {
+                    null
+                }
+            )
+            AuthFieldError(state.errorMessage)
+
             PrimaryButton(
-                text = "Continue",
-                onClick = { showSuccessDialog = true },
-                enabled = newPassword.isNotEmpty() && confirmPassword.isNotEmpty() && newPassword == confirmPassword
+                text = if (state.isSubmitting) "Saving…" else "Continue",
+                onClick = viewModel::resetPassword,
+                enabled = newPassword.isNotEmpty() &&
+                    confirmPassword == newPassword &&
+                    !state.isSubmitting
             )
 
             Spacer(modifier = Modifier.height(24.dp))

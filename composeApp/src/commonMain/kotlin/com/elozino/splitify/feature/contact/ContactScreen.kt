@@ -22,13 +22,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.contact.presentation.ContactsViewModel
+import com.elozino.splitify.shared.api.dto.Contact
 import com.elozino.splitify.ui.theme.primaryLight
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun ContactScreen(onVisibilityChanged: (Boolean) -> Unit) {
+fun ContactScreen(
+    onVisibilityChanged: (Boolean) -> Unit,
+    viewModel: ContactsViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var currentStep by remember { mutableStateOf(ContactStep.LIST) }
     var selectedContact by remember { mutableStateOf<ContactData?>(null) }
-    var searchQuery by remember { mutableStateOf("") }
+    val searchQuery = state.query
 
     LaunchedEffect(currentStep) {
         onVisibilityChanged(currentStep == ContactStep.LIST)
@@ -36,6 +44,14 @@ fun ContactScreen(onVisibilityChanged: (Boolean) -> Unit) {
 
     when (currentStep) {
         ContactStep.LIST -> ContactListScreen(
+            contacts = state.contacts.map { it.toData() },
+            favorites = state.favorites.map { it.toData() },
+            isLoading = state.isLoading,
+            errorMessage = state.errorMessage,
+            onToggleFavorite = { data ->
+                state.contacts.firstOrNull { it.userId.value == data.id }
+                    ?.let(viewModel::toggleFavorite)
+            },
             onSearchClick = { currentStep = ContactStep.SEARCH },
             onAddContactClick = { currentStep = ContactStep.ADD_CONTACT },
             onContactClick = { 
@@ -45,7 +61,11 @@ fun ContactScreen(onVisibilityChanged: (Boolean) -> Unit) {
         )
         ContactStep.SEARCH -> SearchContactScreen(
             query = searchQuery,
-            onQueryChange = { searchQuery = it },
+            onQueryChange = viewModel::onQueryChange,
+            results = state.contacts.map { it.toData() },
+            directoryResults = state.directoryResults.map { user ->
+                ContactData(user.id.value, user.displayName, user.email)
+            },
             onNavigateBack = { currentStep = ContactStep.LIST },
             onContactClick = {
                 selectedContact = it
@@ -54,6 +74,10 @@ fun ContactScreen(onVisibilityChanged: (Boolean) -> Unit) {
         )
         ContactStep.DETAIL -> ContactDetailScreen(
             contact = selectedContact!!,
+            onToggleFavorite = {
+                state.contacts.firstOrNull { it.userId.value == selectedContact?.id }
+                    ?.let(viewModel::toggleFavorite)
+            },
             onNavigateBack = { currentStep = ContactStep.LIST },
             onDeleteSuccess = { 
                 selectedContact = null
@@ -76,32 +100,45 @@ private enum class ContactStep {
 }
 
 data class ContactData(
+    val id: String,
     val name: String,
     val email: String,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val balanceLabel: String? = null,
+    val sharedGroups: Int = 0,
+)
+
+/** Maps an API contact onto the row model, including the running balance. */
+private fun Contact.toData() = ContactData(
+    id = userId.value,
+    name = displayName,
+    email = email,
+    isFavorite = isFavorite,
+    balanceLabel = netBalance?.takeIf { !it.isZero }?.let { balance ->
+        if (balance.isPositive) {
+            "owes you ${balance.toPlainString()}"
+        } else {
+            "you owe ${balance.abs().toPlainString()}"
+        }
+    },
+    sharedGroups = sharedGroupCount,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ContactListScreen(
+    contacts: List<ContactData>,
+    favorites: List<ContactData>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onToggleFavorite: (ContactData) -> Unit,
     onSearchClick: () -> Unit,
     onAddContactClick: () -> Unit,
-    onContactClick: (ContactData) -> Unit
+    onContactClick: (ContactData) -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("All Contacts", "Favorites")
-    
-    val contacts = remember {
-        listOf(
-            ContactData("Alexia Hershey", "alexia_hershey@gmail.com"),
-            ContactData("Alfonzo Schuessler", "alfonzo.schuessler@gmail.com"),
-            ContactData("Augustina Midgett", "augustina.midgett@gmail.com"),
-            ContactData("Charlotte Hanlin", "charlotte_hanlin@gmail.com"),
-            ContactData("Darron Kulikowski", "darron.kulikowski@gmail.com"),
-            ContactData("Florencio Dorrance", "florencio.dorrance@gmail.com"),
-            ContactData("Geoffrey Mott", "geoffrey.mott@gmail.com")
-        )
-    }
+    val visible = if (selectedTab == 1) favorites else contacts
 
     Scaffold(
         topBar = {
@@ -183,8 +220,39 @@ private fun ContactListScreen(
                     contentPadding = PaddingValues(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(contacts) { contact ->
-                        ContactListItem(contact, onClick = { onContactClick(contact) })
+                    errorMessage?.let { message ->
+                        item {
+                            Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+                        }
+                    }
+
+                    if (isLoading) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = primaryLight)
+                            }
+                        }
+                    }
+
+                    if (!isLoading && visible.isEmpty()) {
+                        item {
+                            Text(
+                                text = "No contacts yet. People you share a group with appear here.",
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
+                    items(visible, key = { it.id }) { contact ->
+                        ContactListItem(
+                            contact = contact,
+                            onClick = { onContactClick(contact) },
+                            onToggleFavorite = { onToggleFavorite(contact) }
+                        )
                     }
                 }
                 
@@ -211,7 +279,11 @@ private fun ContactListScreen(
 }
 
 @Composable
-private fun ContactListItem(contact: ContactData, onClick: () -> Unit) {
+private fun ContactListItem(
+    contact: ContactData,
+    onClick: () -> Unit,
+    onToggleFavorite: () -> Unit = {},
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -222,13 +294,17 @@ private fun ContactListItem(contact: ContactData, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(contact.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(contact.email, fontSize = 12.sp, color = Color.Gray)
+            Text(
+                text = contact.balanceLabel ?: contact.email,
+                fontSize = 12.sp,
+                color = if (contact.balanceLabel != null) Color(0xFF2E7D32) else Color.Gray
+            )
         }
         Icon(
             imageVector = if (contact.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
-            contentDescription = null,
+            contentDescription = if (contact.isFavorite) "Unfavourite" else "Favourite",
             tint = if (contact.isFavorite) primaryLight else Color.LightGray,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(20.dp).clickable { onToggleFavorite() }
         )
     }
 }
@@ -238,6 +314,8 @@ private fun ContactListItem(contact: ContactData, onClick: () -> Unit) {
 private fun SearchContactScreen(
     query: String,
     onQueryChange: (String) -> Unit,
+    results: List<ContactData>,
+    directoryResults: List<ContactData>,
     onNavigateBack: () -> Unit,
     onContactClick: (ContactData) -> Unit
 ) {
@@ -290,30 +368,55 @@ private fun SearchContactScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             if (query.isEmpty()) {
-                Text("Recent searches", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 16.dp))
-                // Mock recent searches
-                val recent = listOf("Theresa Webb", "Geoffrey Mott", "Alexia Hershey")
-                recent.forEach { name ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(name, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.Close, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                Text(
+                    text = "Your contacts",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    items(results, key = { it.id }) { contact ->
+                        ContactListItem(contact, onClick = { onContactClick(contact) })
                     }
                 }
             } else {
-                // Mock results
-                val results = listOf(
-                    ContactData("Charlotte Hanlin", "charlotte_hanlin@gmail.com"),
-                    ContactData("Geoffrey Mott", "geoffrey.mott@gmail.com")
-                ).filter { it.name.contains(query, ignoreCase = true) }
-                
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(results) { contact ->
-                        ContactListItem(contact, onClick = { onContactClick(contact) })
+                    if (results.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Your contacts",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        items(results, key = { it.id }) { contact ->
+                            ContactListItem(contact, onClick = { onContactClick(contact) })
+                        }
+                    }
+
+                    // Directory results are people not yet sharing a group; the server
+                    // only answers once the query is long enough to not be enumerable.
+                    if (directoryResults.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "On Splitfy",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        items(directoryResults, key = { "directory-" + it.id }) { contact ->
+                            ContactListItem(contact, onClick = { onContactClick(contact) })
+                        }
+                    }
+
+                    if (results.isEmpty() && directoryResults.isEmpty()) {
+                        item {
+                            Text(
+                                text = "Nobody matches that yet",
+                                color = Color.Gray,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(vertical = 16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -326,7 +429,8 @@ private fun SearchContactScreen(
 private fun ContactDetailScreen(
     contact: ContactData,
     onNavigateBack: () -> Unit,
-    onDeleteSuccess: () -> Unit
+    onDeleteSuccess: () -> Unit,
+    onToggleFavorite: () -> Unit = {},
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showSuccessState by remember { mutableStateOf(false) }
@@ -341,7 +445,7 @@ private fun ContactDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Favorite */ }) {
+                    IconButton(onClick = onToggleFavorite) {
                         Icon(Icons.Default.StarBorder, contentDescription = "Favorite")
                     }
                 },
@@ -532,7 +636,7 @@ private fun AddContactScreen(
                 value = email,
                 onValueChange = { email = it },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                placeholder = { Text("brooklyn_simmons@gmail.com", color = Color.Gray) },
+                placeholder = { Text("name@example.com", color = Color.Gray) },
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color(0xFFF5F5F5),
                     focusedContainerColor = Color(0xFFF5F5F5),
@@ -601,7 +705,7 @@ private fun SearchResultScreen(
             Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray))
             Spacer(modifier = Modifier.height(16.dp))
             Text("Brooklyn Simmons", fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            Text("brooklyn_simmons@gmail.com", color = Color.Gray, fontSize = 14.sp)
+            Text("Ask them for the email they signed up with", color = Color.Gray, fontSize = 14.sp)
             Text("Splitify Account", color = Color.Gray, fontSize = 12.sp)
             
             Spacer(modifier = Modifier.height(32.dp))

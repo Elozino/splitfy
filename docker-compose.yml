@@ -1,0 +1,49 @@
+# Local development stack: Postgres plus the API.
+#
+#   docker compose up --build
+#
+# The API applies its Flyway migrations on start-up, so the database is ready as
+# soon as the container reports healthy.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: splitfy
+      POSTGRES_USER: splitfy
+      POSTGRES_PASSWORD: splitfy
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U splitfy -d splitfy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: LOCAL
+      PORT: 8080
+      DATABASE_URL: jdbc:postgresql://postgres:5432/splitfy
+      DATABASE_USER: splitfy
+      DATABASE_PASSWORD: splitfy
+      DATABASE_RUN_MIGRATIONS: "true"
+      # Development only. Every deployed environment must inject its own secret.
+      JWT_SECRET: local-development-secret-do-not-use-in-production
+      JWT_ISSUER: http://localhost:8080
+      JWT_AUDIENCE: splitfy-mobile
+      # Cheaper hashing keeps local sign-up snappy; production uses the default 12.
+      BCRYPT_COST: "10"
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:

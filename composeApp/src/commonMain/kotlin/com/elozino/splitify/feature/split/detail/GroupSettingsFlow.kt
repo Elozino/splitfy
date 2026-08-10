@@ -25,24 +25,37 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.split.presentation.GroupSettingsUiState
+import com.elozino.splitify.feature.split.presentation.GroupSettingsViewModel
+import com.elozino.splitify.shared.domain.model.GroupCategory
 import com.elozino.splitify.ui.theme.primaryLight
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupSettingsScreen(
     groupId: String,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: GroupSettingsViewModel = koinViewModel { parametersOf(groupId) },
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var step by remember { mutableStateOf(SettingsStep.MENU) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showLeaveDialog by remember { mutableStateOf(false) }
+
+    // Leaving or archiving takes the user out of the group entirely.
+    LaunchedEffect(state.closed) {
+        if (state.closed) onNavigateBack()
+    }
 
     when (step) {
         SettingsStep.MENU -> {
             Scaffold(
                 topBar = {
                     CenterAlignedTopAppBar(
-                        title = { Text("Trip to Japan 🇯🇵", fontWeight = FontWeight.Bold) },
+                        title = { Text(state.groupName, fontWeight = FontWeight.Bold) },
                         navigationIcon = {
                             IconButton(onClick = onNavigateBack) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -57,14 +70,30 @@ fun GroupSettingsScreen(
                         .padding(padding)
                         .padding(horizontal = 24.dp)
                 ) {
-                    SettingsItem("Edit Group", Icons.Default.Edit, onClick = { step = SettingsStep.EDIT })
+                    if (state.canManage) {
+                        SettingsItem("Edit Group", Icons.Default.Edit, onClick = { step = SettingsStep.EDIT })
+                    }
                     SettingsItem("Leave Group", Icons.AutoMirrored.Filled.Logout, onClick = { showLeaveDialog = true })
-                    SettingsItem("Delete Group", Icons.Default.Delete, isError = true, onClick = { showDeleteDialog = true })
+                    if (state.canManage) {
+                        SettingsItem(
+                            "Archive Group",
+                            Icons.Default.Delete,
+                            isError = true,
+                            onClick = { showDeleteDialog = true }
+                        )
+                    }
+
+                    state.errorMessage?.let { message ->
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+                    }
                 }
             }
         }
         SettingsStep.EDIT -> {
             EditGroupScreen(
+                state = state,
+                viewModel = viewModel,
                 onNavigateBack = { step = SettingsStep.MENU },
                 onSave = { step = SettingsStep.MENU }
             )
@@ -74,20 +103,27 @@ fun GroupSettingsScreen(
     if (showLeaveDialog) {
         ConfirmationDialog(
             title = "Leave Group",
-            text = "Are you sure you want to leave from the group \"Trip to Japan\"?",
+            text = "Leave " + state.groupName + "? You can only leave once your balance is settled.",
             confirmLabel = "Yes, Leave Group",
-            onConfirm = { showLeaveDialog = false },
+            onConfirm = {
+                showLeaveDialog = false
+                viewModel.leaveGroup()
+            },
             onDismiss = { showLeaveDialog = false }
         )
     }
 
     if (showDeleteDialog) {
         ConfirmationDialog(
-            title = "Delete Group",
-            text = "Are you sure you want to delete the group \"Trip to Japan\"?\nAll history and balances will be lost forever.",
-            confirmLabel = "Yes, Delete Group",
+            title = "Archive Group",
+            text = "Archive " + state.groupName + "? It disappears from your list, " +
+                "but the expense history stays intact so balances remain auditable.",
+            confirmLabel = "Yes, Archive Group",
             isError = true,
-            onConfirm = { showDeleteDialog = false },
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.archiveGroup()
+            },
             onDismiss = { showDeleteDialog = false }
         )
     }
@@ -99,10 +135,20 @@ enum class SettingsStep {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun EditGroupScreen(onNavigateBack: () -> Unit, onSave: () -> Unit) {
-    var title by remember { mutableStateOf("Trip to Japan 🇯🇵") }
-    var description by remember { mutableStateOf("Holidaying with college friends in Japan") }
-    var selectedCategory by remember { mutableStateOf("Trip") }
+private fun EditGroupScreen(
+    state: GroupSettingsUiState,
+    viewModel: GroupSettingsViewModel,
+    onNavigateBack: () -> Unit,
+    onSave: () -> Unit,
+) {
+    val title = state.name
+    val description = state.description
+    val selectedCategory = state.category
+
+    // Return to the menu once the change has landed on the server.
+    LaunchedEffect(state.saved) {
+        if (state.saved) onSave()
+    }
     
     Scaffold(
         topBar = {
@@ -132,7 +178,7 @@ private fun EditGroupScreen(onNavigateBack: () -> Unit, onSave: () -> Unit) {
                     Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = onSave,
+                    onClick = viewModel::save,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
@@ -174,7 +220,7 @@ private fun EditGroupScreen(onNavigateBack: () -> Unit, onSave: () -> Unit) {
             Text("Title", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             TextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = viewModel::onNameChange,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color(0xFFF5F5F5),
@@ -190,7 +236,7 @@ private fun EditGroupScreen(onNavigateBack: () -> Unit, onSave: () -> Unit) {
             Text("Description", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             TextField(
                 value = description,
-                onValueChange = { description = it },
+                onValueChange = viewModel::onDescriptionChange,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 100.dp),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color(0xFFF5F5F5),
@@ -214,7 +260,7 @@ private fun EditGroupScreen(onNavigateBack: () -> Unit, onSave: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("USD", fontWeight = FontWeight.Bold)
+                    Text(state.group?.currency?.code ?: "-", fontWeight = FontWeight.Bold)
                     Icon(Icons.Default.KeyboardArrowDown, contentDescription = null)
                 }
             }
@@ -223,24 +269,24 @@ private fun EditGroupScreen(onNavigateBack: () -> Unit, onSave: () -> Unit) {
 
             Text("Category", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             val categories = listOf(
-                "Trip" to "✈️", 
-                "Family" to "👨‍👩‍👧‍👦", 
-                "Couple" to "💑", 
-                "Event" to "🗓️", 
-                "Project" to "💼", 
-                "Other" to "🧩"
+                GroupCategory.TRIP to "Trip ✈️",
+                GroupCategory.HOME to "Home 👨‍👩‍👧‍👦",
+                GroupCategory.COUPLE to "Couple 💑",
+                GroupCategory.EVENT to "Event 🗓️", 
+                GroupCategory.PROJECT to "Project 💼",
+                GroupCategory.OTHER to "Other 🧩"
             )
             FlowRow(
                 modifier = Modifier.padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                categories.forEach { (name, emoji) ->
-                    val isSelected = selectedCategory == name
+                categories.forEach { (category, label) ->
+                    val isSelected = selectedCategory == category
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedCategory = name },
-                        label = { Text("$name $emoji") },
+                        onClick = { viewModel.onCategoryChange(category) },
+                        label = { Text(label) },
                         shape = RoundedCornerShape(100.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = primaryLight,

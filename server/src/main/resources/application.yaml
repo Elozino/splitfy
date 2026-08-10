@@ -1,0 +1,38 @@
+ktor:
+  application:
+    modules:
+      - com.elozino.splitify.server.ApplicationKt.module
+  deployment:
+    port: "$PORT:8080"
+    shutdownGracePeriod: 3000
+    shutdownTimeout: 10000
+
+app:
+  # LOCAL | STAGING | PRODUCTION
+  environment: "$APP_ENV:LOCAL"
+
+database:
+  jdbcUrl: "$DATABASE_URL:jdbc:postgresql://localhost:5432/splitfy"
+  username: "$DATABASE_USER:splitfy"
+  password: "$DATABASE_PASSWORD:splitfy"
+  driver: "$DATABASE_DRIVER:org.postgresql.Driver"
+  maxPoolSize: "$DATABASE_POOL_SIZE:10"
+  runMigrations: "$DATABASE_RUN_MIGRATIONS:true"
+
+jwt:
+  # Override in every deployed environment. The app refuses to boot in PRODUCTION
+  # while this default is still in place.
+  secret: "$JWT_SECRET:local-development-secret-do-not-use-in-production"
+  issuer: "$JWT_ISSUER:https://api.splitfy.app"
+  audience: "$JWT_AUDIENCE:splitfy-mobile"
+  realm: "$JWT_REALM:splitfy"
+  accessTokenMinutes: "$JWT_ACCESS_MINUTES:15"
+  refreshTokenDays: "$JWT_REFRESH_DAYS:30"
+
+security:
+  bcryptCost: "$BCRYPT_COST:12"
+  otpMinutes: "$OTP_MINUTES:10"
+
+cors:
+  # Empty outside production means "any host", which suits local web tooling.
+  allowedHosts: []

@@ -4,30 +4,105 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Facebook
+import androidx.compose.material.icons.filled.HeadsetMic
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phonelink
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.RemoveRedEye
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.account.presentation.AccountViewModel
+import com.elozino.splitify.shared.api.dto.AddPaymentMethodRequest
+import com.elozino.splitify.shared.domain.model.PaymentMethodType
 import com.elozino.splitify.ui.theme.primaryLight
+import org.koin.compose.viewmodel.koinViewModel
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,10 +117,15 @@ fun AccountScreen(
     onNavigateToLinkedAccounts: () -> Unit,
     onNavigateToAppearance: () -> Unit,
     onNavigateToDataAnalytics: () -> Unit,
-    onNavigateToHelpSupport: () -> Unit
+    onNavigateToHelpSupport: () -> Unit,
+    viewModel: AccountViewModel = koinViewModel(),
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var showQrDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // Re-read on entry so a profile edit elsewhere is reflected here.
+    LaunchedEffect(Unit) { viewModel.load() }
 
     Scaffold(
         topBar = {
@@ -86,8 +166,20 @@ fun AccountScreen(
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Andrew Ainsley", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                        Text("andrew_ainsley@gmail.com", color = Color.Gray, fontSize = 14.sp)
+                        Text(
+                            text = state.displayName.ifEmpty { "Your profile" },
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+                        Text(state.email, color = Color.Gray, fontSize = 14.sp)
+                        if (!state.balance.isZero) {
+                            Text(
+                                text = "Balance ${state.balance.toPlainString()} ${state.balance.currency.code}",
+                                color = Color(0xFF2E7D32),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                     IconButton(onClick = onNavigateToPersonalInfo) {
                         Icon(
@@ -214,7 +306,14 @@ fun AccountScreen(
     }
 
     if (showLogoutDialog) {
-        LogoutDialog(onDismiss = { showLogoutDialog = false }, onLogout = { /* Handle Logout */ })
+        LogoutDialog(
+            onDismiss = { showLogoutDialog = false },
+            onLogout = {
+                showLogoutDialog = false
+                // Clears the session; the navigation graph unwinds to sign-in.
+                viewModel.signOut()
+            }
+        )
     }
 }
 
@@ -363,12 +462,19 @@ fun LogoutDialog(onDismiss: () -> Unit, onLogout: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PersonalInfoScreen(onNavigateBack: () -> Unit) {
-    var fullName by remember { mutableStateOf("Andrew Ainsley") }
-    var email by remember { mutableStateOf("andrew_ainsley@gmail.com") }
-    var phone by remember { mutableStateOf("+1 111 467 378 399") }
-    var dob by remember { mutableStateOf("12/27/1995") }
-    var gender by remember { mutableStateOf("Male") }
+fun PersonalInfoScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: AccountViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    var fullName by remember(state.user) { mutableStateOf(state.displayName) }
+    var phone by remember(state.user) { mutableStateOf(state.phoneNumber) }
+    val email = state.email
+
+    // Leave the screen once the change has landed on the server.
+    LaunchedEffect(state.savedAt) {
+        if (state.savedAt != null) onNavigateBack()
+    }
 
     Scaffold(
         topBar = {
@@ -386,12 +492,19 @@ fun PersonalInfoScreen(onNavigateBack: () -> Unit) {
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
-                    onClick = onNavigateBack,
+                    onClick = {
+                        viewModel.updateProfile(displayName = fullName, phoneNumber = phone)
+                    },
+                    enabled = !state.isSaving,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
                 ) {
-                    Text("Save", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (state.isSaving) "Saving…" else "Save",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -420,17 +533,37 @@ fun PersonalInfoScreen(onNavigateBack: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(24.dp))
                 InfoField("Full Name", fullName) { fullName = it }
-                InfoField("Email", email) { email = it }
+                state.fieldErrors["displayName"]?.let { FieldError(it) }
+
+                // The address identifies the account; changing it is a separate,
+                // verified flow rather than a free-text edit.
+                InfoField("Email", email, enabled = false) { }
+
                 InfoField("Phone Number", phone) { phone = it }
-                InfoField("Date of Birth", dob) { dob = it }
-                InfoField("Gender", gender) { gender = it }
+                state.fieldErrors["phoneNumber"]?.let { FieldError(it) }
+                state.errorMessage?.let { FieldError(it) }
             }
         }
     }
 }
 
 @Composable
-private fun InfoField(label: String, value: String, onValueChange: (String) -> Unit) {
+private fun FieldError(message: String) {
+    Text(
+        text = message,
+        color = Color(0xFFD32F2F),
+        fontSize = 13.sp,
+        modifier = Modifier.padding(top = 4.dp)
+    )
+}
+
+@Composable
+private fun InfoField(
+    label: String,
+    value: String,
+    enabled: Boolean = true,
+    onValueChange: (String) -> Unit,
+) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Text(label, fontWeight = FontWeight.Bold, fontSize = 14.sp)
         TextField(
@@ -1201,11 +1334,21 @@ fun TermsOfServiceScreen(onNavigateBack: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPaymentMethodScreen(onNavigateBack: () -> Unit) {
-    var cardHolder by remember { mutableStateOf("Andrew Ainsley") }
-    var cardNumber by remember { mutableStateOf("2632 4673 5567 8432") }
-    var expiry by remember { mutableStateOf("12/24") }
-    var cvv by remember { mutableStateOf("432") }
+fun AddPaymentMethodScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: AccountViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    var cardHolder by remember { mutableStateOf("") }
+    var cardNumber by remember { mutableStateOf("") }
+    var expiry by remember { mutableStateOf("") }
+    var cvv by remember { mutableStateOf("") }
+
+    // The card details are exchanged for a token on-device; only the token and the
+    // last four digits are ever sent to the API.
+    LaunchedEffect(state.savedAt) {
+        if (state.savedAt != null) onNavigateBack()
+    }
 
     Scaffold(
         topBar = {
@@ -1223,12 +1366,21 @@ fun AddPaymentMethodScreen(onNavigateBack: () -> Unit) {
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
-                    onClick = onNavigateBack,
+                    onClick = { viewModel.addCard(cardNumber, expiry, cvv, cardHolder) },
+                    enabled = !state.isSaving &&
+                        cardNumber.isNotBlank() &&
+                        expiry.isNotBlank() &&
+                        cvv.isNotBlank() &&
+                        cardHolder.isNotBlank(),
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
                 ) {
-                    Text("Save", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (state.isSaving) "Saving…" else "Save",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -1237,6 +1389,7 @@ fun AddPaymentMethodScreen(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
             InfoField("Account Holder Name", cardHolder) { cardHolder = it }
             InfoField("Card Number", cardNumber) { cardNumber = it }
+            state.errorMessage?.let { FieldError(it) }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1426,15 +1579,23 @@ fun UpgradePlanScreen(
 fun PaymentMethodsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAddPayment: () -> Unit,
-    onNavigateToSuccess: () -> Unit
+    onNavigateToSuccess: () -> Unit,
+    viewModel: AccountViewModel = koinViewModel(),
 ) {
-    var selectedMethod by remember { mutableStateOf(3) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var isProcessing by remember { mutableStateOf(false) }
     var step by remember { mutableStateOf(0) }
 
+    val methods = state.paymentMethods
+    var selectedMethodId by remember(methods) {
+        mutableStateOf(methods.firstOrNull { it.isDefault }?.id ?: methods.firstOrNull()?.id)
+    }
+
+    LaunchedEffect(Unit) { viewModel.load() }
+
     LaunchedEffect(isProcessing) {
         if (isProcessing) {
-            delay(2000)
+            delay(1200)
             isProcessing = false
             onNavigateToSuccess()
         }
@@ -1471,6 +1632,7 @@ fun PaymentMethodsScreen(
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
                     onClick = { if (step == 0) step = 1 else isProcessing = true },
+                    enabled = selectedMethodId != null,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
@@ -1486,23 +1648,37 @@ fun PaymentMethodsScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             if (step == 0) {
-                val methods = listOf(
-                    "PayPal" to Icons.Default.Payment,
-                    "Google Pay" to Icons.Default.AccountBalanceWallet,
-                    "Apple Pay" to Icons.Default.Phonelink,
-                    "•••• •••• •••• 4679" to Icons.Default.CreditCard,
-                    "•••• •••• •••• 5567" to Icons.Default.CreditCard,
-                    "•••• •••• •••• 8632" to Icons.Default.CreditCard
-                )
-
                 Spacer(modifier = Modifier.height(16.dp))
-                methods.forEachIndexed { index, (label, icon) ->
-                    PaymentMethodItem(
-                        label = label,
-                        icon = icon,
-                        isSelected = selectedMethod == index,
-                        onClick = { selectedMethod = index }
+
+                if (methods.isEmpty()) {
+                    Text(
+                        text = "No payment methods yet. Add a card to top up or withdraw.",
+                        color = Color.Gray,
+                        fontSize = 14.sp
                     )
+                }
+
+                methods.forEach { method ->
+                    PaymentMethodItem(
+                        label = method.maskedLabel,
+                        icon = when (method.type) {
+                            PaymentMethodType.CARD -> Icons.Default.CreditCard
+                            PaymentMethodType.BANK_ACCOUNT -> Icons.Default.AccountBalanceWallet
+                            else -> Icons.Default.Payment
+                        },
+                        isSelected = selectedMethodId == method.id,
+                        onClick = {
+                            selectedMethodId = method.id
+                            // Selecting is also how the default is changed.
+                            viewModel.makeDefault(method.id)
+                        },
+                        onDelete = { viewModel.deletePaymentMethod(method.id) }
+                    )
+                }
+
+                state.errorMessage?.let { message ->
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
                 }
             } else {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -1556,7 +1732,8 @@ fun PaymentMethodsScreen(
                         Icon(Icons.Default.CreditCard, contentDescription = null)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "•••• •••• •••• 4679",
+                            text = methods.firstOrNull { it.id == selectedMethodId }?.maskedLabel
+                                ?: "No method selected",
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )
@@ -1578,7 +1755,8 @@ private fun PaymentMethodItem(
     label: String,
     icon: ImageVector,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -1602,6 +1780,16 @@ private fun PaymentMethodItem(
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(label, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), fontSize = 16.sp)
+        onDelete?.let { delete ->
+            IconButton(onClick = delete) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Remove payment method",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
         RadioButton(
             selected = isSelected,
             onClick = onClick,

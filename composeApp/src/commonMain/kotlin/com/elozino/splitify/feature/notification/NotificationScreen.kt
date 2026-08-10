@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,12 +29,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.activity.presentation.NotificationViewModel
+import com.elozino.splitify.shared.api.dto.AppNotification
+import com.elozino.splitify.shared.api.dto.NotificationCategory
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationScreen(
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    viewModel: NotificationViewModel = koinViewModel(),
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -44,62 +53,39 @@ fun NotificationScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Settings */ }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    if (state.unreadCount > 0) {
+                        TextButton(onClick = viewModel::markAllRead) {
+                            Text("Mark all read", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
                     }
                 }
             )
         }
     ) { padding ->
-        val notifications = listOf(
-            NotificationSection(
-                title = "Today",
-                items = listOf(
-                    NotificationItemData(
-                        icon = Icons.Outlined.NewReleases,
-                        title = "New Updates Available!",
-                        message = "Update the Splitify and enjoy new features for a better split bill experi...",
-                        time = "09:41 AM",
-                        isNew = true
-                    ),
-                    NotificationItemData(
-                        icon = Icons.Outlined.Security,
-                        title = "Enable 2FA for Security!",
-                        message = "Use two-factor authentication for extra security on your account.",
-                        time = "09:10 AM",
-                        isNew = true
-                    )
-                )
-            ),
-            NotificationSection(
-                title = "Yesterday",
-                items = listOf(
-                    NotificationItemData(
-                        icon = Icons.Outlined.CreditCard,
-                        title = "Multiple Payments Support!",
-                        message = "Now you can add multiple cards. Go to Account -> Payment methods to add ano...",
-                        time = "09:47 AM"
-                    ),
-                    NotificationItemData(
-                        icon = Icons.Outlined.Event,
-                        title = "Christmas and New Year Event!",
-                        message = "We offer a special event for you on the special day of Christmas.",
-                        time = "16:50 PM"
-                    )
-                )
-            ),
-            NotificationSection(
-                title = "Dec 18, 2023",
-                items = listOf(
-                    NotificationItemData(
-                        icon = Icons.Outlined.StarOutline,
-                        title = "Premium Features Unlocked!",
-                        message = "Upgrade to Splitify Premium and unlock exclusive features for even smoother bill...",
-                        time = "13:41 PM"
-                    )
-                )
-            )
-        )
+        // Grouped by day, newest first, straight from the API.
+        val notifications = state.items
+            .groupBy { it.createdAt.toString().take(10) }
+            .map { (day, items) -> NotificationSection(day, items.map { it.toItem() }) }
+
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFFFEBB1B))
+            }
+            return@Scaffold
+        }
+
+        if (state.isEmpty) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("You're all caught up", color = Color.Gray, fontSize = 16.sp)
+            }
+            return@Scaffold
+        }
 
         LazyColumn(
             modifier = Modifier
@@ -117,7 +103,10 @@ fun NotificationScreen(
                     )
                 }
                 items(section.items) { notification ->
-                    NotificationItem(notification)
+                    NotificationItem(
+                        data = notification,
+                        onClick = { viewModel.markRead(notification.id) }
+                    )
                 }
             }
         }
@@ -125,11 +114,11 @@ fun NotificationScreen(
 }
 
 @Composable
-fun NotificationItem(data: NotificationItemData) {
+fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { }
+            .clickable { onClick() }
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.Top
     ) {
@@ -202,9 +191,26 @@ data class NotificationSection(
 )
 
 data class NotificationItemData(
+    val id: String,
     val icon: ImageVector,
     val title: String,
     val message: String,
     val time: String,
     val isNew: Boolean = false
+)
+
+/** Maps an API notification onto the row model, picking an icon per category. */
+private fun AppNotification.toItem() = NotificationItemData(
+    id = id,
+    icon = when (category) {
+        NotificationCategory.SECURITY -> Icons.Outlined.Security
+        NotificationCategory.PAYMENT -> Icons.Outlined.CreditCard
+        NotificationCategory.GROUP -> Icons.Outlined.Event
+        NotificationCategory.PROMOTION -> Icons.Outlined.StarOutline
+        NotificationCategory.SYSTEM -> Icons.Outlined.NewReleases
+    },
+    title = title,
+    message = message,
+    time = createdAt.toString().drop(11).take(5),
+    isNew = !isRead,
 )

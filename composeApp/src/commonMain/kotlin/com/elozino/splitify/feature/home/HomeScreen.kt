@@ -22,11 +22,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.home.presentation.HomeUiState
+import com.elozino.splitify.feature.home.presentation.HomeViewModel
+import com.elozino.splitify.shared.domain.model.LedgerEntry
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview(showBackground = true, showSystemUi = true)
 fun HomeScreen(
+    viewModel: HomeViewModel = koinViewModel(),
     onNavigateToNotification: () -> Unit = {},
     onNavigateToActivity: () -> Unit = {},
     onNavigateToPay: () -> Unit = {},
@@ -35,6 +41,8 @@ fun HomeScreen(
     onNavigateToWithdraw: () -> Unit = {},
     onNavigateToTransactionHistory: () -> Unit = {}
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -56,12 +64,20 @@ fun HomeScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToNotification) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = "Notifications",
-                            modifier = Modifier.size(28.dp),
-                            tint = Color.Black
-                        )
+                        BadgedBox(
+                            badge = {
+                                if (state.unreadNotifications > 0) {
+                                    Badge { Text(state.unreadNotifications.coerceAtMost(99).toString()) }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Notifications,
+                                contentDescription = "Notifications",
+                                modifier = Modifier.size(28.dp),
+                                tint = Color.Black
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -76,6 +92,7 @@ fun HomeScreen(
                 .padding(padding)
         ) {
             BalanceHeader(
+                state = state,
                 onSendClick = onNavigateToPay,
                 onRequestClick = onNavigateToRequest,
                 onTopUpClick = onNavigateToTopUp,
@@ -83,6 +100,7 @@ fun HomeScreen(
                 onHistoryClick = onNavigateToTransactionHistory
             )
             ActivitySection(
+                state = state,
                 modifier = Modifier.weight(1f),
                 onViewAllClick = onNavigateToActivity
             )
@@ -92,6 +110,7 @@ fun HomeScreen(
 
 @Composable
 fun BalanceHeader(
+    state: HomeUiState,
     onSendClick: () -> Unit = {},
     onRequestClick: () -> Unit = {},
     onTopUpClick: () -> Unit = {},
@@ -114,16 +133,16 @@ fun BalanceHeader(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "0",
+                    text = state.walletBalance.toPlainString(),
                     fontSize = 56.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
                 Text(
-                    text = "$",
+                    text = state.walletBalance.currency.code,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 8.dp, start = 6.dp),
                     color = Color.Black
                 )
             }
@@ -134,6 +153,17 @@ fun BalanceHeader(
                 color = Color.Black.copy(alpha = 0.8f),
                 fontWeight = FontWeight.Medium
             )
+
+            if (!state.totalOwedToYou.isZero || !state.totalYouOwe.isZero) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Owed to you ${state.totalOwedToYou.toPlainString()}  ·  " +
+                        "You owe ${state.totalYouOwe.toPlainString()}",
+                    fontSize = 13.sp,
+                    color = Color.Black.copy(alpha = 0.8f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
 
             Spacer(modifier = Modifier.height(40.dp))
 
@@ -188,6 +218,7 @@ fun ActionItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
 
 @Composable
 fun ActivitySection(
+    state: HomeUiState,
     modifier: Modifier = Modifier,
     onViewAllClick: () -> Unit
 ) {
@@ -226,32 +257,77 @@ fun ActivitySection(
             }
         }
 
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Inbox,
-                contentDescription = null,
-                modifier = Modifier.size(80.dp),
-                tint = Color.LightGray
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+        if (state.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFFEBB1B))
+            }
+            return@Column
+        }
+
+        if (!state.hasActivity) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Inbox,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp),
+                    tint = Color.LightGray
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "No Transactions",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "You haven't made any transactions.",
+                    fontSize = 16.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp
+                )
+            }
+            return@Column
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        state.recentEntries.forEach { entry ->
+            RecentEntryRow(entry)
+        }
+    }
+}
+
+/** One line of the wallet ledger, signed so credits and debits read at a glance. */
+@Composable
+private fun RecentEntryRow(entry: LedgerEntry) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "No Transactions",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
+                text = entry.counterpartyName ?: entry.description,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = Color.Black
             )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "You haven't made any transactions.",
-                fontSize = 16.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.Center,
-                lineHeight = 22.sp
+                text = entry.note ?: entry.type.name.lowercase().replace('_', ' '),
+                fontSize = 13.sp,
+                color = Color.Gray
             )
         }
+        Text(
+            text = (if (entry.type.isCredit) "+ " else "- ") + entry.amount.toPlainString(),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (entry.type.isCredit) Color(0xFF2E7D32) else Color.Black
+        )
     }
 }

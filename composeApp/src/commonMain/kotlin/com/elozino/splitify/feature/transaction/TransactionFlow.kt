@@ -31,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -39,6 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +55,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elozino.splitify.feature.transaction.model.TransactionType
 import com.elozino.splitify.feature.transaction.model.TransactionUser
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.transaction.presentation.SuccessFlow
+import com.elozino.splitify.feature.transaction.presentation.TransactionConfirmationSheet
+import com.elozino.splitify.feature.transaction.presentation.TransactionViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Public entry point for the Pay flow.
@@ -82,21 +89,31 @@ fun RequestScreen(onNavigateBack: () -> Unit) {
 @Composable
 internal fun TransactionScreen(
     type: TransactionType,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: TransactionViewModel = koinViewModel(),
 ) {
-    // In a real-world scenario, these would likely be managed in a ViewModel.
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedUser by remember { mutableStateOf<TransactionUser?>(null) }
     var showConfirmation by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
 
-    // Mock data - should be provided by a ViewModel
-    val users = remember {
-        listOf(
-            TransactionUser("Andrew Ainsley (You)", "andrew.ainsley@gmail.com", "$365.50"),
-            TransactionUser("Alfonzo Schuessler", "alfonzo.schuessler@gmail.com", "$365.50"),
-            TransactionUser("Maryland Winkles", "maryland.winkles@gmail.com", "$642.50"),
-            TransactionUser("Darron Kulikowski", "darron.kulikowski@gmail.com", "$208.40")
-        )
+    // Paying settles what you owe; requesting chases what you are owed. Contacts who
+    // are square with you are not actionable and are left out.
+    val users = state.contacts.mapNotNull(TransactionUser::from).filter { user ->
+        if (type == TransactionType.REQUEST) user.owesYou else !user.owesYou
+    }
+
+    // Stable across recomposition so a retried tap cannot send twice.
+    val clientRequestId = remember(selectedUser) {
+        "transfer-${'$'}{type.name}-${'$'}{selectedUser?.userId?.value.orEmpty()}"
+    }
+
+    // The success sheet appears only after the server has recorded the transfer.
+    LaunchedEffect(state.lastTransfer) {
+        if (state.lastTransfer != null) {
+            showConfirmation = false
+            showSuccess = true
+        }
     }
 
     val blurBackground = showConfirmation || showSuccess
@@ -117,7 +134,9 @@ internal fun TransactionScreen(
             onUserSelected = {
                 selectedUser = it
                 showConfirmation = true
-            }
+            },
+            isLoading = state.isLoading,
+            errorMessage = state.errorMessage
         )
     }
 
@@ -126,9 +145,17 @@ internal fun TransactionScreen(
             type = type,
             user = selectedUser!!,
             onConfirm = {
-                showConfirmation = false
-                showSuccess = true
+                selectedUser?.let { user ->
+                    viewModel.send(
+                        kind = type.toTransferKind(),
+                        counterparty = state.contacts.first { it.userId == user.userId },
+                        amount = user.balance.abs(),
+                        note = null,
+                        clientRequestId = clientRequestId,
+                    )
+                }
             },
+            isSubmitting = state.isSubmitting,
             onDismiss = {
                 showConfirmation = false
                 selectedUser = null
@@ -143,6 +170,7 @@ internal fun TransactionScreen(
             onDismiss = {
                 showSuccess = false
                 selectedUser = null
+                viewModel.consumeLastTransfer()
             }
         )
     }
@@ -175,7 +203,9 @@ private fun TransactionContent(
     modifier: Modifier = Modifier,
     users: List<TransactionUser>,
     type: TransactionType,
-    onUserSelected: (TransactionUser) -> Unit
+    onUserSelected: (TransactionUser) -> Unit,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
 ) {
     Column(
         modifier = modifier
@@ -189,8 +219,37 @@ private fun TransactionContent(
             modifier = Modifier.padding(vertical = 16.dp)
         )
         
+        errorMessage?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return@Column
+        }
+
+        if (users.isEmpty()) {
+            Text(
+                text = if (type == TransactionType.REQUEST) {
+                    "Nobody owes you right now."
+                } else {
+                    "You don't owe anyone right now."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+            return@Column
+        }
+
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            items(users) { user ->
+            items(users, key = { it.userId.value }) { user ->
                 UserListItem(
                     user = user,
                     actionLabel = if (type == TransactionType.PAY) "Pay" else "Request",
@@ -230,7 +289,7 @@ private fun UserListItem(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "owes you",
+                    text = if (user.owesYou) "owes you" else "you owe",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -261,370 +320,5 @@ private fun UserListItem(
                 )
             }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TransactionConfirmationSheet(
-    type: TransactionType,
-    user: TransactionUser,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        sheetState = sheetState,
-        scrimColor = Color.Black.copy(alpha = 0.32f)
-    ) {
-        TransactionConfirmationContent(
-            type = type,
-            user = user,
-            onConfirm = onConfirm,
-            onCancel = onDismiss
-        )
-    }
-}
-
-@Composable
-private fun TransactionConfirmationContent(
-    type: TransactionType,
-    user: TransactionUser,
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = if (type == TransactionType.PAY) "Pay" else "Request",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        TransactionAmountSummary(user.amount)
-
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        UserDetailsRow(user)
-
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        TransactionNotesField(note = "Dinner Delights Group Payments")
-
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(25.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-            ) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
-            }
-            Button(
-                onClick = onConfirm,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(25.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Text(
-                    text = if (type == TransactionType.PAY) "Pay Now" else "Request Now",
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-    }
-}
-
-@Composable
-private fun TransactionAmountSummary(amount: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Amount",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.outline
-            )
-            Text(
-                text = amount,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Your available balance: $1,267.50",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
-    }
-}
-
-@Composable
-private fun UserDetailsRow(user: TransactionUser) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(
-                text = user.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
-    }
-}
-
-@Composable
-private fun TransactionNotesField(note: String) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Notes (optional)",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(
-                text = note,
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-    }
-}
-
-@Composable
-private fun SuccessFlow(
-    type: TransactionType,
-    user: TransactionUser,
-    onDismiss: () -> Unit
-) {
-    if (type == TransactionType.PAY) {
-        PaymentSuccessScreen(user = user, onDismiss = onDismiss)
-    } else {
-        RequestSuccessSheet(onDismiss = onDismiss)
-    }
-}
-
-@Composable
-private fun PaymentSuccessScreen(
-    user: TransactionUser,
-    onDismiss: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(40.dp))
-            
-            SuccessCircleIcon()
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = user.amount,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Paid to ${user.name}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.outline
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            PaymentReceiptDetails(user)
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Notes",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.outline
-                )
-                Text(
-                    text = "Dinner Delights Group Payments",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            ReceiptActions()
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun RequestSuccessSheet(onDismiss: () -> Unit) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        scrimColor = Color.Black.copy(alpha = 0.32f)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            SuccessCircleIcon()
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Request Has Been Sent!",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(40.dp))
-            
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = RoundedCornerShape(100.dp)
-            ) {
-                Text(
-                    text = "Done",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun SuccessCircleIcon() {
-    Box(
-        modifier = Modifier
-            .size(80.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Check,
-            contentDescription = null,
-            modifier = Modifier.size(40.dp),
-            tint = MaterialTheme.colorScheme.onPrimary
-        )
-    }
-}
-
-@Composable
-private fun PaymentReceiptDetails(user: TransactionUser) {
-    DetailRow("You have paid", user.amount)
-    DetailRow("To", user.name)
-    DetailRow("Email", user.email)
-    DetailRow("Date", user.date)
-    DetailRow("Transaction ID", "201220230941")
-    DetailRow("Reference ID", "H375K7D9")
-}
-
-@Composable
-private fun ReceiptActions() {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        OutlinedButton(
-            onClick = {},
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(25.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-        ) {
-            Text("Download Receipt", color = MaterialTheme.colorScheme.onSurface)
-        }
-        Button(
-            onClick = {},
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(25.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Text("Share Receipt", color = MaterialTheme.colorScheme.onPrimary)
-        }
-    }
-}
-
-@Composable
-private fun DetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.outline
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold
-        )
     }
 }

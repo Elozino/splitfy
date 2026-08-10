@@ -30,31 +30,46 @@ import com.preat.peekaboo.image.picker.SelectionMode
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
 import com.preat.peekaboo.ui.camera.PeekabooCamera
 import com.preat.peekaboo.ui.camera.rememberPeekabooCameraState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.feature.split.presentation.AddExpenseUiState
+import com.elozino.splitify.feature.split.presentation.AddExpenseViewModel
+import com.elozino.splitify.shared.domain.model.ExpenseCategory
+import com.elozino.splitify.shared.domain.model.SplitMethod
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseScreen(
     groupId: String,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: AddExpenseViewModel = koinViewModel { parametersOf(groupId) },
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var step by remember { mutableStateOf(AddExpenseStep.DETAILS) }
-    var splitType by remember { mutableStateOf("Equally") }
     var showImageSheet by remember { mutableStateOf(false) }
+
+    // Stable per screen entry: a retry after a timeout must not create a duplicate.
+    val clientRequestId = remember { "expense-$groupId-${'$'}{state.hashCode()}" }
+
+    LaunchedEffect(state.saved) {
+        if (state.saved) onNavigateBack()
+    }
 
     when (step) {
         AddExpenseStep.DETAILS -> ExpenseDetailsScreen(
+            state = state,
+            viewModel = viewModel,
             onNavigateBack = onNavigateBack,
-            onContinue = { /* Save logic */ onNavigateBack() },
+            onContinue = { viewModel.save(clientRequestId) },
             onSelectSplitType = { step = AddExpenseStep.SPLIT_TYPE },
-            onAddImage = { showImageSheet = true },
-            selectedSplitType = splitType
+            onAddImage = { showImageSheet = true }
         )
         AddExpenseStep.SPLIT_TYPE -> SplitWithScreen(
+            state = state,
+            viewModel = viewModel,
             onNavigateBack = { step = AddExpenseStep.DETAILS },
-            onSplitTypeSelected = { 
-                splitType = it
-                step = AddExpenseStep.DETAILS 
-            }
+            onDone = { step = AddExpenseStep.DETAILS }
         )
         AddExpenseStep.CAMERA -> ReceiptCaptureScreen(
             onNavigateBack = { step = AddExpenseStep.DETAILS },
@@ -83,15 +98,17 @@ enum class AddExpenseStep {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpenseDetailsScreen(
+    state: AddExpenseUiState,
+    viewModel: AddExpenseViewModel,
     onNavigateBack: () -> Unit,
     onContinue: () -> Unit,
     onSelectSplitType: () -> Unit,
     onAddImage: () -> Unit,
-    selectedSplitType: String
 ) {
-    var title by remember { mutableStateOf("Japanese Grocery Shopping") }
-    var amount by remember { mutableStateOf("200.00") }
-    var notes by remember { mutableStateOf("Shop for Japanese Groceries to Cook Yourself at the Inn.") }
+    val title = state.title
+    val amount = state.amountInput
+    val notes = state.notes
+    val selectedSplitType = state.splitMethod.label()
 
     Scaffold(
         topBar = {
@@ -124,11 +141,16 @@ private fun ExpenseDetailsScreen(
                 }
                 Button(
                     onClick = onContinue,
+                    enabled = state.canSave,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
                 ) {
-                    Text("Save", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (state.isSaving) "Saving…" else "Save",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -144,7 +166,7 @@ private fun ExpenseDetailsScreen(
                 Text("Title", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 TextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = viewModel::onTitleChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = Color(0xFFF5F5F5),
@@ -157,10 +179,10 @@ private fun ExpenseDetailsScreen(
             }
 
             item {
-                Text("Amount (USD $)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("Amount (${'$'}{state.currency.code})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 TextField(
                     value = amount,
-                    onValueChange = { amount = it },
+                    onValueChange = viewModel::onAmountChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = Color(0xFFF5F5F5),
@@ -175,7 +197,10 @@ private fun ExpenseDetailsScreen(
             item {
                 Text("Category", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Surface(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable { /* TODO */ },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
+                        val all = ExpenseCategory.entries
+                        viewModel.onCategoryChange(all[(all.indexOf(state.category) + 1) % all.size])
+                    },
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFF5F5F5)
                 ) {
@@ -192,7 +217,10 @@ private fun ExpenseDetailsScreen(
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                             }
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text("Groceries", fontWeight = FontWeight.Bold)
+                            Text(
+                                text = state.category.name.lowercase().replaceFirstChar { it.uppercase() },
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                         Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray)
                     }
@@ -202,7 +230,14 @@ private fun ExpenseDetailsScreen(
             item {
                 Text("Paid by", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Surface(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable { /* TODO */ },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable {
+                        // Cycle through members; every group has at least the creator.
+                        val members = state.members
+                        if (members.isNotEmpty()) {
+                            val next = members.indexOfFirst { it.userId == state.paidBy } + 1
+                            viewModel.onPaidByChange(members[next % members.size].userId)
+                        }
+                    },
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFF5F5F5)
                 ) {
@@ -211,7 +246,11 @@ private fun ExpenseDetailsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Andrew Ainsley (You)", fontWeight = FontWeight.Bold)
+                        val payer = state.members.firstOrNull { it.userId == state.paidBy }
+                        Text(
+                            text = payer?.displayName ?: "Select who paid",
+                            fontWeight = FontWeight.Bold
+                        )
                         Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray)
                     }
                 }
@@ -239,7 +278,7 @@ private fun ExpenseDetailsScreen(
                 Text("Notes", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 TextField(
                     value = notes,
-                    onValueChange = { notes = it },
+                    onValueChange = viewModel::onNotesChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 100.dp),
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = Color(0xFFF5F5F5),
@@ -410,23 +449,20 @@ private fun ReceiptCaptureScreen(onNavigateBack: () -> Unit, onCapture: () -> Un
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SplitWithScreen(
+    state: AddExpenseUiState,
+    viewModel: AddExpenseViewModel,
     onNavigateBack: () -> Unit,
-    onSplitTypeSelected: (String) -> Unit
+    onDone: () -> Unit,
 ) {
-    val modes = listOf("Equally", "Unequally", "By Percentages", "By Shares", "By Adjustment")
-    var selectedMode by remember { mutableStateOf("Equally") }
-    
-    val totalAmount = 120.0
-    val participants = remember {
-        mutableStateListOf(
-            ParticipantSplit("Andrew Ainsley (You)", 0.0),
-            ParticipantSplit("Charlotte Hanlin", 0.0),
-            ParticipantSplit("Darron Kulikowski", 0.0),
-            ParticipantSplit("Kristin Watson", 0.0),
-            ParticipantSplit("Joseph Thomas", 0.0),
-            ParticipantSplit("Maryland Winkles", 0.0)
-        )
-    }
+    // Only the methods `:shared` can actually compute are offered.
+    val modes = listOf(
+        SplitMethod.EQUAL,
+        SplitMethod.EXACT,
+        SplitMethod.PERCENTAGE,
+        SplitMethod.SHARES,
+    )
+    val selectedMode = state.splitMethod
+    val totalAmount = state.amount
 
     Scaffold(
         topBar = {
@@ -458,7 +494,8 @@ private fun SplitWithScreen(
                     Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = { onSplitTypeSelected(selectedMode) },
+                    onClick = onDone,
+                    enabled = state.splitError == null,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
@@ -484,8 +521,8 @@ private fun SplitWithScreen(
                     val isSelected = selectedMode == mode
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedMode = mode },
-                        label = { Text(mode) },
+                        onClick = { viewModel.onSplitMethodChange(mode) },
+                        label = { Text(mode.label()) },
                         shape = RoundedCornerShape(100.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = primaryLight,
@@ -499,30 +536,43 @@ private fun SplitWithScreen(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 24.dp)
             ) {
-                items(participants) { participant ->
+                items(state.members, key = { it.userId.value }) { member ->
                     SplitParticipantItem(
-                        participant = participant,
+                        name = if (member.userId.value == state.paidBy?.value) {
+                            "${'$'}{member.displayName} (payer)"
+                        } else {
+                            member.displayName
+                        },
+                        isParticipant = state.isParticipant(member.userId),
+                        // The preview is the shared calculator's own output.
+                        previewAmount = state.previewShares
+                            .firstOrNull { it.userId == member.userId }
+                            ?.amount
+                            ?.toPlainString(),
+                        rawValue = state.weightOf(member.userId),
                         mode = selectedMode,
-                        totalAmount = totalAmount,
-                        onValueChange = { newValue ->
-                            val index = participants.indexOf(participant)
-                            participants[index] = participant.copy(value = newValue)
-                        }
+                        currencyCode = state.currency.code,
+                        onToggle = { viewModel.toggleParticipant(member.userId) },
+                        onValueChange = { viewModel.onWeightChange(member.userId, it) }
                     )
                 }
             }
 
-            SplitSummaryFooter(selectedMode, participants, totalAmount)
+            SplitSummaryFooter(state)
         }
     }
 }
 
 @Composable
 private fun SplitParticipantItem(
-    participant: ParticipantSplit,
-    mode: String,
-    totalAmount: Double,
-    onValueChange: (Double) -> Unit
+    name: String,
+    isParticipant: Boolean,
+    previewAmount: String?,
+    rawValue: Long,
+    mode: SplitMethod,
+    currencyCode: String,
+    onToggle: () -> Unit,
+    onValueChange: (String) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -531,58 +581,66 @@ private fun SplitParticipantItem(
         Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(participant.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            if (mode == "Equally") {
-                Text("$${(totalAmount / 6).toFixed(2)}", color = Color.Gray, fontSize = 12.sp)
+            Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            if (isParticipant && previewAmount != null) {
+                Text("$previewAmount $currencyCode", color = Color.Gray, fontSize = 12.sp)
             }
         }
 
+        if (!isParticipant) {
+            Checkbox(
+                checked = false,
+                onCheckedChange = { onToggle() },
+                colors = CheckboxDefaults.colors(checkedColor = primaryLight)
+            )
+            return@Row
+        }
+
         when (mode) {
-            "Equally" -> {
+            SplitMethod.EQUAL -> {
                 Checkbox(
-                    checked = true, 
-                    onCheckedChange = {}, 
+                    checked = true,
+                    onCheckedChange = { onToggle() },
                     colors = CheckboxDefaults.colors(checkedColor = primaryLight)
                 )
             }
-            "Unequally" -> {
+            SplitMethod.EXACT -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("$ ", fontWeight = FontWeight.Bold)
+                    Text("$currencyCode ", fontWeight = FontWeight.Bold)
                     SplitTextField(
-                        value = if (participant.value == 0.0) "" else participant.value.toString(),
-                        onValueChange = { onValueChange(it.toDoubleOrNull() ?: 0.0) }
+                        value = if (rawValue == 0L) "" else (rawValue / 100.0).toFixed(2),
+                        onValueChange = onValueChange
                     )
                 }
             }
-            "By Percentages" -> {
+            SplitMethod.PERCENTAGE -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SplitTextField(
-                        value = if (participant.value == 0.0) "" else participant.value.toInt().toString(),
-                        onValueChange = { onValueChange(it.toDoubleOrNull() ?: 0.0) }
+                        value = if (rawValue == 0L) "" else (rawValue / 100).toString(),
+                        onValueChange = onValueChange
                     )
                     Text(" %", fontWeight = FontWeight.Bold)
                 }
             }
-            "By Shares" -> {
+            SplitMethod.SHARES -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SplitTextField(
-                        value = if (participant.value == 0.0) "" else participant.value.toInt().toString(),
-                        onValueChange = { onValueChange(it.toDoubleOrNull() ?: 0.0) }
+                        value = if (rawValue == 0L) "" else rawValue.toString(),
+                        onValueChange = onValueChange
                     )
                     Text(" shares", color = Color.Gray, fontSize = 12.sp)
                 }
             }
-            "By Adjustment" -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("+ ", fontWeight = FontWeight.Bold)
-                    SplitTextField(
-                        value = if (participant.value == 0.0) "" else participant.value.toString(),
-                        onValueChange = { onValueChange(it.toDoubleOrNull() ?: 0.0) }
-                    )
-                }
-            }
         }
     }
+}
+
+/** UI copy for a split method; the enum itself is the shared contract. */
+internal fun SplitMethod.label(): String = when (this) {
+    SplitMethod.EQUAL -> "Equally"
+    SplitMethod.EXACT -> "Unequally"
+    SplitMethod.PERCENTAGE -> "By Percentages"
+    SplitMethod.SHARES -> "By Shares"
 }
 
 @Composable
@@ -601,34 +659,41 @@ private fun SplitTextField(value: String, onValueChange: (String) -> Unit) {
 }
 
 @Composable
-private fun SplitSummaryFooter(mode: String, participants: List<ParticipantSplit>, totalAmount: Double) {
+private fun SplitSummaryFooter(state: AddExpenseUiState) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        when (mode) {
-            "Equally" -> {
-                Text("$${(totalAmount / participants.size).toFixed(2)} /person", fontWeight = FontWeight.Bold)
-                Text("(${participants.size} people)", color = Color.Gray, fontSize = 12.sp)
+        // The error comes straight from the shared calculator, so what blocks Save
+        // here is exactly what the server would have rejected.
+        state.splitError?.let { message ->
+            Text(message, color = Color(0xFFD32F2F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            return@Column
+        }
+
+        when (state.splitMethod) {
+            SplitMethod.EQUAL -> {
+                val each = state.previewShares.firstOrNull()?.amount?.toPlainString() ?: "-"
+                Text("$each /person", fontWeight = FontWeight.Bold)
+                Text("(${'$'}{state.participants.size} people)", color = Color.Gray, fontSize = 12.sp)
             }
-            "Unequally" -> {
-                val currentTotal = participants.sumOf { it.value }
-                val left = totalAmount - currentTotal
-                Text("$${currentTotal.toFixed(2)} of $${totalAmount.toFixed(2)}", fontWeight = FontWeight.Bold)
-                Text("$${left.toFixed(2)} left", color = Color.Gray, fontSize = 12.sp)
+            SplitMethod.EXACT -> {
+                val assigned = state.participants.sumOf { state.weightOf(it) }
+                val total = state.amount?.toPlainString() ?: "-"
+                Text(
+                    text = "${(assigned / 100.0).toFixed(2)} of $total",
+                    fontWeight = FontWeight.Bold
+                )
+                Text("${'$'}{(state.remaining / 100.0).toFixed(2)} left", color = Color.Gray, fontSize = 12.sp)
             }
-            "By Percentages" -> {
-                val totalPercent = participants.sumOf { it.value }.toInt()
-                val leftPercent = 100 - totalPercent
-                Text("$totalPercent% of 100%", fontWeight = FontWeight.Bold)
-                Text("$leftPercent% left", color = Color.Gray, fontSize = 12.sp)
+            SplitMethod.PERCENTAGE -> {
+                val assigned = state.participants.sumOf { state.weightOf(it) } / 100
+                Text("$assigned% of 100%", fontWeight = FontWeight.Bold)
+                Text("${'$'}{state.remaining / 100}% left", color = Color.Gray, fontSize = 12.sp)
             }
-            "By Shares" -> {
-                val totalShares = participants.sumOf { it.value }.toInt()
+            SplitMethod.SHARES -> {
+                val totalShares = state.participants.sumOf { state.weightOf(it) }
                 Text("$totalShares total shares", fontWeight = FontWeight.Bold)
-            }
-            "By Adjustment" -> {
-                // No specific footer shown in 56
             }
         }
     }
@@ -646,4 +711,3 @@ private fun Double.toFixed(digits: Int): String {
     }
 }
 
-data class ParticipantSplit(val name: String, val value: Double)

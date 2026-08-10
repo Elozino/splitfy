@@ -1,11 +1,36 @@
 package com.elozino.splitify.feature.transaction.model
 
+import com.elozino.splitify.shared.api.dto.Contact
+import com.elozino.splitify.shared.domain.model.Money
+import com.elozino.splitify.shared.domain.model.UserId
+
 /**
- * Data model for a user in the transaction flow.
+ * A counterparty as the pay/request screens render them.
+ *
+ * Built from a real [Contact]; [amount] is the outstanding balance with that person,
+ * so tapping a row proposes settling exactly what is owed.
  */
 data class TransactionUser(
+    val userId: UserId,
     val name: String,
     val email: String,
-    val amount: String,
-    val date: String = "Dec 20, 2023 - 09:41 AM"
-)
+    val balance: Money,
+    val owesYou: Boolean,
+) {
+    val amount: String get() = balance.abs().toPlainString() + " " + balance.currency.code
+
+    companion object {
+        fun from(contact: Contact): TransactionUser? {
+            val balance = contact.netBalance ?: return null
+            if (balance.isZero) return null
+            return TransactionUser(
+                userId = contact.userId,
+                name = contact.displayName,
+                email = contact.email,
+                balance = balance,
+                // Positive means the contact owes the signed-in user.
+                owesYou = balance.isPositive,
+            )
+        }
+    }
+}

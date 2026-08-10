@@ -45,6 +45,13 @@ import androidx.navigation.toRoute
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitify.core.domain.session.SessionManager
+import com.elozino.splitify.core.domain.session.SessionState
+import com.elozino.splitify.feature.auth.presentation.AuthViewModel
+import com.elozino.splitify.feature.split.presentation.NewGroupViewModel
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun NavSetup() {
@@ -58,7 +65,29 @@ fun NavSetup() {
         showBottomBarOverride = true
     }
 
-    val isAuthenticated = true
+    // The session is the single source of truth for which half of the graph the user
+    // belongs in — the flag used to be hardcoded to `true`.
+    // One AuthViewModel for the whole unauthenticated graph: the reset flow spans
+    // three screens and has to carry the email and reset token between them.
+    val authViewModel: AuthViewModel = koinViewModel()
+    // The create-group draft spans two screens, so it lives above both of them.
+    val newGroupViewModel: NewGroupViewModel = koinViewModel()
+    val sessionManager: SessionManager = koinInject()
+    val sessionState by sessionManager.state.collectAsStateWithLifecycle()
+    val isAuthenticated = sessionState is SessionState.SignedIn
+
+    // A 401 anywhere in the app (or an explicit sign-out) unwinds the whole back
+    // stack exactly once, so no authenticated screen is left behind it.
+    var wasSignedIn by remember { mutableStateOf(isAuthenticated) }
+    LaunchedEffect(sessionState) {
+        val signedIn = sessionState is SessionState.SignedIn
+        if (wasSignedIn && !signedIn) {
+            navController.navigate(Route.Auth) {
+                popUpTo(navController.graph.id) { inclusive = true }
+            }
+        }
+        wasSignedIn = signedIn
+    }
 
     val showBottomBar = showBottomBarOverride && (
             currentDestination?.hasRoute(Route.Home::class) == true ||
@@ -124,6 +153,7 @@ fun NavSetup() {
             }
             composable<Route.Signup> {
                 SignUpScreen(
+                    viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToLogin = { navController.navigate(Route.Login) },
                     onSignUpSuccess = { navController.navigate(Route.Home) }
@@ -131,6 +161,7 @@ fun NavSetup() {
             }
             composable<Route.Login> {
                 LoginScreen(
+                    viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToSignup = { navController.navigate(Route.Signup) },
                     onNavigateToForgotPassword = { navController.navigate(Route.ForgotPassword) },
@@ -139,18 +170,21 @@ fun NavSetup() {
             }
             composable<Route.ForgotPassword> {
                 ForgotPasswordScreen(
+                    viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onOtpSent = { navController.navigate(Route.Otp) }
                 )
             }
             composable<Route.Otp> {
                 OtpScreen(
+                    viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onOtpVerified = { navController.navigate(Route.NewPassword) }
                 )
             }
             composable<Route.NewPassword> {
                 NewPasswordScreen(
+                    viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onPasswordChanged = { navController.navigate(Route.Login) }
                 )
@@ -213,12 +247,14 @@ fun NavSetup() {
             }
             composable<Route.NewGroup> {
                 NewGroupScreen(
+                    viewModel = newGroupViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onContinue = { navController.navigate(Route.SelectParticipants) }
                 )
             }
             composable<Route.SelectParticipants> {
                 SelectParticipantsScreen(
+                    viewModel = newGroupViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onFinish = {
                         navController.navigate(Route.Groups) {
@@ -240,7 +276,7 @@ fun NavSetup() {
                         navController.navigate(Route.SplitDetail(route.groupId)) 
                     },
                     onNavigateToExpenseDetail = { expenseId ->
-                        navController.navigate(Route.ExpenseDetail(expenseId))
+                        navController.navigate(Route.ExpenseDetail(route.groupId, expenseId))
                     }
                 )
             }
@@ -254,6 +290,7 @@ fun NavSetup() {
             composable<Route.ExpenseDetail> { backStackEntry ->
                 val route: Route.ExpenseDetail = backStackEntry.toRoute()
                 ExpenseDetailScreen(
+                    groupId = route.groupId,
                     expenseId = route.expenseId,
                     onNavigateBack = { navController.popBackStack() },
                     onViewReceipt = { /* Open full receipt */ }

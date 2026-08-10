@@ -43,30 +43,35 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitify.feature.auth.component.AuthTextField
 import com.elozino.splitify.feature.auth.component.PrimaryButton
 import com.elozino.splitify.feature.auth.component.SuccessDialog
+import com.elozino.splitify.feature.auth.presentation.AuthViewModel
 import kotlinx.coroutines.delay
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun LoginScreen(
     onNavigateBack: () -> Unit,
     onNavigateToSignup: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    viewModel: AuthViewModel = koinViewModel(),
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
-    var showSuccessDialog by remember { mutableStateOf(false) }
 
-    if (showSuccessDialog) {
-        SuccessDialog(
-            onDismissRequest = { showSuccessDialog = false }
-        )
+    val email = state.email
+    val password = state.password
+
+    // The dialog is driven by the session, not by the tap: it only appears once the
+    // backend has actually issued a token.
+    if (state.isAuthenticated) {
+        SuccessDialog(onDismissRequest = {})
         LaunchedEffect(Unit) {
-            delay(2000)
+            delay(1200)
             onLoginSuccess()
         }
     }
@@ -122,18 +127,23 @@ fun LoginScreen(
 
             AuthTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = viewModel::onEmailChange,
                 label = "Email",
                 placeholder = "Email",
                 leadingIcon = Icons.Default.Email,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
 
+            state.fieldErrors["email"]?.let { message ->
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = message, fontSize = 13.sp, color = Color(0xFFD32F2F))
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             AuthTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = viewModel::onPasswordChange,
                 label = "Password",
                 placeholder = "Password",
                 leadingIcon = Icons.Default.Lock,
@@ -149,6 +159,16 @@ fun LoginScreen(
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
+
+            state.fieldErrors["password"]?.let { message ->
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = message, fontSize = 13.sp, color = Color(0xFFD32F2F))
+            }
+
+            state.errorMessage?.let { message ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = message, fontSize = 14.sp, color = Color(0xFFD32F2F))
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -186,9 +206,9 @@ fun LoginScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             PrimaryButton(
-                text = "Sign in",
-                onClick = { showSuccessDialog = true },
-                enabled = email.isNotEmpty() && password.isNotEmpty()
+                text = if (state.isSubmitting) "Signing in…" else "Sign in",
+                onClick = viewModel::login,
+                enabled = state.canSubmitLogin
             )
 
             Spacer(modifier = Modifier.height(24.dp))
