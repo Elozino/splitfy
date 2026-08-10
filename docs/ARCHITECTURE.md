@@ -8,24 +8,24 @@ a kobo that nobody owes. A single repository lets the two share one module — a
 sharing, not the co-location, is the point.
 
 ```
-        ┌──────────────┐         ┌──────────────┐
-        │  androidApp  │         │    iosApp    │
-        └──────┬───────┘         └──────┬───────┘
-               └────────────┬───────────┘
-                     ┌──────▼───────┐
-                     │  composeApp  │  UI · ViewModels · repositories · HTTP
-                     └──────┬───────┘
-                            │
-                     ┌──────▼───────┐
-                     │    shared    │  DTOs · domain models · split maths · validation
-                     └──────▲───────┘
-                            │
-                     ┌──────┴───────┐
-                     │    server    │  routes · services · repositories · Postgres
-                     └──────────────┘
+    ┌──────────────────┐     ┌──────────────────┐
+    │ app:androidApp   │     │   app:iosApp     │
+    └────────┬─────────┘     └────────┬─────────┘
+             └──────────┬─────────────┘
+                ┌───────▼──────────┐     ┌────────────────────┐
+                │    app:shared    │────▶│ app:ui-components  │  theme · composables
+                └───────┬──────────┘     └────────────────────┘
+                        │                screens · ViewModels · repositories · HTTP
+                ┌───────▼──────────┐
+                │       core       │  DTOs · domain models · split maths · validation
+                └───────▲──────────┘
+                        │
+                ┌───────┴──────────┐
+                │     backend      │  routes · services · repositories · Postgres
+                └──────────────────┘
 ```
 
-## `:shared`
+## `:core`
 
 Targets `android`, `iosArm64`, `iosSimulatorArm64` and `jvm`. Contains no framework
 code — no Ktor, no Compose, no Exposed — so it stays cheap to compile and impossible
@@ -52,7 +52,7 @@ constants and the client builds requests from them. `ApiErrorCode` and
 on the client for inline field errors, on the server because client validation is a
 UX affordance, not a security control.
 
-## `:server`
+## `:backend`
 
 Layered, with dependencies pointing inward:
 
@@ -95,7 +95,7 @@ put into the MDC, echoed on error responses as `traceId`, and printed on every l
 line. `/health` is a pure liveness check that touches nothing; `/ready` verifies the
 database, so a broken instance leaves the load balancer instead of being killed.
 
-## `:server` — money
+## `:backend` — money
 
 The wallet is a **cached fold of an append-only ledger**. Every movement writes one
 `ledger_entries` row carrying the balance as it stood afterwards, so a statement
@@ -119,12 +119,19 @@ That keeps the API out of PCI scope. `DevCardTokenizer` stands in for the provid
 SDK — it validates (Luhn, expiry, CVV) and issues a fake token, and cannot charge
 anything.
 
-## `:composeApp`
+## `:app:shared`
+
+Packages are flat, following the KotlinConf app: a screen sits next to its view
+model rather than in a folder of its own.
 
 ```
-feature/*/presentation  ViewModel + UiState (StateFlow)
-core/domain             repository interfaces, DataResult/DataError, SessionManager
-core/data               Ktor client, repository implementations, session storage
+screens/        Screen composables + ViewModel + UiState (StateFlow)
+repositories/   repository interfaces and their implementations
+network/        Ktor client, API config, error mapping
+storage/        session storage
+navigation/     routes and the NavHost
+di/             Koin modules
+(root)          DataResult/DataError, SessionManager, CardTokenizer, shared value types
 ```
 
 **Failures.** `ApiCaller` is the one place a transport exception becomes a
@@ -147,7 +154,7 @@ interfaces and ViewModels are `factory` bindings scoped to their navigation entr
 
 - One Gradle build, one version catalog, one wrapper.
 - AGP 9 no longer supports `com.android.application` on a KMP module, so the Android
-  app shell (`:androidApp`) is separate from the shared UI (`:composeApp`).
+  app shell (`:app:androidApp`) is separate from the shared UI (`:app:shared`).
 - Timestamps use `kotlin.time.Instant` from the Kotlin 2.3 standard library rather
   than `kotlinx-datetime`, which removed the type its 0.6 line exposed. The server
   converts to `java.time.Instant` at the repository boundary, where Exposed needs it.
@@ -157,7 +164,7 @@ interfaces and ViewModels are `factory` bindings scoped to their navigation entr
 Every screen reads from the API through a repository; no screen renders hardcoded
 sample data. A few notes on the less obvious ones:
 
-- **Split preview** — the add-expense screen runs `:shared`'s `SplitCalculator`
+- **Split preview** — the add-expense screen runs `:core`'s `SplitCalculator`
   on-device, so the per-person amounts shown before saving are the amounts the server
   stores. The client sends split *inputs*, never computed shares.
 - **Activity** — derived from the ledger on read using the same calculator the group

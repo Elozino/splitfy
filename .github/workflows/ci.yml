@@ -14,10 +14,10 @@ env:
   GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false
 
 jobs:
-  # The shared module and the backend are pure JVM, so they run on the cheap
+  # :core and :backend are pure JVM, so they run on the cheap
   # ubuntu runners and gate everything else.
   jvm:
-    name: Shared + server
+    name: Core + backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,14 +29,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Shared domain tests
-        run: ./gradlew :shared:jvmTest --stacktrace
+      - name: Core domain tests
+        run: ./gradlew :core:jvmTest --stacktrace
 
-      - name: Server tests
-        run: ./gradlew :server:test --stacktrace
+      - name: Backend tests
+        run: ./gradlew :backend:test --stacktrace
 
-      - name: Server fat JAR
-        run: ./gradlew :server:buildFatJar
+      - name: Backend fat JAR
+        run: ./gradlew :backend:buildFatJar
 
       - name: Upload test reports
         if: always()
@@ -44,8 +44,8 @@ jobs:
         with:
           name: jvm-test-reports
           path: |
-            shared/build/reports/tests/
-            server/build/reports/tests/
+            core/build/reports/tests/
+            backend/build/reports/tests/
           retention-days: 7
 
   android:
@@ -63,12 +63,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Assemble debug APK
-        run: ./gradlew :androidApp:assembleDebug --stacktrace
+        run: ./gradlew :app:androidApp:assembleDebug --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
           name: splitfy-debug-apk
-          path: androidApp/build/outputs/apk/debug/*.apk
+          path: app/androidApp/build/outputs/apk/debug/*.apk
           retention-days: 7
 
   # macOS runners are the expensive ones, so the iOS job only starts once the JVM
@@ -88,7 +88,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Client tests (Kotlin/Native)
-        run: ./gradlew :composeApp:iosSimulatorArm64Test --stacktrace
+        run: ./gradlew :app:shared:iosSimulatorArm64Test --stacktrace
 
       - name: Link iOS framework
-        run: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 --stacktrace
+        run: ./gradlew :app:shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace

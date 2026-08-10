@@ -38,13 +38,16 @@ rootProject.name = "splitfy"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 // Contracts + domain logic shared by the apps and the backend.
-include(":shared")
-
-// Compose Multiplatform client UI + data layer (Android + iOS).
-include(":composeApp")
-
-// Thin Android application host for :composeApp.
-include(":androidApp")
+include(":core")
 
 // Ktor backend (JVM).
-include(":server")
+include(":backend")
+
+// Compose Multiplatform client UI + data layer (Android + iOS).
+include(":app:shared")
+
+// Design system: theme, reusable composables, drawables and fonts.
+include(":app:ui-components")
+
+// Thin Android application host for :app:shared.
+include(":app:androidApp")
