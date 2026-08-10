@@ -25,6 +25,12 @@ kotlin {
         namespace = "com.elozino.splitify.ui"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
+
+        // The KMP Android library plugin keeps the resource pipeline off by
+        // default, and Compose ships drawables and fonts as Android assets. Left
+        // off, the APK silently contains neither and the app falls back to the
+        // system font — which is what it did before this module existed.
+        androidResources.enable = true
     }
 
     listOf(iosArm64(), iosSimulatorArm64()).forEach { iosTarget ->
