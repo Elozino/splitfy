@@ -14,8 +14,14 @@ data class ApiConfig(
     val enableLogging: Boolean,
 ) {
     companion object {
-        fun forBuild(isDebug: Boolean) = ApiConfig(
-            baseUrl = defaultApiBaseUrl(isDebug),
+        /**
+         * [baseUrl] is what the platform's build configuration resolved — Android's
+         * `config.properties` by way of `BuildConfig`, iOS's `.xcconfig` by way of
+         * Info.plist. Blank or absent, the platform default below applies, which is
+         * what happens in tests and in any build predating those files.
+         */
+        fun forBuild(isDebug: Boolean, baseUrl: String? = null) = ApiConfig(
+            baseUrl = baseUrl?.takeIf { it.isNotBlank() } ?: defaultApiBaseUrl(isDebug),
             // Request logging would leak user data in a shipped build.
             enableLogging = isDebug,
         )

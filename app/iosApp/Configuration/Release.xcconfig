@@ -1,0 +1,9 @@
+#include "Config.xcconfig"
+
+// See Debug.xcconfig for why the URL is split in two.
+API_SCHEME = https
+API_HOST = api.splitfy.app
+
+// Last, so a local override — a signing TEAM_ID, most likely — beats everything
+// above it. Optional include: the file is gitignored.
+#include? "Local.xcconfig"

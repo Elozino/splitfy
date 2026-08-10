@@ -170,7 +170,7 @@
 		8F2950F7CC59973CF98D5748 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 3D0F4E1AA611556F4B242552 /* Configuration */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
+			baseConfigurationReferenceRelativePath = Release.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -234,7 +234,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = "$(TEAM_ID)";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -256,7 +256,7 @@
 		BB485332CB0ABFFFC0FDCF8C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 3D0F4E1AA611556F4B242552 /* Configuration */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
+			baseConfigurationReferenceRelativePath = Debug.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -327,7 +327,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
-				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				DEVELOPMENT_TEAM = "$(TEAM_ID)";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;

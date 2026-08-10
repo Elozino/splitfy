@@ -15,7 +15,7 @@ class SplitfyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        initKoin(isDebug = BuildConfig.DEBUG) {
+        initKoin(isDebug = BuildConfig.DEBUG, apiBaseUrl = BuildConfig.API_BASE_URL) {
             androidLogger(if (BuildConfig.DEBUG) Level.ERROR else Level.NONE)
             androidContext(this@SplitfyApplication)
         }

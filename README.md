@@ -82,6 +82,28 @@ to produce the `shared` framework, so no separate step is needed.
 
 ## Configuration
 
+### Apps
+
+App identity and the API host come from one committed file per platform, so neither
+is hardcoded in Kotlin:
+
+| Platform | File | Reaches the app as |
+| --- | --- | --- |
+| Android | `app/androidApp/config.properties` | `BuildConfig.API_BASE_URL`, `applicationId`, version, `@string/app_name` |
+| iOS | `app/iosApp/Configuration/{Debug,Release}.xcconfig` | build settings, plus an `ApiBaseUrl` Info.plist entry |
+
+Both have a gitignored sibling for personal values — `config.local.properties` and
+`Configuration/Local.xcconfig`. Each is read last and wins, which is where a signing
+`TEAM_ID` goes, or the LAN address of your machine when running on a real device
+rather than an emulator:
+
+```properties
+# app/androidApp/config.local.properties
+api.baseUrl.debug=http://192.168.1.42:8080
+```
+
+### Backend
+
 The backend reads everything from the environment (see
 `backend/src/main/resources/application.yaml`). Nothing sensitive is committed, and
 the app refuses to boot in `PRODUCTION` with the development JWT secret still set.

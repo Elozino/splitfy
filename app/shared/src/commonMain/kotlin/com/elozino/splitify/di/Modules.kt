@@ -57,9 +57,9 @@ expect fun platformModule(): Module
  * Repositories are bound to their interfaces so a ViewModel test can swap in a fake
  * without touching this file.
  */
-fun dataModule(isDebug: Boolean): Module = module {
+fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null): Module = module {
 
-    single { ApiConfig.forBuild(isDebug) }
+    single { ApiConfig.forBuild(isDebug, apiBaseUrl) }
     single { SessionStorage(get()) }
     single { SessionManager(get()) }
     single { ApiCaller(get()) }
@@ -111,15 +111,17 @@ val viewModelModule: Module = module {
 /**
  * Entry point for both platforms.
  *
- * Android passes `BuildConfig.DEBUG` and the application context; iOS passes
- * `Platform.isDebugBinary`.
+ * Android passes `BuildConfig.DEBUG`, `BuildConfig.API_BASE_URL` and the application
+ * context; iOS passes `Platform.isDebugBinary` and reads its own base URL out of
+ * Info.plist, so it has nothing to hand over here.
  */
 fun initKoin(
     isDebug: Boolean,
+    apiBaseUrl: String? = null,
     platformConfig: (KoinApplication.() -> Unit)? = null,
 ): KoinApplication = startKoin {
     platformConfig?.invoke(this)
-    modules(platformModule(), dataModule(isDebug), viewModelModule)
+    modules(platformModule(), dataModule(isDebug, apiBaseUrl), viewModelModule)
 }
 
 /** Convenience for `koinViewModel { parametersOf(groupId) }` call sites. */
