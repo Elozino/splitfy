@@ -33,3 +33,4 @@ app/iosApp/Configuration/Local.xcconfig
 !debug.keystore
 google-services.json
 GoogleService-Info.plist
+.claude/worktrees
