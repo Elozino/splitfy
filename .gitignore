@@ -2,7 +2,6 @@
 .kotlin
 .gradle
 **/build/
-xcuserdata
 !src/**/build/
 local.properties
 .idea
@@ -10,6 +9,7 @@ local.properties
 captures
 .externalNativeBuild
 .cxx
+xcuserdata
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
@@ -17,3 +17,19 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Per-developer overrides of the build configuration. The committed
+# config.properties / *.xcconfig hold the defaults; these hold your signing team,
+# a LAN address for on-device testing, and anything else personal.
+app/androidApp/config.local.properties
+app/iosApp/Configuration/Local.xcconfig
+
+# Secrets and local environment overrides — never commit these.
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+!debug.keystore
+google-services.json
+GoogleService-Info.plist

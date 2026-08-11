@@ -1,0 +1,15 @@
+#include "Config.xcconfig"
+
+// The API host, split into scheme and host because xcconfig treats `//` as the
+// start of a comment — `http://localhost` would silently truncate to `http:`.
+// Info.plist reassembles the two into an `ApiBaseUrl` entry.
+//
+// The iOS simulator shares the host machine's loopback, so localhost reaches a
+// server started with `./gradlew :backend:run`. Building onto a physical device
+// instead? Override API_HOST in Local.xcconfig with your machine's LAN address.
+API_SCHEME = http
+API_HOST = localhost:8080
+
+// Last, so a local override beats everything above it. Optional include: the file
+// is gitignored and most checkouts will not have one.
+#include? "Local.xcconfig"

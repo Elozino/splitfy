@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug builds only — this file lives in src/debug and is not merged into release.
+
+  The debug API host is plain HTTP (10.0.2.2 for the emulator, or a LAN address set
+  in config.local.properties when running on a real device), and Android has blocked
+  cleartext by default since API 28. Without this the client fails every request with
+  UnknownServiceException, which the data layer reports as "You're offline".
+
+  Left permissive rather than pinned to a domain list precisely because the host is
+  configurable. Release builds get no networkSecurityConfig at all, so they keep the
+  platform default and refuse cleartext.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

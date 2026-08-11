@@ -1,0 +1,16 @@
+// Settings shared by every build configuration. Anything that differs between a
+// local build and a shipped one lives in Debug.xcconfig / Release.xcconfig, which
+// both include this file first and Local.xcconfig last.
+//
+// Nothing personal belongs here — put a signing team or a LAN address in
+// Local.xcconfig, which is gitignored and, being included last, wins.
+
+PRODUCT_NAME = Splitify
+PRODUCT_BUNDLE_IDENTIFIER = com.elozino.splitify
+
+CURRENT_PROJECT_VERSION = 1
+MARKETING_VERSION = 1.0.0
+
+// Set TEAM_ID in Local.xcconfig. Left blank, Xcode falls back to whatever personal
+// team the signed-in Apple ID has, which is what you want for a simulator build.
+DEVELOPMENT_TEAM = $(TEAM_ID)
