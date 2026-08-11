@@ -10,7 +10,7 @@ kotlin {
     jvmToolchain(libs.versions.jvmToolchain.get().toInt())
 
     androidLibrary {
-        namespace = "com.elozino.splitify"
+        namespace = "com.elozino.splitfy"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
     }

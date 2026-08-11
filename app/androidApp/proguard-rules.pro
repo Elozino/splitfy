@@ -7,11 +7,11 @@
 -keepclasseswithmembers class kotlinx.serialization.json.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class com.elozino.splitify.**$$serializer { *; }
--keepclassmembers class com.elozino.splitify.** {
+-keep,includedescriptorclasses class com.elozino.splitfy.**$$serializer { *; }
+-keepclassmembers class com.elozino.splitfy.** {
     *** Companion;
 }
--keepclasseswithmembers class com.elozino.splitify.** {
+-keepclasseswithmembers class com.elozino.splitfy.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 

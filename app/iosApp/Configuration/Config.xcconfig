@@ -5,8 +5,8 @@
 // Nothing personal belongs here — put a signing team or a LAN address in
 // Local.xcconfig, which is gitignored and, being included last, wins.
 
-PRODUCT_NAME = Splitify
-PRODUCT_BUNDLE_IDENTIFIER = com.elozino.splitify
+PRODUCT_NAME = splitfy
+PRODUCT_BUNDLE_IDENTIFIER = com.elozino.splitfy
 
 CURRENT_PROJECT_VERSION = 1
 MARKETING_VERSION = 1.0.0

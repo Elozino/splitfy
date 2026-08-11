@@ -1,4 +1,4 @@
-# Splitfy
+# splitfy
 
 Bill splitting for groups — one Kotlin Multiplatform repository containing the
 Android app, the iOS app, and the backend that serves them.

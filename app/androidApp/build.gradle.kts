@@ -38,7 +38,7 @@ android {
 
     // The package BuildConfig and R land in. Distinct from `applicationId`, which
     // identifies the installed app and is configurable below.
-    namespace = "com.elozino.splitify"
+    namespace = "com.elozino.splitfy"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {

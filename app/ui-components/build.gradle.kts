@@ -15,14 +15,14 @@ compose.resources {
     // from any resources a feature module generates for itself.
     publicResClass = true
     nameOfResClass = "UiRes"
-    packageOfResClass = "com.elozino.splitify.ui.generated.resources"
+    packageOfResClass = "com.elozino.splitfy.ui.generated.resources"
 }
 
 kotlin {
     jvmToolchain(libs.versions.jvmToolchain.get().toInt())
 
     androidLibrary {
-        namespace = "com.elozino.splitify.ui"
+        namespace = "com.elozino.splitfy.ui"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 

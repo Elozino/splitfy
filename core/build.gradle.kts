@@ -12,7 +12,7 @@ kotlin {
 
     // Consumed by :app:shared
     androidLibrary {
-        namespace = "com.elozino.splitify.core"
+        namespace = "com.elozino.splitfy.core"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
     }

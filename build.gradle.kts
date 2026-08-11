@@ -12,5 +12,5 @@ plugins {
     alias(ktorLibs.plugins.ktor) apply false
 }
 
-group = "com.elozino.splitify"
+group = "com.elozino.splitfy"
 version = providers.gradleProperty("splitfy.version").getOrElse("1.0.0-SNAPSHOT")

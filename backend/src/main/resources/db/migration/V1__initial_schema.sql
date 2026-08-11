@@ -1,4 +1,4 @@
--- Splitfy initial schema.
+-- splitfy initial schema.
 -- Money is stored as BIGINT minor units plus an ISO-4217 currency code; floating
 -- point is never used for amounts.
 

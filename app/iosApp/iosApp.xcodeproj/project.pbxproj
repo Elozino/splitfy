@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		171ED42A1C97D6761C0D6184 /* Splitify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Splitify.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		171ED42A1C97D6761C0D6184 /* splitfy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = splitfy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -59,7 +59,7 @@
 		599A7CA27DD4FCD2E432985F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				171ED42A1C97D6761C0D6184 /* Splitify.app */,
+				171ED42A1C97D6761C0D6184 /* splitfy.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosApp;
-			productReference = 171ED42A1C97D6761C0D6184 /* Splitify.app */;
+			productReference = 171ED42A1C97D6761C0D6184 /* splitfy.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

@@ -192,7 +192,7 @@ These are deliberate omissions, not oversights:
 3. **OTP delivery.** `LoggingOtpNotifier` prints reset codes to the log and refuses to
    run in production. A real email/SMS provider implements `OtpNotifier`.
 4. **Payment provider.** `DevCardTokenizer` and the top-up/withdraw endpoints move
-   money inside Splitfy's own ledger only; no external rail is connected yet. Swap in
+   money inside splitfy's own ledger only; no external rail is connected yet. Swap in
    the provider SDK on the client and settle the ledger against it on the server.
 5. **QR decoding.** The scan flow captures a frame and confirms the recipient against
    real contacts before paying, because the project has no QR decoder dependency yet.

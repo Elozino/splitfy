@@ -6,7 +6,7 @@ plugins {
     alias(ktorLibs.plugins.ktor)
 }
 
-group = "com.elozino.splitify"
+group = "com.elozino.splitfy"
 version = rootProject.version
 
 application {

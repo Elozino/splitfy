@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: Splitfy API
+  title: splitfy API
   version: 1.0.0
   description: |
-    Bill-splitting backend for the Splitfy Kotlin Multiplatform client.
+    Bill-splitting backend for the splitfy Kotlin Multiplatform client.
 
     **Money** is always an object of `{ amount, currency }` where `amount` is an
     integer number of minor units (kobo, cents). Floating point is never used.
