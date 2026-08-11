@@ -8,6 +8,7 @@ import com.elozino.splitify.backend.routes.expenseRoutes
 import com.elozino.splitify.backend.routes.groupRoutes
 import com.elozino.splitify.backend.routes.healthRoutes
 import com.elozino.splitify.backend.routes.notificationRoutes
+import com.elozino.splitify.backend.routes.openApiRoutes
 import com.elozino.splitify.backend.routes.settlementRoutes
 import com.elozino.splitify.backend.routes.transferRoutes
 import com.elozino.splitify.backend.routes.userRoutes
@@ -52,6 +53,7 @@ fun Application.configureRouting(database: Database) {
 
     routing {
         swaggerUI(path = ApiRoutes.System.OPENAPI, swaggerFile = "openapi/documentation.yaml")
+        openApiRoutes()
 
         healthRoutes(database)
         authRoutes(authService)

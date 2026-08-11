@@ -132,7 +132,27 @@ paths:
               properties:
                 refreshToken: { type: string }
       responses:
-        "200": { description: Signed out }
+        "200":
+          description: Signed out
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+
+  /api/v1/auth/logout/all:
+    post:
+      tags: [Auth]
+      summary: Revoke every refresh token for the signed-in user
+      description: |
+        Signs the account out on every device. Unlike the other auth endpoints this
+        one requires a valid access token, since it acts on the caller rather than on
+        a presented refresh token.
+      responses:
+        "200":
+          description: Signed out of all devices
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
 
   /api/v1/auth/forgot-password:
     post:
@@ -150,7 +170,11 @@ paths:
               properties:
                 email: { type: string, format: email }
       responses:
-        "202": { description: Accepted }
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
 
   /api/v1/auth/verify-otp:
     post:
@@ -195,7 +219,11 @@ paths:
                 resetToken: { type: string }
                 newPassword: { type: string }
       responses:
-        "200": { description: Password updated }
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
         "400": { $ref: "#/components/responses/ValidationError" }
 
   /api/v1/users/me:
@@ -242,6 +270,23 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/User" }
+
+  /api/v1/users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Users]
+      summary: Another user's public profile
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/groups:
     get:
@@ -303,6 +348,28 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Group" }
         "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/v1/groups/{groupId}/archive:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+    post:
+      tags: [Groups]
+      summary: Archive or restore a group (owner or admin only)
+      description: |
+        Archiving hides the group from the default listing without deleting anything;
+        its expenses and balances are untouched. Pass `?archived=false` to restore.
+      parameters:
+        - name: archived
+          in: query
+          schema: { type: boolean, default: true }
+      responses:
+        "200":
+          description: Updated group
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/groups/{groupId}/balances:
     parameters:
@@ -409,22 +476,33 @@ paths:
     patch:
       tags: [Expenses]
       summary: Edit an expense (author, owner or admin)
+      description: |
+        Every field is optional; omitted fields keep their current value. Sending a
+        `split` re-runs the calculation, so the shares are replaced rather than merged.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/CreateExpenseRequest" }
+            schema: { $ref: "#/components/schemas/UpdateExpenseRequest" }
       responses:
         "200":
           description: Updated expense
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Expense" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "403": { $ref: "#/components/responses/Forbidden" }
     delete:
       tags: [Expenses]
       summary: Soft-delete an expense
+      description: Sets `deletedAt`; the row is kept so balances stay reproducible.
       responses:
-        "200": { description: Removed }
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /api/v1/groups/{groupId}/settlements:
     parameters:
@@ -455,13 +533,29 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Settlement" }
 
+  /api/v1/groups/{groupId}/settlements/{settlementId}:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+      - $ref: "#/components/parameters/SettlementId"
+    delete:
+      tags: [Settlements]
+      summary: Cancel a pending settlement
+      description: |
+        Moves the settlement to `CANCELLED` rather than deleting the row, so the
+        group's history stays auditable.
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settlement" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /api/v1/groups/{groupId}/settlements/{settlementId}/confirm:
     parameters:
       - $ref: "#/components/parameters/GroupId"
-      - name: settlementId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
+      - $ref: "#/components/parameters/SettlementId"
     post:
       tags: [Settlements]
       summary: Confirm receipt — only the payee may call this
@@ -506,14 +600,7 @@ paths:
           description: A page of ledger entries
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items: { $ref: "#/components/schemas/LedgerEntry" }
-                  nextCursor: { type: string, nullable: true }
-                  hasMore: { type: boolean }
+              schema: { $ref: "#/components/schemas/LedgerPage" }
 
   /api/v1/wallet/top-up:
     post:
@@ -536,11 +623,7 @@ paths:
           description: Wallet credited
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  wallet: { $ref: "#/components/schemas/Wallet" }
-                  entryId: { type: string, format: uuid }
+              schema: { $ref: "#/components/schemas/WalletOperationResponse" }
         "400": { $ref: "#/components/responses/ValidationError" }
 
   /api/v1/wallet/withdraw:
@@ -560,7 +643,11 @@ paths:
                 paymentMethodId: { type: string, format: uuid }
                 clientRequestId: { type: string, nullable: true }
       responses:
-        "201": { description: Withdrawal recorded }
+        "201":
+          description: Withdrawal recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WalletOperationResponse" }
         "400": { $ref: "#/components/responses/ValidationError" }
 
   /api/v1/payment-methods:
@@ -615,7 +702,14 @@ paths:
       tags: [Wallet]
       summary: Remove a funding source
       responses:
-        "200": { description: Remaining methods }
+        "200":
+          description: The remaining payment methods
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PaymentMethod" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/payment-methods/{methodId}/default:
     parameters:
@@ -627,7 +721,14 @@ paths:
       tags: [Wallet]
       summary: Make this the default funding source
       responses:
-        "200": { description: Remaining methods }
+        "200":
+          description: All payment methods, with the new default flagged
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PaymentMethod" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/transfers:
     get:
@@ -715,14 +816,7 @@ paths:
           description: Activity feed
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  entries:
-                    type: array
-                    items: { $ref: "#/components/schemas/DebtEntry" }
-                  totalYouOwe: { $ref: "#/components/schemas/Money" }
-                  totalOwedToYou: { $ref: "#/components/schemas/Money" }
+              schema: { $ref: "#/components/schemas/ActivityResponse" }
 
   /api/v1/notifications:
     get:
@@ -733,20 +827,18 @@ paths:
           description: Notifications
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items: { $ref: "#/components/schemas/AppNotification" }
-                  unreadCount: { type: integer }
+              schema: { $ref: "#/components/schemas/NotificationsResponse" }
 
   /api/v1/notifications/read-all:
     post:
       tags: [Notifications]
       summary: Mark everything read
       responses:
-        "200": { description: Updated list }
+        "200":
+          description: The refreshed list, with `unreadCount` at zero
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationsResponse" }
 
   /api/v1/notifications/{notificationId}/read:
     parameters:
@@ -758,7 +850,11 @@ paths:
       tags: [Notifications]
       summary: Mark one notification read
       responses:
-        "200": { description: Updated list }
+        "200":
+          description: The refreshed list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationsResponse" }
 
   /api/v1/contacts:
     get:
@@ -776,15 +872,7 @@ paths:
           description: Contacts
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  contacts:
-                    type: array
-                    items: { $ref: "#/components/schemas/Contact" }
-                  favorites:
-                    type: array
-                    items: { $ref: "#/components/schemas/Contact" }
+              schema: { $ref: "#/components/schemas/ContactsResponse" }
 
   /api/v1/contacts/{contactId}/favorite:
     parameters:
@@ -800,7 +888,11 @@ paths:
           in: query
           schema: { type: boolean, default: true }
       responses:
-        "200": { description: Updated contacts }
+        "200":
+          description: The refreshed contact lists
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactsResponse" }
 
 components:
   securitySchemes:
@@ -812,6 +904,11 @@ components:
   parameters:
     GroupId:
       name: groupId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SettlementId:
+      name: settlementId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -858,6 +955,59 @@ components:
           schema: { $ref: "#/components/schemas/ApiErrorResponse" }
 
   schemas:
+    MessageResponse:
+      type: object
+      required: [message]
+      description: Returned by endpoints whose only result is "done".
+      properties:
+        message: { type: string }
+
+    WalletOperationResponse:
+      type: object
+      description: The updated wallet plus the ledger entry just written, for a receipt.
+      properties:
+        wallet: { $ref: "#/components/schemas/Wallet" }
+        entryId: { type: string, format: uuid }
+
+    LedgerPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/LedgerEntry" }
+        nextCursor: { type: string, nullable: true }
+        hasMore: { type: boolean }
+
+    ActivityResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/DebtEntry" }
+        totalYouOwe: { $ref: "#/components/schemas/Money" }
+        totalOwedToYou: { $ref: "#/components/schemas/Money" }
+
+    NotificationsResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AppNotification" }
+        unreadCount: { type: integer }
+
+    ContactsResponse:
+      type: object
+      description: |
+        `favorites` is a filtered view of the same people, not a separate set — a
+        favourited contact appears in both lists.
+      properties:
+        contacts:
+          type: array
+          items: { $ref: "#/components/schemas/Contact" }
+        favorites:
+          type: array
+          items: { $ref: "#/components/schemas/Contact" }
+
     Wallet:
       type: object
       properties:
@@ -1205,6 +1355,21 @@ components:
           type: string
           nullable: true
           description: Idempotency key, unique per group.
+
+    UpdateExpenseRequest:
+      type: object
+      description: |
+        A partial update — every field is optional and omitted fields are left alone.
+        There is no `clientRequestId`, because an edit is already idempotent.
+      properties:
+        description: { type: string, maxLength: 140 }
+        total: { $ref: "#/components/schemas/Money" }
+        category: { type: string }
+        paidBy: { type: string, format: uuid }
+        split: { $ref: "#/components/schemas/SplitPayload" }
+        receiptUrl: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        incurredAt: { type: string, format: date-time, nullable: true }
 
     Settlement:
       type: object

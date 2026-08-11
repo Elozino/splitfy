@@ -1,22 +1,45 @@
 package com.elozino.splitify.screens
 
+import com.elozino.splitify.ui.generated.resources.UiRes
+import com.elozino.splitify.ui.generated.resources.onboarding_activity
+import com.elozino.splitify.ui.generated.resources.onboarding_groups
+import com.elozino.splitify.ui.generated.resources.onboarding_wallet
+import org.jetbrains.compose.resources.DrawableResource
+
 data class OnboardingState(
     val title: String,
     val subtitle: String,
-    val image: String = "",
+    val badge: String,
+    val imageDescription: String,
+    /**
+     * A real screenshot of the screen this slide describes, shown in a phone frame
+     * above the copy. Captured from the running app with the system status bar and
+     * gesture pill cropped off; all three share one aspect ratio so the frame does
+     * not resize as the pager moves between slides.
+     */
+    val image: DrawableResource,
 )
 
 val onboardingSlides = listOf(
     OnboardingState(
-        title = "Track shared expenses effortlessly",
-        subtitle = "Add bills, split costs, and keep everything organized in one place."
+        title = "Split the cost.\nKeep the vibe.",
+        subtitle = "Create a group, add expenses, and let Splitfy keep every shared cost crystal clear.",
+        badge = "Everyone's in sync",
+        imageDescription = "A preview of shared expense groups",
+        image = UiRes.drawable.onboarding_groups,
     ),
     OnboardingState(
-        title = "Know who owes what, instantly",
-        subtitle = "No more confusion — Splitify calculates balances for you in real time."
+        title = "Always know\nwho owes what.",
+        subtitle = "Balances update as you go, so there’s no maths, confusion, or awkward group-chat audits.",
+        badge = "Balances updated",
+        imageDescription = "A preview of expense activity and balances",
+        image = UiRes.drawable.onboarding_activity,
     ),
     OnboardingState(
-        title = "Settle up with confidence",
-        subtitle = "Simplify debts and close payments quickly without stress or awkward reminders."
+        title = "Settle up.\nMove on.",
+        subtitle = "See what you owe and close the loop in a few taps—simple, quick, and drama-free.",
+        badge = "All settled",
+        imageDescription = "A preview of the Splitfy wallet",
+        image = UiRes.drawable.onboarding_wallet,
     )
 )

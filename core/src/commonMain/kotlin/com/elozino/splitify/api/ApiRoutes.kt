@@ -89,6 +89,12 @@ object ApiRoutes {
         const val HEALTH = "/health"
         const val READY = "/ready"
         const val METRICS = "/metrics"
+
+        /** Swagger UI. The spec it loads lives under this path too, but that is the plugin's business. */
         const val OPENAPI = "/openapi"
+
+        /** The specification itself, for client generators and API clients. */
+        const val OPENAPI_JSON = "/openapi.json"
+        const val OPENAPI_YAML = "/openapi.yaml"
     }
 }

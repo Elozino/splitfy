@@ -177,7 +177,7 @@ private fun ExpenseDetailsScreen(
             }
 
             item {
-                Text("Amount (${'$'}{state.currency.code})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("Amount (${state.currency.code})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 TextField(
                     value = amount,
                     onValueChange = viewModel::onAmountChange,

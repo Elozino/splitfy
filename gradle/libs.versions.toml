@@ -39,6 +39,8 @@ h2 = "2.4.240"
 logback = "1.5.21"
 bcrypt = "0.10.2"
 micrometer = "1.14.2"
+# Pinned to the version ktor-server-config-yaml already resolves, so the two agree.
+kaml = "0.79.0"
 
 # --- Test -------------------------------------------------------------------
 junit = "4.13.2"
@@ -99,6 +101,7 @@ postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" 
 h2database = { module = "com.h2database:h2", version.ref = "h2" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 
 # --- Test -------------------------------------------------------------------

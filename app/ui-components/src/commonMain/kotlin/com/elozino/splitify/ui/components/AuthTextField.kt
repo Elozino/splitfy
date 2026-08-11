@@ -70,7 +70,8 @@ fun AuthTextField(
                 focusedBorderColor = Color.Transparent,
                 unfocusedBorderColor = Color.Transparent,
                 cursorColor = Color.Black
-            )
+            ),
+            maxLines = 1
         )
     }
 }

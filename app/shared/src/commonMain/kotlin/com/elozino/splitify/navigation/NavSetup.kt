@@ -130,12 +130,17 @@ fun NavSetup() {
                 )
             }
         }
-    ) { _ ->
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = if (isAuthenticated) Route.Home else Route.Onboarding,
             modifier = Modifier
                 .fillMaxSize()
+                // Reserve the bar's height so the last row of a tab screen — the final
+                // favourite, the last group — is not hidden underneath it. Only while the
+                // bar is actually shown: every other destination draws to the bottom edge
+                // and manages its own insets, and padding those would leave a dead strip.
+                .padding(bottom = if (showBottomBar) innerPadding.calculateBottomPadding() else 0.dp)
         ) {
             composable<Route.Onboarding> {
                 OnboardingScreen(

@@ -130,7 +130,7 @@ fun LoginScreen(
                 label = "Email",
                 placeholder = "Email",
                 leadingIcon = Icons.Default.Email,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             )
 
             state.fieldErrors["email"]?.let { message ->
@@ -205,7 +205,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             PrimaryButton(
-                text = if (state.isSubmitting) "Signing in…" else "Sign in",
+                text = if (state.isSubmitting) "Logging in…" else "Log in",
                 onClick = viewModel::login,
                 enabled = state.canSubmitLogin
             )

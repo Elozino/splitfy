@@ -33,6 +33,7 @@ data class AccountUiState(
     val fieldErrors: Map<String, String> = emptyMap(),
     val errorMessage: String? = null,
     val signedOut: Boolean = false,
+    val isSigningOut: Boolean = false,
 ) {
     val displayName: String get() = user?.displayName.orEmpty()
     val email: String get() = user?.email.orEmpty()
@@ -184,8 +185,9 @@ class AccountViewModel(
 
     fun signOut() {
         viewModelScope.launch {
+            _state.update { it.copy(isSigningOut = true) }
             authRepository.logout()
-            _state.update { it.copy(signedOut = true) }
+            _state.update { it.copy(isSigningOut = false, signedOut = true) }
         }
     }
 

@@ -277,19 +277,27 @@ fun AccountScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showLogoutDialog = true }
+                        .clickable(enabled = !state.isSigningOut) { showLogoutDialog = true }
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.Logout,
-                        contentDescription = null,
-                        tint = Color.Red,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (state.isSigningOut) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.Red
+                        )
+                    } else {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = null,
+                            tint = Color.Red,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        "Logout",
+                        if (state.isSigningOut) "Logging out…" else "Logout",
                         color = Color.Red,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
@@ -306,13 +314,18 @@ fun AccountScreen(
 
     if (showLogoutDialog) {
         LogoutDialog(
+            isLoggingOut = state.isSigningOut,
             onDismiss = { showLogoutDialog = false },
             onLogout = {
-                showLogoutDialog = false
                 // Clears the session; the navigation graph unwinds to sign-in.
                 viewModel.signOut()
             }
         )
+    }
+
+    // The dialog dismisses itself once sign-out finishes.
+    LaunchedEffect(state.signedOut) {
+        if (state.signedOut) showLogoutDialog = false
     }
 }
 
@@ -415,9 +428,9 @@ fun MyQrCodeDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-fun LogoutDialog(onDismiss: () -> Unit, onLogout: () -> Unit) {
+fun LogoutDialog(isLoggingOut: Boolean = false, onDismiss: () -> Unit, onLogout: () -> Unit) {
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!isLoggingOut) onDismiss() },
         title = {
             Text(
                 "Logout",
@@ -437,16 +450,26 @@ fun LogoutDialog(onDismiss: () -> Unit, onLogout: () -> Unit) {
         confirmButton = {
             Button(
                 onClick = onLogout,
+                enabled = !isLoggingOut,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(100.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
             ) {
-                Text("Yes, Logout", color = Color.Black, fontWeight = FontWeight.Bold)
+                if (isLoggingOut) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.Black
+                    )
+                } else {
+                    Text("Yes, Logout", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
             }
         },
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
+                enabled = !isLoggingOut,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 shape = RoundedCornerShape(100.dp),
                 border = BorderStroke(1.dp, primaryLight)
