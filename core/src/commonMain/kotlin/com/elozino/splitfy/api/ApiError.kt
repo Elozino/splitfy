@@ -32,7 +32,6 @@ enum class ApiErrorCode {
     // 429 / 5xx
     RATE_LIMITED,
     INTERNAL_ERROR,
-    SERVICE_UNAVAILABLE,
 }
 
 /** Field-level detail attached to a [ApiErrorCode.VALIDATION_FAILED] response. */

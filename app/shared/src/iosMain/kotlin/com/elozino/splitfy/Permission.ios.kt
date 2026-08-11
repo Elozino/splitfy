@@ -2,7 +2,6 @@ package com.elozino.splitfy
 
 import androidx.compose.runtime.Composable
 import platform.AVFoundation.*
-import platform.Foundation.*
 import platform.Photos.*
 
 actual fun checkPermission(type: PermissionType): PermissionStatus {

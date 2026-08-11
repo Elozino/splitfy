@@ -1,31 +1,11 @@
 package com.elozino.splitfy.backend.repositories
 
-import com.elozino.splitfy.backend.schema.dbQuery
-import com.elozino.splitfy.backend.schema.toJava
-import com.elozino.splitfy.backend.schema.toKotlin
-import com.elozino.splitfy.backend.schema.TransfersTable
-import com.elozino.splitfy.backend.schema.UsersTable
-import com.elozino.splitfy.domain.model.CurrencyCode
-import com.elozino.splitfy.domain.model.GroupId
-import com.elozino.splitfy.domain.model.Money
-import com.elozino.splitfy.domain.model.Transfer
-import com.elozino.splitfy.domain.model.TransferKind
-import com.elozino.splitfy.domain.model.TransferStatus
-import com.elozino.splitfy.domain.model.UserId
-import java.util.UUID
+import com.elozino.splitfy.backend.schema.*
+import com.elozino.splitfy.domain.model.*
+import org.jetbrains.exposed.sql.*
+import java.util.*
 import kotlin.time.Clock
 import kotlin.time.Instant
-import org.jetbrains.exposed.sql.Alias
-import org.jetbrains.exposed.sql.alias
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.update
 
 data class NewTransfer(
     val kind: TransferKind,

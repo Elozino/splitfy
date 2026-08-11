@@ -1,3 +1,4 @@
+import com.android.build.api.dsl.ApplicationExtension
 import java.util.Properties
 
 plugins {
@@ -14,7 +15,7 @@ plugins {
  * Multiplatform module, so the app shell and the shared UI live in separate
  * projects.
  */
-android {
+extensions.configure<ApplicationExtension> {
     // App identity and the API host, read from `config.properties` — the Android
     // counterpart to the xcconfig files in `app/iosApp/Configuration`.
     //

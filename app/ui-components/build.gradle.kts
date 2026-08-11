@@ -21,7 +21,7 @@ compose.resources {
 kotlin {
     jvmToolchain(libs.versions.jvmToolchain.get().toInt())
 
-    androidLibrary {
+    android {
         namespace = "com.elozino.splitfy.ui"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()

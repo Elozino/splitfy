@@ -10,7 +10,6 @@ enum class PermissionType {
 enum class PermissionStatus {
     GRANTED,
     DENIED,
-    SHOW_RATIONALE
 }
 
 expect fun checkPermission(type: PermissionType): PermissionStatus

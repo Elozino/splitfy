@@ -4,14 +4,13 @@ import com.elozino.splitfy.api.ApiErrorCode
 import com.elozino.splitfy.api.ApiErrorResponse
 import com.elozino.splitfy.backend.services.JwtService
 import com.elozino.splitfy.backend.utils.UserPrincipal
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.Application
-import io.ktor.server.auth.authentication
-import io.ktor.server.auth.jwt.jwt
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.response.respond
-import java.util.UUID
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.response.*
 import org.koin.ktor.ext.inject
+import java.util.*
 
 /**
  * Bearer-token authentication.

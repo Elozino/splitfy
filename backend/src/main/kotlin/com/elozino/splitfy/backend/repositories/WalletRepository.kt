@@ -1,30 +1,11 @@
 package com.elozino.splitfy.backend.repositories
 
-import com.elozino.splitfy.backend.schema.dbQuery
-import com.elozino.splitfy.backend.schema.LedgerEntriesTable
-import com.elozino.splitfy.backend.schema.PaymentMethodsTable
-import com.elozino.splitfy.backend.schema.toJava
-import com.elozino.splitfy.backend.schema.toKotlin
-import com.elozino.splitfy.backend.schema.UsersTable
-import com.elozino.splitfy.backend.schema.WalletsTable
+import com.elozino.splitfy.backend.schema.*
 import com.elozino.splitfy.backend.utils.Cursor
-import com.elozino.splitfy.domain.model.CurrencyCode
-import com.elozino.splitfy.domain.model.LedgerEntry
-import com.elozino.splitfy.domain.model.LedgerEntryType
-import com.elozino.splitfy.domain.model.Money
-import com.elozino.splitfy.domain.model.UserId
-import com.elozino.splitfy.domain.model.Wallet
-import java.util.UUID
+import com.elozino.splitfy.domain.model.*
+import org.jetbrains.exposed.sql.*
+import java.util.*
 import kotlin.time.Clock
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.update
 
 /** Raised when a debit would take the wallet below zero. */
 class InsufficientFundsException(val available: Money, val requested: Money) :
@@ -140,10 +121,10 @@ class WalletRepository {
                 if (types.isNotEmpty()) condition = condition and (LedgerEntriesTable.type inList types)
                 if (cursor != null) {
                     condition = condition and (
-                        (LedgerEntriesTable.occurredAt less cursor.createdAt.toJava()) or
-                            ((LedgerEntriesTable.occurredAt eq cursor.createdAt.toJava()) and
-                                (LedgerEntriesTable.id less cursor.id))
-                        )
+                            (LedgerEntriesTable.occurredAt less cursor.createdAt.toJava()) or
+                                    ((LedgerEntriesTable.occurredAt eq cursor.createdAt.toJava()) and
+                                            (LedgerEntriesTable.id less cursor.id))
+                            )
                 }
                 condition
             }

@@ -18,7 +18,7 @@ fun bodyFontFamily() = FontFamily(
 )
 
 @Composable
-fun AppTypography(): Typography {
+fun appTypography(): Typography {
     val body = bodyFontFamily()
     val baseline = Typography()
     

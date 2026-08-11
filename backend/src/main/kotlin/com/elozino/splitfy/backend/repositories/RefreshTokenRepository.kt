@@ -1,18 +1,13 @@
 package com.elozino.splitfy.backend.repositories
 
-import com.elozino.splitfy.backend.schema.dbQuery
-import com.elozino.splitfy.backend.schema.PasswordResetsTable
-import com.elozino.splitfy.backend.schema.RefreshTokensTable
-import com.elozino.splitfy.backend.schema.toJava
-import com.elozino.splitfy.backend.schema.toKotlin
-import java.util.UUID
-import kotlin.time.Clock
-import kotlin.time.Instant
+import com.elozino.splitfy.backend.schema.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.update
+import java.util.*
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 data class StoredRefreshToken(
     val id: UUID,
@@ -109,9 +104,9 @@ class PasswordResetRepository {
         PasswordResetsTable.selectAll()
             .where {
                 (PasswordResetsTable.userId eq userId) and
-                    (PasswordResetsTable.codeHash eq codeHash) and
-                    PasswordResetsTable.consumedAt.isNull() and
-                    (PasswordResetsTable.expiresAt greater now.toJava())
+                        (PasswordResetsTable.codeHash eq codeHash) and
+                        PasswordResetsTable.consumedAt.isNull() and
+                        (PasswordResetsTable.expiresAt greater now.toJava())
             }
             .singleOrNull()
             ?.get(PasswordResetsTable.id)
