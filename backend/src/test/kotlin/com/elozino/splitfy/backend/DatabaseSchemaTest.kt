@@ -44,7 +44,6 @@ class DatabaseSchemaTest {
         UserIdentitiesTable,
         GroupInvitesTable,
         GroupsTable,
-        com.elozino.splitfy.backend.schema.GroupInvitesTable,
         GroupMembersTable,
         ExpensesTable,
         ExpenseSharesTable,
@@ -56,6 +55,7 @@ class DatabaseSchemaTest {
         LedgerEntriesTable,
         NotificationsTable,
         ContactFavoritesTable,
+        com.elozino.splitfy.backend.schema.UploadsTable,
     )
 
     @BeforeTest

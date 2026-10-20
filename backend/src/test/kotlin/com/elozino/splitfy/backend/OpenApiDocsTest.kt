@@ -124,7 +124,7 @@ class OpenApiDocsTest {
 
         assertEquals("splitfy API", doc.info.title)
         assertEquals(documentedPaths(), doc.paths.keys)
-        assertEquals(40, doc.components?.schemas?.size)
+        assertEquals(44, doc.components?.schemas?.size)
         assertTrue(doc.tags.orEmpty().isNotEmpty(), "Expected the tag list to survive the conversion")
     }
 

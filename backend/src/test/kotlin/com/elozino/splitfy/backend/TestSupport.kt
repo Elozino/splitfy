@@ -97,8 +97,7 @@ fun ApplicationTestBuilder.useTestConfig(
             "security.bcryptCost" to "4",
             "security.otpMinutes" to "10",
             "features.wallet" to walletEnabled.toString(),
-            *extraConfig.toList().toTypedArray(),
-        )
+        ).apply { extraConfig.forEach { (key, value) -> put(key, value) } }
     }
 }
 

@@ -14,6 +14,7 @@ import com.elozino.splitfy.backend.schema.RefreshTokensTable
 import com.elozino.splitfy.backend.schema.UserIdentitiesTable
 import com.elozino.splitfy.backend.schema.UsersTable
 import com.elozino.splitfy.backend.schema.WalletsTable
+import com.elozino.splitfy.backend.schema.dbNow
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.toJava
 import com.elozino.splitfy.backend.utils.AppException
@@ -21,7 +22,6 @@ import com.elozino.splitfy.domain.model.GroupRole
 import com.elozino.splitfy.domain.model.UserId
 import com.elozino.splitfy.domain.split.BalanceCalculator
 import java.util.UUID
-import kotlin.time.Clock
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
@@ -39,6 +39,9 @@ import org.jetbrains.exposed.sql.update
  * or authenticates the person — email, name, phone, avatar, password, linked
  * Google/Apple identities, sessions, one-time codes, notifications, favourites and
  * payment methods. Other members see "Deleted user" against past expenses.
+ * Receipts and cover photos (`uploads`) belong to their group, not the uploader,
+ * so they stay with the group's history; `uploaded_by` keeps pointing at the
+ * anonymised row.
  *
  * Refused while the user still owes or is owed money in any group, because the
  * remaining members could never settle with an account nobody controls.
@@ -89,7 +92,7 @@ class AccountDeletionService(
     }
 
     private suspend fun anonymise(callerId: UUID) = dbQuery {
-        val now = Clock.System.now().toJava()
+        val now = dbNow().toJava()
 
         UsersTable.update({ UsersTable.id eq callerId }) {
             // Frees the real address for a future sign-up; `.invalid` can never receive mail.
@@ -141,7 +144,7 @@ class AccountDeletionService(
                 }
             } else {
                 GroupsTable.update({ (GroupsTable.id eq groupId) and GroupsTable.archivedAt.isNull() }) {
-                    it[archivedAt] = Clock.System.now().toJava()
+                    it[archivedAt] = dbNow().toJava()
                 }
             }
         }

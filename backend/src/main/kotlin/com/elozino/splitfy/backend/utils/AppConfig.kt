@@ -25,6 +25,7 @@ data class AppConfig(
     val oauth: OAuthConfig = OAuthConfig(),
     val links: LinksConfig = LinksConfig(),
     val observability: ObservabilityConfig = ObservabilityConfig(),
+    val storage: StorageConfig = StorageConfig(),
 ) {
     enum class Environment {
         LOCAL, STAGING, PRODUCTION;
@@ -95,6 +96,28 @@ data class AppConfig(
          */
         val metricsToken: String = "",
     )
+
+    /**
+     * S3-compatible object storage (AWS S3, Cloudflare R2) for receipts and cover
+     * photos. Leaving any of the four required values blank turns uploads off.
+     */
+    data class StorageConfig(
+        /** e.g. `https://<account>.r2.cloudflarestorage.com` or `https://s3.eu-west-1.amazonaws.com`. */
+        val endpoint: String = "",
+        val bucket: String = "",
+        val accessKey: String = "",
+        val secretKey: String = "",
+        /** R2 signs with `auto`; AWS needs the bucket's real region. */
+        val region: String = "auto",
+        /** Optional public host for cover photos. Receipts are always served through signed links. */
+        val publicBaseUrl: String? = null,
+    ) {
+        val isConfigured: Boolean
+            get() = listOf(endpoint, bucket, accessKey, secretKey).all { it.isNotBlank() }
+
+        override fun toString() =
+            "StorageConfig(endpoint=$endpoint, bucket=$bucket, region=$region, configured=$isConfigured)"
+    }
 
     data class FeaturesConfig(
         /**
@@ -183,6 +206,16 @@ data class AppConfig(
                                 "observability.metricsToken must be at least $MIN_METRICS_TOKEN_LENGTH characters"
                             }
                         },
+                ),
+                storage = StorageConfig(
+                    endpoint = config.propertyOrNull("storage.endpoint")?.getString().orEmpty().trim().trimEnd('/'),
+                    bucket = config.propertyOrNull("storage.bucket")?.getString().orEmpty().trim(),
+                    accessKey = config.propertyOrNull("storage.accessKey")?.getString().orEmpty().trim(),
+                    secretKey = config.propertyOrNull("storage.secretKey")?.getString().orEmpty().trim(),
+                    region = config.propertyOrNull("storage.region")?.getString()?.trim()?.ifEmpty { null }
+                        ?: StorageConfig().region,
+                    publicBaseUrl = config.propertyOrNull("storage.publicBaseUrl")?.getString()?.trim()
+                        ?.trimEnd('/')?.ifEmpty { null },
                 ),
                 features = FeaturesConfig(
                     wallet = config.propertyOrNull("features.wallet")?.getString()?.toBooleanStrict() ?: false,

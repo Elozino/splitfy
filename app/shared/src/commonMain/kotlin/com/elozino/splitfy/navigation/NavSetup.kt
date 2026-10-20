@@ -355,7 +355,7 @@ fun NavSetup() {
                     groupId = route.groupId,
                     expenseId = route.expenseId,
                     onNavigateBack = { navController.popBackStack() },
-                    onViewReceipt = { /* Open full receipt */ })
+                )
             }
             composable<Route.GroupSettings> { backStackEntry ->
                 val route: Route.GroupSettings = backStackEntry.toRoute()

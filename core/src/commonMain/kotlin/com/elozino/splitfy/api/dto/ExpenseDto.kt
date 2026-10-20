@@ -57,6 +57,7 @@ data class CreateExpenseRequest(
     val category: ExpenseCategory = ExpenseCategory.OTHER,
     val paidBy: UserId,
     val split: SplitPayload,
+    /** An `objectKey` from a RECEIPT upload slot issued for this group. Anything else is rejected. */
     val receiptUrl: String? = null,
     val notes: String? = null,
     val incurredAt: Instant? = null,
@@ -74,6 +75,7 @@ data class UpdateExpenseRequest(
     val category: ExpenseCategory? = null,
     val paidBy: UserId? = null,
     val split: SplitPayload? = null,
+    /** A RECEIPT `objectKey` issued for this group, or an empty string to remove the receipt. */
     val receiptUrl: String? = null,
     val notes: String? = null,
     val incurredAt: Instant? = null,

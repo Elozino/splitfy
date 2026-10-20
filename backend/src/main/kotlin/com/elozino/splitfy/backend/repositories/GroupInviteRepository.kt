@@ -1,5 +1,6 @@
 package com.elozino.splitfy.backend.repositories
 
+import com.elozino.splitfy.backend.schema.dbNow
 import com.elozino.splitfy.backend.schema.GroupInvitesTable
 import com.elozino.splitfy.backend.schema.GroupsTable
 import com.elozino.splitfy.backend.schema.GroupMembersTable
@@ -44,7 +45,7 @@ class GroupInviteRepository {
         if (reset && member[GroupMembersTable.role] !in setOf(GroupRole.OWNER, GroupRole.ADMIN)) {
             throw AppException.Forbidden("Only an owner or admin can reset the invite link")
         }
-        val now = Clock.System.now()
+        val now = dbNow()
         val active = GroupInvitesTable.selectAll()
             .where { (GroupInvitesTable.groupId eq groupId) and GroupInvitesTable.revokedAt.isNull() }
             .orderBy(GroupInvitesTable.createdAt, SortOrder.DESC)

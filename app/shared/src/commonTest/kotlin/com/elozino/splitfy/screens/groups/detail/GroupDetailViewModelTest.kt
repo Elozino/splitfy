@@ -23,6 +23,10 @@ import com.elozino.splitfy.repositories.ExpenseRepository
 import com.elozino.splitfy.repositories.GroupRepository
 import com.elozino.splitfy.screens.groups.detail.shared.GroupDetailViewModel
 import com.elozino.splitfy.storage.SessionStorage
+import com.elozino.splitfy.api.dto.UploadPurpose
+import com.elozino.splitfy.uploads.FakeUploadRepository
+import com.elozino.splitfy.uploads.MarkingCompressor
+import kotlin.test.assertContentEquals
 import com.russhwolf.settings.MapSettings
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -63,6 +67,7 @@ class GroupDetailViewModelTest {
     )
 
     private val groups = FakeGroups(group)
+    private val uploads = FakeUploadRepository().apply { uploadResult = DataResult.Success("groups/g/covers/new.jpg") }
 
     private fun viewModel(signedInAs: UserId): GroupDetailViewModel {
         val session = SessionManager(SessionStorage(MapSettings()))
@@ -70,7 +75,7 @@ class GroupDetailViewModelTest {
             User(id = signedInAs, email = "x@example.com", displayName = "X", createdAt = epoch),
             TokenPair("access", "refresh", 900),
         )
-        return GroupDetailViewModel(group.id.value, groups, NoExpenses, session)
+        return GroupDetailViewModel(group.id.value, groups, NoExpenses, session, uploads, MarkingCompressor, dispatcher)
     }
 
     @BeforeTest
@@ -162,10 +167,78 @@ class GroupDetailViewModelTest {
         assertEquals(listOf(owner), vm.state.value.group?.members?.map { it.userId })
     }
 
+    @Test
+    fun `an owner's new cover is compressed and uploaded and set on the group`() = runTest(dispatcher) {
+        val vm = viewModel(owner)
+        advanceUntilIdle()
+        assertTrue(vm.state.value.canEditCover)
+
+        vm.onCoverImage(byteArrayOf(9))
+        advanceUntilIdle()
+
+        val call = uploads.uploads.single()
+        assertEquals(UploadPurpose.GROUP_COVER, call.purpose)
+        assertContentEquals(byteArrayOf(9, 0x7F), call.bytes)
+        assertEquals("groups/g/covers/new.jpg", groups.updates.single().coverImageUrl)
+        assertEquals("https://cdn.example/groups/g/covers/new.jpg", vm.state.value.group?.coverImageUrl)
+        assertFalse(vm.state.value.isUploadingCover)
+    }
+
+    @Test
+    fun `members cannot change the cover and nobody can without storage`() = runTest(dispatcher) {
+        val asMember = viewModel(member)
+        advanceUntilIdle()
+        assertFalse(asMember.state.value.canEditCover)
+        asMember.onCoverImage(byteArrayOf(9))
+        advanceUntilIdle()
+        assertTrue(uploads.uploads.isEmpty())
+
+        uploads.enabled = false
+        val withoutStorage = viewModel(owner)
+        advanceUntilIdle()
+        assertFalse(withoutStorage.state.value.canEditCover)
+    }
+
+    @Test
+    fun `a failed cover upload leaves the group untouched`() = runTest(dispatcher) {
+        uploads.uploadResult = DataResult.Failure(DataError.Timeout)
+        val vm = viewModel(owner)
+        advanceUntilIdle()
+
+        vm.onCoverImage(byteArrayOf(9))
+        advanceUntilIdle()
+
+        assertTrue(groups.updates.isEmpty())
+        assertNull(vm.state.value.group?.coverImageUrl)
+        assertEquals("That took too long. Try again.", vm.state.value.errorMessage)
+        assertFalse(vm.state.value.isUploadingCover)
+    }
+
+    @Test
+    fun `viewing a receipt fetches a fresh link to open once`() = runTest(dispatcher) {
+        val vm = viewModel(member)
+        advanceUntilIdle()
+
+        vm.openReceipt("e1")
+        advanceUntilIdle()
+        assertEquals("https://storage.example/receipt?sig=1", vm.state.value.receiptLinkToOpen)
+        assertNull(vm.state.value.openingReceiptFor)
+
+        vm.consumeReceiptLink()
+        assertNull(vm.state.value.receiptLinkToOpen)
+
+        uploads.receiptResult = DataResult.Failure(DataError.NotFound("Receipt was not found"))
+        vm.openReceipt("e1")
+        advanceUntilIdle()
+        assertNull(vm.state.value.receiptLinkToOpen)
+        assertEquals("Receipt was not found", vm.state.value.errorMessage)
+    }
+
     private inner class FakeGroups(private var current: Group) : GroupRepository {
         val addedEmails = mutableListOf<String>()
         var addResult: DataResult<Group>? = null
         var removeResult: DataResult<Group>? = null
+        val updates = mutableListOf<UpdateGroupRequest>()
 
         override suspend fun get(groupId: String) = DataResult.Success(current)
         override suspend fun balances(groupId: String) =
@@ -187,7 +260,12 @@ class GroupDetailViewModelTest {
 
         override suspend fun list(includeArchived: Boolean): DataResult<List<GroupSummary>> = TODO()
         override suspend fun create(request: CreateGroupRequest): DataResult<Group> = TODO()
-        override suspend fun update(groupId: String, request: UpdateGroupRequest): DataResult<Group> = TODO()
+        override suspend fun update(groupId: String, request: UpdateGroupRequest): DataResult<Group> {
+            updates += request
+            return DataResult.Success(
+                current.copy(coverImageUrl = request.coverImageUrl?.let { "https://cdn.example/$it" }).also { current = it }
+            )
+        }
         override suspend fun setArchived(groupId: String, archived: Boolean): DataResult<Group> = TODO()
     }
 

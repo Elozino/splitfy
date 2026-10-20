@@ -1,5 +1,6 @@
 package com.elozino.splitfy.backend.repositories
 
+import com.elozino.splitfy.backend.schema.dbNow
 import com.elozino.splitfy.backend.schema.UsersTable
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.toJava
@@ -28,7 +29,7 @@ class UserRepository {
         /** True when a provider (Google, Apple) has already proven the address. */
         emailVerified: Boolean = false,
     ): User = dbQuery {
-        val now = Clock.System.now()
+        val now = dbNow()
         val id = UUID.randomUUID()
         UsersTable.insert {
             it[UsersTable.id] = id
