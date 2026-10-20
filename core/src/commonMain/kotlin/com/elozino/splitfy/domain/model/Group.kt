@@ -12,6 +12,8 @@ data class User(
     val avatarUrl: String? = null,
     val defaultCurrency: CurrencyCode = CurrencyCode.NGN,
     val createdAt: Instant,
+    /** Whether the user has proven they own [email]. Others can only find verified accounts. */
+    val emailVerified: Boolean = false,
 )
 
 @Serializable

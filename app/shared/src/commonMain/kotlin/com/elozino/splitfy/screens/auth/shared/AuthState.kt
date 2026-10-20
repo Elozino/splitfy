@@ -21,6 +21,7 @@ data class AuthState(
     val isNewPasswordVisible: Boolean = false,
     val isConfirmPasswordVisible: Boolean = false,
     val otpSecondsRemaining: Int = 55,
+    val emailVerified: Boolean = false,
 ) {
     val canSubmitLogin: Boolean
         get() = !isSubmitting && email.isNotBlank() && password.isNotBlank()

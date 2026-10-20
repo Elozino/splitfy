@@ -79,12 +79,21 @@ class UserRepository {
     }
 
     /** Name/email prefix search used by the "add people" picker. Never leaks hashes. */
-    suspend fun search(query: String, limit: Int): List<User> = dbQuery {
-        val pattern = "${query.trim().lowercase()}%"
+    /**
+     * Directory lookup: one verified account whose email matches exactly. Partial or
+     * name matching would let any user enumerate strangers' email addresses.
+     */
+    suspend fun findVerifiedByEmail(email: String): User? = dbQuery {
         UsersTable.selectAll()
-            .where { (UsersTable.email like pattern) or (UsersTable.displayName like pattern) }
-            .limit(limit)
-            .map { it.toUser() }
+            .where { (UsersTable.email eq email.normalizedEmail()) and UsersTable.emailVerifiedAt.isNotNull() }
+            .singleOrNull()
+            ?.toUser()
+    }
+
+    suspend fun markEmailVerified(id: UUID): Unit = dbQuery {
+        UsersTable.update({ (UsersTable.id eq id) and UsersTable.emailVerifiedAt.isNull() }) {
+            it[emailVerifiedAt] = Clock.System.now().toJava()
+        }
     }
 
     suspend fun updateProfile(
@@ -124,6 +133,7 @@ internal fun ResultRow.toUser() = User(
     avatarUrl = this[UsersTable.avatarUrl],
     defaultCurrency = CurrencyCode(this[UsersTable.defaultCurrency]),
     createdAt = this[UsersTable.createdAt].toKotlin(),
+    emailVerified = this[UsersTable.emailVerifiedAt] != null,
 )
 
 internal fun ResultRow.toUserRecord() = UserRecord(

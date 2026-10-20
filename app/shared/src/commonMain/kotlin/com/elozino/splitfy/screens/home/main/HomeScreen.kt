@@ -45,6 +45,7 @@ fun HomeScreen(
     onNavigateToNewGroup: () -> Unit = {},
     onNavigateToGroups: () -> Unit = {},
     onNavigateToGroupDetail: (String) -> Unit = {},
+    onNavigateToVerifyEmail: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -104,6 +105,9 @@ fun HomeScreen(
                     )
                 )
         ) {
+            if (state.user?.emailVerified == false) {
+                VerifyEmailBanner(onClick = onNavigateToVerifyEmail)
+            }
             if (FeatureFlags.WALLET) {
                 BalanceHeader(
                     state = state,
@@ -517,6 +521,27 @@ fun GroupsSection(
 }
 
 private const val HOME_GROUP_LIMIT = 5
+
+/** Shown until the email is confirmed, since unconfirmed accounts can't be added by email. */
+@Composable
+private fun VerifyEmailBanner(onClick: () -> Unit) {
+    Surface(color = Color(0xFFFFF3CD), modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
+        Row(
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.MarkEmailUnread, contentDescription = null, tint = Color.Black)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Confirm your email so friends can add you to groups",
+                fontSize = 13.sp,
+                color = Color.Black,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Black)
+        }
+    }
+}
 
 @Composable
 private fun GroupRow(summary: GroupSummary, onClick: () -> Unit) {

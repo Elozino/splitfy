@@ -22,9 +22,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -48,18 +50,94 @@ fun OtpScreen(
     onOtpVerified: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // Six boxes because the backend issues a six-digit code.
-    val otpValues = List(OTP_LENGTH) { index -> state.otpCode.getOrNull(index)?.toString() ?: "" }
 
     // Only move on once the server has exchanged the code for a reset token.
     LaunchedEffect(state.resetToken) {
         if (state.resetToken != null) onOtpVerified()
     }
 
+    CodeEntryScreen(
+        title = "OTP code verification",
+        emoji = "🔐",
+        email = state.email,
+        code = state.otpCode,
+        errorMessage = state.errorMessage,
+        secondsRemaining = state.otpSecondsRemaining,
+        onTick = viewModel::tickOtpTimer,
+        onCodeChange = viewModel::onOtpChange,
+        onComplete = viewModel::verifyOtp,
+        onResend = {
+            viewModel.resetOtpTimer()
+            viewModel.requestPasswordReset()
+        },
+        onNavigateBack = onNavigateBack,
+    )
+}
+
+/**
+ * The step after sign-up: confirm the email address with the code we sent. It can
+ * be skipped; until it is done, nobody can add this account to a group by email.
+ */
+@Composable
+fun VerifyEmailScreen(
+    viewModel: AuthViewModel,
+    email: String,
+    onDone: () -> Unit,
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(state.emailVerified) {
+        if (state.emailVerified) onDone()
+    }
+
+    CodeEntryScreen(
+        title = "Confirm your email",
+        emoji = "📬",
+        email = email,
+        code = state.otpCode,
+        errorMessage = state.errorMessage,
+        secondsRemaining = state.otpSecondsRemaining,
+        onTick = viewModel::tickOtpTimer,
+        onCodeChange = viewModel::onOtpChange,
+        onComplete = viewModel::verifyEmail,
+        onResend = {
+            viewModel.resetOtpTimer()
+            viewModel.resendVerification()
+        },
+        // Already signed in at this point, so "back" means "later", never the sign-up form.
+        onNavigateBack = onDone,
+        footer = {
+            TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
+                Text("Skip for now", color = Color.Gray, fontSize = 16.sp)
+            }
+        },
+    )
+}
+
+/** Six code boxes, a resend timer and a number pad; owns no state of its own. */
+@Composable
+private fun CodeEntryScreen(
+    title: String,
+    emoji: String,
+    email: String,
+    code: String,
+    errorMessage: String?,
+    secondsRemaining: Int,
+    onTick: () -> Unit,
+    onCodeChange: (String) -> Unit,
+    onComplete: () -> Unit,
+    onResend: () -> Unit,
+    onNavigateBack: () -> Unit,
+    footer: @Composable () -> Unit = {},
+) {
+    // Six boxes because the backend issues a six-digit code.
+    val otpValues = List(OTP_LENGTH) { index -> code.getOrNull(index)?.toString() ?: "" }
+    val remaining by rememberUpdatedState(secondsRemaining)
+
     LaunchedEffect(Unit) {
-        while (viewModel.state.value.otpSecondsRemaining > 0) {
+        while (remaining > 0) {
             delay(1000)
-            viewModel.tickOtpTimer()
+            onTick()
         }
     }
 
@@ -90,14 +168,14 @@ fun OtpScreen(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "OTP code verification",
+                    text = title,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "🔐",
+                    text = emoji,
                     fontSize = 32.sp
                 )
             }
@@ -105,11 +183,11 @@ fun OtpScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             val emailText = buildAnnotatedString {
-                append("We have sent an OTP code to ")
+                append("We have sent a code to ")
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Black)) {
-                    append(maskEmail(state.email))
+                    append(maskEmail(email))
                 }
-                append(". Enter the OTP code below to verify.")
+                append(". Enter it below to verify.")
             }
 
             Text(
@@ -125,7 +203,7 @@ fun OtpScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                otpValues.forEachIndexed { index, value ->
+                otpValues.forEach { value ->
                     OtpBox(
                         value = value,
                         isFocused = false, // Simple implementation without active focus tracking
@@ -146,34 +224,32 @@ fun OtpScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            AuthFieldError(state.errorMessage)
+            AuthFieldError(errorMessage)
 
             Text(
-                text = if (state.otpSecondsRemaining > 0) "You can resend code in ${state.otpSecondsRemaining} s" else "Tap to resend the code",
+                text = if (secondsRemaining > 0) "You can resend code in $secondsRemaining s" else "Tap to resend the code",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(enabled = state.otpSecondsRemaining == 0) {
-                        viewModel.resetOtpTimer()
-                        viewModel.requestPasswordReset()
-                    },
+                    .clickable(enabled = secondsRemaining == 0, onClick = onResend),
                 textAlign = TextAlign.Center,
                 fontSize = 16.sp,
                 color = Color.Black
             )
 
+            footer()
+
             Spacer(modifier = Modifier.weight(1f))
 
-            // Custom Number Keyboard (Simplified)
             NumberKeyboard(
                 onNumberClick = { num ->
-                    if (state.otpCode.length < OTP_LENGTH) {
-                        val updated = state.otpCode + num
-                        viewModel.onOtpChange(updated)
+                    if (code.length < OTP_LENGTH) {
+                        val updated = code + num
+                        onCodeChange(updated)
                         // Verify automatically once the code is complete.
-                        if (updated.length == OTP_LENGTH) viewModel.verifyOtp()
+                        if (updated.length == OTP_LENGTH) onComplete()
                     }
                 },
-                onDeleteClick = { viewModel.onOtpChange(state.otpCode.dropLast(1)) }
+                onDeleteClick = { onCodeChange(code.dropLast(1)) }
             )
 
             Spacer(modifier = Modifier.height(24.dp))

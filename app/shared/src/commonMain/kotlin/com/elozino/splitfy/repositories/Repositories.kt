@@ -49,6 +49,11 @@ interface AuthRepository {
 
     suspend fun resetPassword(email: String, resetToken: String, newPassword: String): DataResult<Unit>
 
+    /** Confirms the signed-in user's email with the code sent at sign-up. */
+    suspend fun verifyEmail(code: String): DataResult<User>
+
+    suspend fun resendVerification(): DataResult<Unit>
+
     suspend fun logout(): DataResult<Unit>
 }
 

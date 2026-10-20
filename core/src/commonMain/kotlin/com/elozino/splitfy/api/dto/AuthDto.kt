@@ -66,6 +66,11 @@ data class AuthResponse(
 
 /** Single-use token handed out once an OTP has been verified. */
 @Serializable
+data class VerifyEmailRequest(
+    val code: String,
+)
+
+@Serializable
 data class VerifyOtpResponse(
     val resetToken: String,
 )

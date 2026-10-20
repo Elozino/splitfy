@@ -8,6 +8,7 @@ import com.elozino.splitfy.api.dto.MessageResponse
 import com.elozino.splitfy.api.dto.RefreshTokenRequest
 import com.elozino.splitfy.api.dto.RegisterRequest
 import com.elozino.splitfy.api.dto.ResetPasswordRequest
+import com.elozino.splitfy.api.dto.VerifyEmailRequest
 import com.elozino.splitfy.api.dto.VerifyOtpRequest
 import com.elozino.splitfy.api.dto.VerifyOtpResponse
 import com.elozino.splitfy.backend.plugins.RateLimitScope
@@ -73,6 +74,16 @@ fun Route.authRoutes(service: AuthService) {
         }
 
         authenticate(JwtService.AUTH_JWT) {
+            post(ApiRoutes.Auth.VERIFY_EMAIL) {
+                val user = service.verifyEmail(call.requireUser().userId, call.receive<VerifyEmailRequest>())
+                call.respond(HttpStatusCode.OK, user)
+            }
+
+            post(ApiRoutes.Auth.RESEND_VERIFICATION) {
+                service.resendVerification(call.requireUser().userId)
+                call.respond(HttpStatusCode.Accepted, MessageResponse("A new code is on its way"))
+            }
+
             post("${ApiRoutes.Auth.LOGOUT}/all") {
                 service.logoutEverywhere(call.requireUser().userId)
                 call.respond(HttpStatusCode.OK, MessageResponse("Signed out of all devices"))

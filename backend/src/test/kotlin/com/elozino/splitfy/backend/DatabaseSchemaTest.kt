@@ -2,6 +2,7 @@ package com.elozino.splitfy.backend
 
 import com.elozino.splitfy.backend.schema.ActivityLogTable
 import com.elozino.splitfy.backend.schema.ContactFavoritesTable
+import com.elozino.splitfy.backend.schema.EmailVerificationsTable
 import com.elozino.splitfy.backend.schema.ExpenseSharesTable
 import com.elozino.splitfy.backend.schema.ExpensesTable
 import com.elozino.splitfy.backend.schema.GroupMembersTable
@@ -37,6 +38,7 @@ class DatabaseSchemaTest {
         UsersTable,
         RefreshTokensTable,
         PasswordResetsTable,
+        EmailVerificationsTable,
         GroupsTable,
         GroupMembersTable,
         ExpensesTable,

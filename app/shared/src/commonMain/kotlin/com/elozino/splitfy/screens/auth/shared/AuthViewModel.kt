@@ -126,7 +126,10 @@ class AuthViewModel(
             when (val result = authRepository.verifyOtp(current.email.trim(), current.otpCode)) {
                 is DataResult.Success ->
                     _state.update { it.copy(isSubmitting = false, resetToken = result.data) }
-                is DataResult.Failure -> handleFailure(result.error)
+                is DataResult.Failure -> {
+                    handleFailure(result.error)
+                    _state.update { it.copy(otpCode = "") }
+                }
             }
         }
     }
@@ -143,6 +146,32 @@ class AuthViewModel(
             when (val result = authRepository.resetPassword(current.email.trim(), token, current.newPassword)) {
                 is DataResult.Success ->
                     _state.update { it.copy(isSubmitting = false, passwordReset = true) }
+                is DataResult.Failure -> handleFailure(result.error)
+            }
+        }
+    }
+
+    /** Submits the sign-up code; a wrong one is cleared so the user can type again. */
+    fun verifyEmail() {
+        val code = _state.value.otpCode
+        if (_state.value.isSubmitting) return
+        viewModelScope.launch {
+            _state.update { it.copy(isSubmitting = true, errorMessage = null) }
+            when (val result = authRepository.verifyEmail(code)) {
+                is DataResult.Success ->
+                    _state.update { it.copy(isSubmitting = false, emailVerified = true, otpCode = "") }
+                is DataResult.Failure -> {
+                    handleFailure(result.error)
+                    _state.update { it.copy(otpCode = "") }
+                }
+            }
+        }
+    }
+
+    fun resendVerification() {
+        viewModelScope.launch {
+            when (val result = authRepository.resendVerification()) {
+                is DataResult.Success -> _state.update { it.copy(errorMessage = null) }
                 is DataResult.Failure -> handleFailure(result.error)
             }
         }
