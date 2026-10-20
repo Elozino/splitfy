@@ -16,6 +16,7 @@ import com.elozino.splitfy.backend.routes.walletRoutes
 import com.elozino.splitfy.backend.services.ActivityService
 import com.elozino.splitfy.backend.utils.AppConfig
 import com.elozino.splitfy.backend.services.AuthService
+import com.elozino.splitfy.backend.services.SocialAuthService
 import com.elozino.splitfy.backend.services.ContactService
 import com.elozino.splitfy.backend.services.ExpenseService
 import com.elozino.splitfy.backend.services.GroupService
@@ -42,6 +43,7 @@ import org.koin.ktor.ext.inject
  */
 fun Application.configureRouting(database: Database, features: AppConfig.FeaturesConfig) {
     val authService by inject<AuthService>()
+    val socialAuthService by inject<SocialAuthService>()
     val userService by inject<UserService>()
     val groupService by inject<GroupService>()
     val expenseService by inject<ExpenseService>()
@@ -57,7 +59,7 @@ fun Application.configureRouting(database: Database, features: AppConfig.Feature
         openApiRoutes()
 
         healthRoutes(database)
-        authRoutes(authService)
+        authRoutes(authService, socialAuthService)
 
         authenticate(JwtService.AUTH_JWT) {
             rateLimit(RateLimitScope.API.scopeName) {

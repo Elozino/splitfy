@@ -21,6 +21,7 @@ object ApiRoutes {
         const val VERIFY_OTP = "$BASE/verify-otp"
         const val VERIFY_EMAIL = "$BASE/verify-email"
         const val RESEND_VERIFICATION = "$BASE/verify-email/resend"
+        fun oauth(provider: String) = "$BASE/oauth/$provider"
     }
 
     object Users {

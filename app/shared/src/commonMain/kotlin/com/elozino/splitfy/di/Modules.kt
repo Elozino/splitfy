@@ -1,5 +1,7 @@
 package com.elozino.splitfy.di
 
+import com.elozino.splitfy.social.SocialSignInConfig
+import com.elozino.splitfy.social.platformGoogleClientId
 import com.elozino.splitfy.CardTokenizer
 import com.elozino.splitfy.DevCardTokenizer
 import com.elozino.splitfy.network.ApiCaller
@@ -58,7 +60,9 @@ expect fun platformModule(): Module
  * Repositories are bound to their interfaces so a ViewModel test can swap in a fake
  * without touching this file.
  */
-fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null): Module = module {
+fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: String? = null): Module = module {
+
+    single { SocialSignInConfig(googleClientId?.takeIf { it.isNotBlank() } ?: platformGoogleClientId()) }
 
     single { ApiConfig.forBuild(isDebug, apiBaseUrl) }
     single { SessionStorage(get()) }
@@ -120,10 +124,11 @@ val viewModelModule: Module = module {
 fun initKoin(
     isDebug: Boolean,
     apiBaseUrl: String? = null,
+    googleClientId: String? = null,
     platformConfig: (KoinApplication.() -> Unit)? = null,
 ): KoinApplication = startKoin {
     platformConfig?.invoke(this)
-    modules(platformModule(), dataModule(isDebug, apiBaseUrl), viewModelModule)
+    modules(platformModule(), dataModule(isDebug, apiBaseUrl, googleClientId), viewModelModule)
 }
 
 /** Convenience for `koinViewModel { parametersOf(groupId) }` call sites. */

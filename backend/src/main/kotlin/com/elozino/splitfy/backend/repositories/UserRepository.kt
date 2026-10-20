@@ -25,6 +25,8 @@ class UserRepository {
         displayName: String,
         phoneNumber: String?,
         defaultCurrency: CurrencyCode,
+        /** True when a provider (Google, Apple) has already proven the address. */
+        emailVerified: Boolean = false,
     ): User = dbQuery {
         val now = Clock.System.now()
         val id = UUID.randomUUID()
@@ -35,6 +37,7 @@ class UserRepository {
             it[UsersTable.displayName] = displayName.trim()
             it[UsersTable.phoneNumber] = phoneNumber
             it[UsersTable.defaultCurrency] = defaultCurrency.code
+            if (emailVerified) it[emailVerifiedAt] = now.toJava()
             it[createdAt] = now.toJava()
             it[updatedAt] = now.toJava()
         }
@@ -45,6 +48,7 @@ class UserRepository {
             phoneNumber = phoneNumber,
             defaultCurrency = defaultCurrency,
             createdAt = now,
+            emailVerified = emailVerified,
         )
     }
 

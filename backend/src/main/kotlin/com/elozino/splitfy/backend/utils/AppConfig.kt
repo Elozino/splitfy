@@ -22,6 +22,7 @@ data class AppConfig(
     val cors: CorsConfig,
     val features: FeaturesConfig = FeaturesConfig(),
     val email: EmailConfig = EmailConfig(),
+    val oauth: OAuthConfig = OAuthConfig(),
 ) {
     enum class Environment {
         LOCAL, STAGING, PRODUCTION;
@@ -62,6 +63,13 @@ data class AppConfig(
         /** Resend API key. Blank means "log codes instead", which production refuses. */
         val resendApiKey: String = "",
         val from: String = "splitfy <no-reply@splitfy.app>",
+    )
+
+    data class OAuthConfig(
+        /** Every Google OAuth client id whose ID tokens we accept (Android, iOS, web). Empty disables Google. */
+        val googleClientIds: Set<String> = emptySet(),
+        /** Apple audiences: the iOS bundle id, plus a Services ID if web sign-in is added. Empty disables Apple. */
+        val appleClientIds: Set<String> = emptySet(),
     )
 
     data class FeaturesConfig(
@@ -131,11 +139,18 @@ data class AppConfig(
                     resendApiKey = config.propertyOrNull("email.resendApiKey")?.getString().orEmpty(),
                     from = config.propertyOrNull("email.from")?.getString() ?: EmailConfig().from,
                 ),
+                oauth = OAuthConfig(
+                    googleClientIds = config.propertyOrNull("oauth.googleClientIds")?.getString().csv(),
+                    appleClientIds = config.propertyOrNull("oauth.appleClientIds")?.getString().csv(),
+                ),
                 features = FeaturesConfig(
                     wallet = config.propertyOrNull("features.wallet")?.getString()?.toBooleanStrict() ?: false,
                 ),
             )
         }
+
+        private fun String?.csv(): Set<String> =
+            orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
 
         const val INSECURE_DEV_SECRET = "local-development-secret-do-not-use-in-production"
         const val INSECURE_DEV_DATABASE_PASSWORD = "splitfy"

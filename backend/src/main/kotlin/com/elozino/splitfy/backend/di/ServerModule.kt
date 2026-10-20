@@ -4,6 +4,9 @@ import com.elozino.splitfy.backend.repositories.ExpenseRepository
 import com.elozino.splitfy.backend.repositories.GroupRepository
 import com.elozino.splitfy.backend.repositories.EmailVerificationRepository
 import com.elozino.splitfy.backend.repositories.PasswordResetRepository
+import com.elozino.splitfy.backend.repositories.UserIdentityRepository
+import com.elozino.splitfy.backend.services.IdentityTokenVerifier
+import com.elozino.splitfy.backend.services.SocialAuthService
 import com.elozino.splitfy.backend.repositories.PaymentMethodRepository
 import com.elozino.splitfy.backend.repositories.RefreshTokenRepository
 import com.elozino.splitfy.backend.repositories.SettlementRepository
@@ -74,6 +77,7 @@ fun serverModule(config: AppConfig) = module {
     single { RefreshTokenRepository() }
     single { PasswordResetRepository() }
     single { EmailVerificationRepository() }
+    single { UserIdentityRepository() }
     single { GroupRepository() }
     single { ExpenseRepository() }
     single { SettlementRepository() }
@@ -86,6 +90,15 @@ fun serverModule(config: AppConfig) = module {
     // Services
     single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { UserService(get()) }
+    single {
+        SocialAuthService(
+            get(), get(), get(), get(), get(), get(),
+            verifiers = listOf(
+                IdentityTokenVerifier.google(config.oauth.googleClientIds),
+                IdentityTokenVerifier.apple(config.oauth.appleClientIds),
+            ),
+        )
+    }
     single { GroupService(get(), get(), get(), get()) }
     single { ExpenseService(get(), get()) }
     single { SettlementService(get(), get()) }

@@ -46,6 +46,11 @@ email:
   # Must be on a domain verified in Resend.
   from: "$EMAIL_FROM:splitfy <no-reply@splitfy.app>"
 
+oauth:
+  # Comma-separated OAuth client ids. Leaving one empty turns that provider off.
+  googleClientIds: "$GOOGLE_CLIENT_IDS:"
+  appleClientIds: "$APPLE_CLIENT_IDS:"
+
 features:
   # Wallet, top-up, withdrawal, payment methods and peer transfers. Leave off until a
   # payment provider is integrated: a top-up currently credits without charging.

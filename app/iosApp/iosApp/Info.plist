@@ -6,6 +6,9 @@
 	     at launch by defaultApiBaseUrl() in ApiConfig.ios.kt. -->
 	<key>ApiBaseUrl</key>
 	<string>$(API_SCHEME)://$(API_HOST)</string>
+	<!-- Read by platformGoogleClientId() in SocialSignIn.ios.kt. -->
+	<key>GoogleIosClientId</key>
+	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>

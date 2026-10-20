@@ -164,9 +164,14 @@ fun NavSetup() {
             }
             composable<Route.Auth> {
                 AuthScreen(
+                    viewModel = authViewModel,
                     onNavigateToRegister = { navController.navigate(Route.Signup) },
                     onNavigateToLogin = { navController.navigate(Route.Login) },
-                    onNavigateToSocialAuth = { /* Handle social auth */ })
+                    onSignedIn = {
+                        navController.navigate(Route.Home) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    })
             }
             composable<Route.Signup> {
                 SignUpScreen(
