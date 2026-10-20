@@ -50,6 +50,7 @@ import com.elozino.splitfy.screens.groups.detail.expense.ExpenseDetailScreen
 import com.elozino.splitfy.screens.groups.detail.main.GroupDetailScreen
 import com.elozino.splitfy.screens.groups.list.GroupsScreen
 import com.elozino.splitfy.screens.groups.settings.GroupSettingsScreen
+import com.elozino.splitfy.screens.settlements.SettleUpScreen
 import com.elozino.splitfy.screens.home.main.HomeScreen
 import com.elozino.splitfy.screens.notifications.list.NotificationScreen
 import com.elozino.splitfy.screens.onboarding.main.OnboardingScreen
@@ -260,6 +261,9 @@ fun NavSetup() {
                     onNavigateToAddExpense = {
                         navController.navigate(Route.AddExpense(route.groupId))
                     },
+                    onNavigateToSettleUp = {
+                        navController.navigate(Route.SettleUp(route.groupId))
+                    },
                     onNavigateToSettings = {
                         // Using SplitDetail route for settings as mock
                         navController.navigate(Route.SplitDetail(route.groupId))
@@ -267,6 +271,10 @@ fun NavSetup() {
                     onNavigateToExpenseDetail = { expenseId ->
                         navController.navigate(Route.ExpenseDetail(route.groupId, expenseId))
                     })
+            }
+            composable<Route.SettleUp> { backStackEntry ->
+                val route: Route.SettleUp = backStackEntry.toRoute()
+                SettleUpScreen(groupId = route.groupId, onNavigateBack = { navController.popBackStack() })
             }
             composable<Route.AddExpense> { backStackEntry ->
                 val route: Route.AddExpense = backStackEntry.toRoute()
