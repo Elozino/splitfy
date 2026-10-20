@@ -54,6 +54,10 @@ class ApiCaller(private val sessionManager: SessionManager) {
         }.getOrNull()
 
         return when (status) {
+            // A wrong password, OTP or reset token is a 401 too, but it says nothing
+            // about the session: report it so the form can show it, and stay signed in.
+            HttpStatusCode.Unauthorized if parsed?.code == ApiErrorCode.INVALID_CREDENTIALS ->
+                DataError.Api(ApiErrorCode.INVALID_CREDENTIALS, parsed.message, parsed.traceId)
             HttpStatusCode.Unauthorized -> {
                 // Ktor's Bearer plugin already tried to refresh; reaching here means
                 // the session is genuinely dead.
