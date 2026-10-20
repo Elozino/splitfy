@@ -158,15 +158,15 @@ Assuming Paystack (NGN default currency):
 
 **Backend**
 - [ ] Managed PostgreSQL (e.g. Neon, RDS or Cloud SQL) with automated backups and point-in-time recovery; separate staging and production databases.
-- [ ] Deploy pipeline: build the fat JAR/image → run Flyway migrations → roll out; health checks on `/ready`.
-- [ ] Secrets in the platform's secret store; never defaults.
-- [ ] Monitoring and alerting on `/metrics`, error logs and slow queries.
+- [x] Deploy pipeline: build the fat JAR/image → run Flyway migrations → roll out; health checks on `/ready`. *(Image pushed to GHCR on `v*` tags; standalone migrator; hosting choice and the deploy hook are still open — see `docs/DEPLOYMENT.md`.)*
+- [ ] Secrets in the platform's secret store; never defaults. *(Server refuses insecure defaults; storing them is per platform.)*
+- [x] Monitoring and alerting on `/metrics`, error logs and slow queries. *(Token-guarded `/metrics`, JSON logs, Sentry; wiring alerts is per platform.)*
 
 **Apps**
-- [ ] Android: release signing config from CI secrets, Play Console internal track.
+- [x] Android: release signing config from CI secrets, Play Console internal track. *(Signed AAB built on tags; Play upload still manual.)*
 - [ ] iOS: signing, TestFlight, privacy manifest.
-- [ ] Crash reporting (Sentry or Crashlytics) in both apps and the backend.
-- [ ] Real content for Terms, Privacy and FAQ screens; account deletion (required by both stores).
+- [x] Crash reporting (Sentry or Crashlytics) in both apps and the backend. *(iOS needs the Sentry Swift package added in Xcode.)*
+- [x] Real content for Terms, Privacy and FAQ screens; account deletion (required by both stores). *(Copy is a draft pending legal review.)*
 
 ---
 

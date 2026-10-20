@@ -27,6 +27,14 @@ while an insecure default is still in place (noted below).
 | `RESEND_API_KEY` | empty | **Required in production.** Without it, reset codes are only logged. |
 | `EMAIL_FROM` | `splitfy <no-reply@splitfy.app>` | Must be on a domain verified in Resend. |
 | `FEATURE_WALLET` | `false` | Wallet, top-up, withdrawal, payment methods and transfers. Leave off until a payment provider is integrated. |
+| `SENTRY_DSN` | empty | Sentry error reporting; empty turns it off. Events are scrubbed of emails, tokens and request data. |
+| `APP_VERSION` | empty | Release name attached to Sentry events; the image sets it to the git tag. |
+| `METRICS_TOKEN` | empty | Enables Prometheus `/metrics`, which then requires `Authorization: Bearer <token>`. At least 24 characters. |
+| `LOG_FORMAT` | `text` (`json` in the Docker image) | `json` writes one JSON object per line for a log collector. |
+| `SHUTDOWN_GRACE_MS` / `SHUTDOWN_TIMEOUT_MS` | `5000` / `20000` | On SIGTERM `/ready` returns 503 at once; requests drain within these bounds. |
+
+Production deployment — databases, migrations as a deploy step, domains, hosting
+options — is covered in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Email (Resend)
 
