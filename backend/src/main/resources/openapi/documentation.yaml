@@ -114,6 +114,23 @@ paths:
         "200": { description: Ready to serve traffic }
         "503": { description: A dependency is unavailable }
 
+  /metrics:
+    get:
+      tags: [System]
+      summary: Prometheus metrics — off unless METRICS_TOKEN is set
+      description: |
+        Answers 404 while METRICS_TOKEN is unset. Once set, the scraper must send
+        `Authorization: Bearer <METRICS_TOKEN>`; this is not a user access token.
+      security: []
+      responses:
+        "200":
+          description: Prometheus text exposition format
+          content:
+            text/plain:
+              schema: { type: string }
+        "401": { description: Missing or wrong metrics token }
+        "404": { description: Metrics are disabled on this deployment }
+
   /api/v1/auth/register:
     post:
       tags: [Auth]
@@ -400,6 +417,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/User" }
+    delete:
+      tags: [Users]
+      summary: Delete the signed-in user's account
+      description: |
+        Anonymises the account: the name becomes "Deleted user", the email is freed,
+        and the password, linked Google/Apple identities, sessions, notifications and
+        payment methods are removed. Past expenses and settlements stay in their
+        groups so other members' history and balances do not change. Groups the user
+        owned pass to the longest-standing remaining member. Refused with 409 while
+        the user has a non-zero balance in any group (the message names the groups)
+        or a non-zero wallet balance.
+      responses:
+        "204": { description: Account deleted; every session is signed out }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
 
   /api/v1/users/search:
     get:

@@ -214,6 +214,24 @@ class AccountViewModel(
         }
     }
 
+    fun setDeleteAccountDialogVisible(isVisible: Boolean) =
+        _state.update { it.copy(isDeleteAccountDialogVisible = isVisible, deleteAccountError = null) }
+
+    /** On success the session is cleared, which takes the app back to sign-in. */
+    fun deleteAccount() {
+        viewModelScope.launch {
+            _state.update { it.copy(isDeletingAccount = true, deleteAccountError = null) }
+            when (val result = authRepository.deleteAccount()) {
+                is DataResult.Success -> _state.update {
+                    it.copy(isDeletingAccount = false, isDeleteAccountDialogVisible = false, signedOut = true)
+                }
+                is DataResult.Failure -> _state.update {
+                    it.copy(isDeletingAccount = false, deleteAccountError = result.error.userMessage())
+                }
+            }
+        }
+    }
+
     fun consumeError() = _state.update { it.copy(errorMessage = null) }
 
     private fun mutateMethods(action: suspend () -> DataResult<List<PaymentMethod>>) {

@@ -23,6 +23,9 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
+        <!-- Sentry is started from SplitfyApplication, and only when a DSN is set;
+             stop the Android SDK from also trying to start itself. -->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
         <!-- Used by FCM for notifications it displays while the app is in the background. -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

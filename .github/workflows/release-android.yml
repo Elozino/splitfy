@@ -1,0 +1,91 @@
+name: Release Android
+
+# Builds a signed release App Bundle on every `v*` tag and attaches it to the run
+# as an artifact, ready to upload to the Play Console (internal testing track
+# first). Signing material comes from repository secrets; when they are not set
+# the job says so and finishes green instead of producing an unsigned bundle.
+#
+# Secrets (Settings -> Secrets and variables -> Actions):
+#   ANDROID_KEYSTORE_BASE64    base64 of the upload keystore (.jks)
+#   ANDROID_KEYSTORE_PASSWORD
+#   ANDROID_KEY_ALIAS
+#   ANDROID_KEY_PASSWORD
+#   SENTRY_DSN_ANDROID         optional; crash reporting stays off without it
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false
+
+jobs:
+  bundle:
+    name: Signed release AAB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check signing secrets
+        id: secrets
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Android release skipped::Signing secrets are not configured; see docs/DEPLOYMENT.md#android-release-signing."
+          fi
+
+      - if: steps.secrets.outputs.present == 'true'
+        uses: actions/checkout@v4
+
+      - if: steps.secrets.outputs.present == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - if: steps.secrets.outputs.present == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore keystore
+        if: steps.secrets.outputs.present == 'true'
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+
+      - name: Build signed bundle
+        if: steps.secrets.outputs.present == 'true'
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/upload.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN_ANDROID }}
+        run: |
+          # v1.2.3 -> versionName 1.2.3; the run number always increases, which
+          # is all the Play Console asks of versionCode.
+          # A manual run on a branch keeps the versionName from config.properties.
+          VERSION_ARGS="-Papp.versionCode=${{ github.run_number }}"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            VERSION_ARGS="$VERSION_ARGS -Papp.versionName=${GITHUB_REF_NAME#v}"
+          fi
+          ./gradlew :app:androidApp:bundleRelease --stacktrace $VERSION_ARGS -Psentry.dsn="$SENTRY_DSN"
+
+      - name: Remove keystore
+        if: always() && steps.secrets.outputs.present == 'true'
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+
+      - if: steps.secrets.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: splitfy-release-aab
+          path: app/androidApp/build/outputs/bundle/release/*.aab
+          retention-days: 30

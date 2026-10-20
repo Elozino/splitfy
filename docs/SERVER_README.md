@@ -35,6 +35,14 @@ while an insecure default is still in place (noted below).
 | `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` | empty | Credentials allowed to read and write objects in the bucket. |
 | `STORAGE_REGION` | `auto` | `auto` for R2; the bucket's region for AWS. |
 | `STORAGE_PUBLIC_BASE_URL` | empty | Optional public host for **cover photos only**. Receipts always use signed links. |
+| `SENTRY_DSN` | empty | Sentry error reporting; empty turns it off. Events are scrubbed of emails, tokens and request data. |
+| `APP_VERSION` | empty | Release name attached to Sentry events; the image sets it to the git tag. |
+| `METRICS_TOKEN` | empty | Enables Prometheus `/metrics`, which then requires `Authorization: Bearer <token>`. At least 24 characters. |
+| `LOG_FORMAT` | `text` (`json` in the Docker image) | `json` writes one JSON object per line for a log collector. |
+| `SHUTDOWN_GRACE_MS` / `SHUTDOWN_TIMEOUT_MS` | `5000` / `20000` | On SIGTERM `/ready` returns 503 at once; requests drain within these bounds. |
+
+Production deployment — databases, migrations as a deploy step, domains, hosting
+options — is covered in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Email (Resend)
 

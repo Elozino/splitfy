@@ -55,8 +55,10 @@ extensions.configure<ApplicationExtension> {
         applicationId = config("app.applicationId")
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = config("app.versionCode").toInt()
-        versionName = config("app.versionName")
+        // CI overrides both from the tag and run number (-Papp.versionCode=...),
+        // so a release never needs a commit just to bump them.
+        versionCode = (providers.gradleProperty("app.versionCode").orNull ?: config("app.versionCode")).toInt()
+        versionName = providers.gradleProperty("app.versionName").orNull ?: config("app.versionName")
 
         // Generated rather than kept in res/values/strings.xml, so the launcher
         // label comes from the same file as the rest of the app's identity.
@@ -64,6 +66,35 @@ extensions.configure<ApplicationExtension> {
 
         // Optional: an empty value hides the Google button rather than failing the build.
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${appConfig.getProperty("google.webClientId").orEmpty()}\"")
+
+        // Crash reporting is off unless a DSN is configured: config.local.properties
+        // locally, `-Psentry.dsn=...` from CI.
+        val sentryDsn = providers.gradleProperty("sentry.dsn").orNull ?: appConfig.getProperty("sentry.dsn").orEmpty()
+        buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
+    }
+
+    // Release signing. Nothing secret is committed: the keystore and its passwords
+    // come from environment variables (CI) or a gitignored keystore.properties
+    // next to this file (a developer's machine). Without either, release builds
+    // are produced unsigned, which is fine for checking that they compile.
+    val keystoreProperties = Properties().apply {
+        providers.fileContents(layout.projectDirectory.file("keystore.properties")).asText.orNull
+            ?.let { load(it.reader()) }
+    }
+    val signingValue = { env: String, property: String ->
+        providers.environmentVariable(env).orNull?.takeIf { it.isNotBlank() }
+            ?: keystoreProperties.getProperty(property)?.takeIf { it.isNotBlank() }
+    }
+    val storeFilePath = signingValue("ANDROID_KEYSTORE_PATH", "storeFile")
+    val releaseSigning = if (storeFilePath != null) {
+        signingConfigs.create("release") {
+            storeFile = file(storeFilePath)
+            storePassword = signingValue("ANDROID_KEYSTORE_PASSWORD", "storePassword")
+            keyAlias = signingValue("ANDROID_KEY_ALIAS", "keyAlias")
+            keyPassword = signingValue("ANDROID_KEY_PASSWORD", "keyPassword")
+        }
+    } else {
+        null
     }
 
     buildFeatures {
@@ -78,6 +109,7 @@ extensions.configure<ApplicationExtension> {
             buildConfigField("String", "API_BASE_URL", "\"${config("api.baseUrl.debug")}\"")
         }
         release {
+            releaseSigning?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             buildConfigField("String", "API_BASE_URL", "\"${config("api.baseUrl.release")}\"")

@@ -23,6 +23,7 @@ node_modules/
 # a LAN address for on-device testing, and anything else personal.
 app/androidApp/config.local.properties
 app/iosApp/Configuration/Local.xcconfig
+app/androidApp/keystore.properties
 
 # Secrets and local environment overrides — never commit these.
 .env

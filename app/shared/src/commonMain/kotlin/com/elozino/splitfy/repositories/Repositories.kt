@@ -59,6 +59,13 @@ interface AuthRepository {
     suspend fun signInWithProvider(provider: OAuthProvider, request: OAuthSignInRequest): DataResult<User>
 
     suspend fun logout(): DataResult<Unit>
+
+    /**
+     * Deletes the signed-in account and, once the server confirms, clears the local
+     * session. The server refuses while any group balance is unsettled and names
+     * the groups in its message, which is passed through unchanged.
+     */
+    suspend fun deleteAccount(): DataResult<Unit>
 }
 
 interface UserRepository {
