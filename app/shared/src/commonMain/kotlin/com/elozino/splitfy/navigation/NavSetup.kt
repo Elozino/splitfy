@@ -127,6 +127,20 @@ fun NavSetup() {
         )
     }
 
+    // A tapped push notification opens its group once someone is signed in.
+    if (isAuthenticated) com.elozino.splitfy.push.RequestPushPermission()
+    val pushGroupId by com.elozino.splitfy.push.PushNotifications.pendingGroupId.collectAsStateWithLifecycle()
+    // Not while the sign-in or email-verification flow is still on screen.
+    val pushCanNavigate = isAuthenticated && currentDestination != null &&
+        listOf(Route.Onboarding::class, Route.Auth::class, Route.Login::class, Route.Signup::class, Route.VerifyEmail::class)
+            .none { currentDestination.hasRoute(it) }
+    LaunchedEffect(pushGroupId, pushCanNavigate) {
+        val groupId = pushGroupId ?: return@LaunchedEffect
+        if (!pushCanNavigate) return@LaunchedEffect
+        com.elozino.splitfy.push.PushNotifications.consumePendingGroup()
+        navController.navigate(Route.GroupDetail(groupId))
+    }
+
     val showBottomBar =
         showBottomBarOverride && (currentDestination?.hasRoute(Route.Home::class) == true || currentDestination?.hasRoute(
             Route.Groups::class
@@ -355,7 +369,7 @@ fun NavSetup() {
                     groupId = route.groupId,
                     expenseId = route.expenseId,
                     onNavigateBack = { navController.popBackStack() },
-                    onViewReceipt = { /* Open full receipt */ })
+                )
             }
             composable<Route.GroupSettings> { backStackEntry ->
                 val route: Route.GroupSettings = backStackEntry.toRoute()

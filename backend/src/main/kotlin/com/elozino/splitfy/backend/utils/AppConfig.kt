@@ -24,6 +24,8 @@ data class AppConfig(
     val email: EmailConfig = EmailConfig(),
     val oauth: OAuthConfig = OAuthConfig(),
     val links: LinksConfig = LinksConfig(),
+    val push: PushConfig = PushConfig(),
+    val storage: StorageConfig = StorageConfig(),
 ) {
     enum class Environment {
         LOCAL, STAGING, PRODUCTION;
@@ -82,6 +84,45 @@ data class AppConfig(
         /** `TEAMID.bundle.id` entries allowed to open links on iOS. */
         val appleAppIds: Set<String> = emptySet(),
     )
+
+    data class PushConfig(
+        /** A Firebase service-account key, as JSON. Wins over [fcmServiceAccountPath]. */
+        val fcmServiceAccountJson: String = "",
+        /** Or the path of that key file. Both blank means push is logged, not sent. */
+        val fcmServiceAccountPath: String = "",
+        /** Off unless configured, so tests and one-off tools never start the scheduler. */
+        val remindersEnabled: Boolean = false,
+        /** A debt has to be this old before its first reminder. */
+        val reminderAfterDays: Int = 3,
+        /** And then at most one reminder per group this often. */
+        val reminderEveryDays: Int = 7,
+        /** When the daily run starts, in UTC. */
+        val reminderHourUtc: Int = 9,
+    ) {
+        val isFcmConfigured: Boolean get() = fcmServiceAccountJson.isNotBlank() || fcmServiceAccountPath.isNotBlank()
+    }
+
+    /**
+     * S3-compatible object storage (AWS S3, Cloudflare R2) for receipts and cover
+     * photos. Leaving any of the four required values blank turns uploads off.
+     */
+    data class StorageConfig(
+        /** e.g. `https://<account>.r2.cloudflarestorage.com` or `https://s3.eu-west-1.amazonaws.com`. */
+        val endpoint: String = "",
+        val bucket: String = "",
+        val accessKey: String = "",
+        val secretKey: String = "",
+        /** R2 signs with `auto`; AWS needs the bucket's real region. */
+        val region: String = "auto",
+        /** Optional public host for cover photos. Receipts are always served through signed links. */
+        val publicBaseUrl: String? = null,
+    ) {
+        val isConfigured: Boolean
+            get() = listOf(endpoint, bucket, accessKey, secretKey).all { it.isNotBlank() }
+
+        override fun toString() =
+            "StorageConfig(endpoint=$endpoint, bucket=$bucket, region=$region, configured=$isConfigured)"
+    }
 
     data class FeaturesConfig(
         /**
@@ -160,6 +201,28 @@ data class AppConfig(
                     androidPackage = config.propertyOrNull("links.androidPackage")?.getString() ?: LinksConfig().androidPackage,
                     androidCertSha256 = config.propertyOrNull("links.androidCertSha256")?.getString().csv(),
                     appleAppIds = config.propertyOrNull("links.appleAppIds")?.getString().csv(),
+                ),
+                push = PushConfig(
+                    fcmServiceAccountJson = config.propertyOrNull("push.fcmServiceAccountJson")?.getString().orEmpty(),
+                    fcmServiceAccountPath = config.propertyOrNull("push.fcmServiceAccountPath")?.getString().orEmpty(),
+                    remindersEnabled = config.propertyOrNull("push.remindersEnabled")?.getString()
+                        ?.toBooleanStrict() ?: PushConfig().remindersEnabled,
+                    reminderAfterDays = config.propertyOrNull("push.reminderAfterDays")?.getString()?.toInt()
+                        ?: PushConfig().reminderAfterDays,
+                    reminderEveryDays = config.propertyOrNull("push.reminderEveryDays")?.getString()?.toInt()
+                        ?: PushConfig().reminderEveryDays,
+                    reminderHourUtc = (config.propertyOrNull("push.reminderHourUtc")?.getString()?.toInt()
+                        ?: PushConfig().reminderHourUtc).also { require(it in 0..23) { "push.reminderHourUtc must be 0-23" } },
+                ),
+                storage = StorageConfig(
+                    endpoint = config.propertyOrNull("storage.endpoint")?.getString().orEmpty().trim().trimEnd('/'),
+                    bucket = config.propertyOrNull("storage.bucket")?.getString().orEmpty().trim(),
+                    accessKey = config.propertyOrNull("storage.accessKey")?.getString().orEmpty().trim(),
+                    secretKey = config.propertyOrNull("storage.secretKey")?.getString().orEmpty().trim(),
+                    region = config.propertyOrNull("storage.region")?.getString()?.trim()?.ifEmpty { null }
+                        ?: StorageConfig().region,
+                    publicBaseUrl = config.propertyOrNull("storage.publicBaseUrl")?.getString()?.trim()
+                        ?.trimEnd('/')?.ifEmpty { null },
                 ),
                 features = FeaturesConfig(
                     wallet = config.propertyOrNull("features.wallet")?.getString()?.toBooleanStrict() ?: false,

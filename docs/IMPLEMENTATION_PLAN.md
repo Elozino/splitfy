@@ -109,10 +109,10 @@ Deployment setup and device checks: [GROUP_INVITES.md](GROUP_INVITES.md).
 
 ## Phase 5 — Receipts and group images · M
 
-- [ ] Object storage (S3-compatible: AWS S3 or Cloudflare R2). Postgres stores only the URL and key.
-- [ ] Endpoint for a presigned upload URL; validate content type and size; the server writes `receipt_url` after upload.
-- [ ] KMP image picker (FileKit or Peekaboo) with client-side compression.
-- [ ] Wire `AddExpenseScreen` gallery button and the `NewGroupScreen` image picker.
+- [x] Object storage (S3-compatible: AWS S3 or Cloudflare R2). Postgres stores only the URL and key.
+- [x] Endpoint for a presigned upload URL; validate content type and size; the server writes `receipt_url` after upload.
+- [x] KMP image picker (FileKit or Peekaboo) with client-side compression.
+- [x] Wire `AddExpenseScreen` gallery button. Group covers are set from group detail once the group exists, not from `NewGroupScreen`.
 
 ## Phase 6 — Money movement (decision required)
 
@@ -135,11 +135,11 @@ Assuming Paystack (NGN default currency):
 
 ## Phase 7 — Push notifications · M
 
-- [ ] Migration `V5__device_tokens.sql`: `device_tokens(user_id, platform, token UNIQUE, updated_at)`.
-- [ ] Register and unregister endpoints; the app registers on login and unregisters on logout.
-- [ ] FCM for Android, and for iOS through APNs (upload the APNs key to Firebase).
-- [ ] `NotificationService.notify` also sends a push, respecting the user's preferences from `notification_settings`.
-- [ ] Scheduled payment reminders for open balances older than N days (once a day, opt-out).
+- [x] Migration `V7__push_notifications.sql`: `device_tokens(user_id, platform, token UNIQUE, updated_at)` and `notification_preferences`.
+- [x] Register and unregister endpoints; the app registers on login and unregisters on logout.
+- [x] FCM for Android, and for iOS through APNs (upload the APNs key to Firebase). Setup: `docs/PUSH_NOTIFICATIONS.md`.
+- [x] `NotificationService.notify` also sends a push, respecting the user's preferences from `notification_settings`.
+- [x] Scheduled payment reminders for open balances older than N days (once a day, opt-out).
 
 ## Phase 8 — Offline-first · L
 

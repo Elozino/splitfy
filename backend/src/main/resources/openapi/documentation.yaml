@@ -33,6 +33,7 @@ tags:
   - name: Activity
   - name: Notifications
   - name: Contacts
+  - name: Uploads
   - name: System
 
 paths:
@@ -652,6 +653,69 @@ paths:
               schema: { $ref: "#/components/schemas/MessageResponse" }
         "403": { $ref: "#/components/responses/Forbidden" }
 
+  /api/v1/groups/{groupId}/expenses/{expenseId}/receipt:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+      - name: expenseId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Expenses, Uploads]
+      summary: A short-lived link to the expense's receipt (members only)
+      description: |
+        Receipts are private. Each call checks membership and returns a freshly
+        signed GET URL that expires after five minutes; never store it.
+      responses:
+        "200":
+          description: Signed link to the receipt file
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FileLink" }
+        "404": { description: No such expense, it has no receipt, or the caller is not a member }
+        "503": { $ref: "#/components/responses/StorageUnavailable" }
+
+  /api/v1/groups/{groupId}/uploads:
+    parameters:
+      - $ref: "#/components/parameters/GroupId"
+    post:
+      tags: [Uploads]
+      summary: Request a presigned URL to upload one file for this group
+      description: |
+        Members may upload receipts; only owners and admins may upload a cover photo.
+        The response's `uploadUrl` accepts a single `PUT` of exactly `sizeBytes`
+        bytes, sent with the returned `headers`, until `expiresAt` (15 minutes).
+        Then pass `objectKey` as an expense's `receiptUrl` or the group's
+        `coverImageUrl`; those fields accept nothing but keys issued here for the
+        same group and purpose.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadSlotRequest" }
+      responses:
+        "201":
+          description: Upload slot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadSlot" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "403": { description: A cover photo was requested by a member who is not an owner or admin }
+        "404": { description: Group not found or caller is not a member }
+        "503": { $ref: "#/components/responses/StorageUnavailable" }
+
+  /api/v1/uploads/config:
+    get:
+      tags: [Uploads]
+      summary: Whether file uploads are available on this server
+      description: The app hides its receipt and cover-photo controls when `enabled` is false.
+      responses:
+        "200":
+          description: Upload availability and limits
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadConfig" }
+
   /api/v1/groups/{groupId}/settlements:
     parameters:
       - $ref: "#/components/parameters/GroupId"
@@ -1004,6 +1068,71 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/NotificationsResponse" }
 
+  /api/v1/notifications/preferences:
+    get:
+      tags: [Notifications]
+      summary: Which events are pushed to the caller's devices
+      description: |
+        Every switch defaults to on. They gate push notifications only: the in-app
+        list keeps everything. Security and account messages are always pushed.
+      responses:
+        "200":
+          description: Current preferences
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPreferences" }
+    patch:
+      tags: [Notifications]
+      summary: Change push preferences
+      description: Omitted fields keep their current value.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateNotificationPreferencesRequest" }
+      responses:
+        "200":
+          description: The preferences after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPreferences" }
+
+  /api/v1/devices:
+    post:
+      tags: [Notifications]
+      summary: Register this device's push token
+      description: |
+        Idempotent. The token is an FCM registration token (Android, and iOS through
+        the Firebase SDK). Registering a token that belonged to another account moves
+        it to the caller, so a shared phone only notifies whoever is signed in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterDeviceRequest" }
+      responses:
+        "204":
+          description: Registered
+        "400":
+          description: Empty or oversized token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+
+  /api/v1/devices/unregister:
+    post:
+      tags: [Notifications]
+      summary: Stop pushing to this device
+      description: Idempotent; called on sign-out. Only the token's owner can remove it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UnregisterDeviceRequest" }
+      responses:
+        "204":
+          description: Unregistered (or was not registered)
+
   /api/v1/contacts:
     get:
       tags: [Contacts]
@@ -1101,8 +1230,51 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+    StorageUnavailable:
+      description: Object storage is not configured on this server (`STORAGE_UNAVAILABLE`)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiErrorResponse" }
 
   schemas:
+    UploadSlotRequest:
+      type: object
+      required: [purpose, contentType, sizeBytes]
+      properties:
+        purpose: { type: string, enum: [RECEIPT, GROUP_COVER] }
+        contentType:
+          type: string
+          description: |
+            `image/jpeg`, `image/png` or `image/heic`; receipts may also be
+            `application/pdf`.
+        sizeBytes: { type: integer, format: int64, minimum: 1, maximum: 10485760 }
+
+    UploadSlot:
+      type: object
+      required: [uploadUrl, objectKey, expiresAt]
+      properties:
+        uploadUrl: { type: string, format: uri }
+        objectKey: { type: string, example: "groups/0b7c…/receipts/Xq3….jpg" }
+        expiresAt: { type: string, format: date-time }
+        headers:
+          type: object
+          description: Send these with the PUT exactly as given; they are signed.
+          additionalProperties: { type: string }
+
+    FileLink:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+
+    UploadConfig:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        maxBytes: { type: integer, format: int64 }
+
     GroupInvite:
       type: object
       required: [token, url, expiresAt]
@@ -1158,6 +1330,35 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AppNotification" }
         unreadCount: { type: integer }
+
+    NotificationPreferences:
+      type: object
+      properties:
+        newExpenses: { type: boolean, description: An expense was added to one of your groups }
+        settlements: { type: boolean, description: A payment to or from you was recorded, confirmed or cancelled }
+        groupActivity: { type: boolean, description: Someone joined a group through your invite }
+        paymentReminders: { type: boolean, description: Daily nudge about money you have owed for a while }
+
+    UpdateNotificationPreferencesRequest:
+      type: object
+      properties:
+        newExpenses: { type: boolean }
+        settlements: { type: boolean }
+        groupActivity: { type: boolean }
+        paymentReminders: { type: boolean }
+
+    RegisterDeviceRequest:
+      type: object
+      required: [token, platform]
+      properties:
+        token: { type: string, maxLength: 512 }
+        platform: { type: string, enum: [ANDROID, IOS] }
+
+    UnregisterDeviceRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
 
     ContactsResponse:
       type: object
@@ -1290,7 +1491,7 @@ components:
             [VALIDATION_FAILED, MALFORMED_REQUEST, SPLIT_INVALID, CURRENCY_MISMATCH,
              INVALID_CREDENTIALS, TOKEN_EXPIRED, TOKEN_INVALID, UNAUTHORIZED, FORBIDDEN,
              NOT_FOUND, EMAIL_ALREADY_REGISTERED, ALREADY_MEMBER, CONFLICT,
-             RATE_LIMITED, INTERNAL_ERROR, SERVICE_UNAVAILABLE]
+             RATE_LIMITED, INTERNAL_ERROR, SERVICE_UNAVAILABLE, STORAGE_UNAVAILABLE]
         message: { type: string }
         fieldErrors:
           type: array
@@ -1374,7 +1575,10 @@ components:
         description: { type: string, nullable: true }
         category: { type: string, enum: [TRIP, HOME, COUPLE, EVENT, PROJECT, OTHER] }
         currency: { type: string }
-        coverImageUrl: { type: string, nullable: true }
+        coverImageUrl:
+          type: string
+          nullable: true
+          description: Displayable URL of the cover photo. Signed links expire, so do not store it.
         members:
           type: array
           items: { $ref: "#/components/schemas/GroupMember" }
@@ -1398,7 +1602,10 @@ components:
         description: { type: string, nullable: true }
         category: { type: string, default: OTHER }
         currency: { type: string }
-        coverImageUrl: { type: string, nullable: true }
+        coverImageUrl:
+          type: string
+          nullable: true
+          description: Must be null. Upload a cover once the group exists, then PATCH it.
         memberIds:
           type: array
           items: { type: string, format: uuid }
@@ -1409,7 +1616,9 @@ components:
         name: { type: string }
         description: { type: string }
         category: { type: string }
-        coverImageUrl: { type: string }
+        coverImageUrl:
+          type: string
+          description: A GROUP_COVER `objectKey` issued for this group, or "" to remove the cover.
 
     AddMemberRequest:
       type: object
@@ -1489,7 +1698,10 @@ components:
         shares:
           type: array
           items: { $ref: "#/components/schemas/ExpenseShare" }
-        receiptUrl: { type: string, nullable: true }
+        receiptUrl:
+          type: string
+          nullable: true
+          description: The receipt's object key. Fetch a viewable link from `/receipt`.
         notes: { type: string, nullable: true }
         incurredAt: { type: string, format: date-time }
         createdBy: { type: string, format: uuid }
@@ -1515,7 +1727,10 @@ components:
         category: { type: string, default: OTHER }
         paidBy: { type: string, format: uuid }
         split: { $ref: "#/components/schemas/SplitPayload" }
-        receiptUrl: { type: string, nullable: true }
+        receiptUrl:
+          type: string
+          nullable: true
+          description: A RECEIPT `objectKey` issued for this group by `POST /groups/{groupId}/uploads`.
         notes: { type: string, nullable: true }
         incurredAt: { type: string, format: date-time, nullable: true }
         clientRequestId:
@@ -1534,7 +1749,10 @@ components:
         category: { type: string }
         paidBy: { type: string, format: uuid }
         split: { $ref: "#/components/schemas/SplitPayload" }
-        receiptUrl: { type: string, nullable: true }
+        receiptUrl:
+          type: string
+          nullable: true
+          description: A RECEIPT `objectKey` issued for this group, or "" to remove the receipt.
         notes: { type: string, nullable: true }
         incurredAt: { type: string, format: date-time, nullable: true }
 

@@ -60,6 +60,30 @@ links:
   # Comma-separated TEAMID.bundle ids, e.g. ABCDE12345.com.elozino.splitfy
   appleAppIds: "$APPLE_APP_IDS:"
 
+push:
+  # Firebase Cloud Messaging service-account key: the JSON itself, or a path to the
+  # file. With neither, pushes are only logged; push is optional and never blocks boot.
+  fcmServiceAccountJson: "$FCM_SERVICE_ACCOUNT_JSON:"
+  fcmServiceAccountPath: "$FCM_SERVICE_ACCOUNT_PATH:"
+  # Daily nudge for balances owed longer than reminderAfterDays, at most once per
+  # group every reminderEveryDays. Safe with several instances: one claims each day.
+  remindersEnabled: "$PAYMENT_REMINDERS_ENABLED:true"
+  reminderAfterDays: "$PAYMENT_REMINDER_AFTER_DAYS:3"
+  reminderEveryDays: "$PAYMENT_REMINDER_EVERY_DAYS:7"
+  reminderHourUtc: "$PAYMENT_REMINDER_HOUR_UTC:9"
+
+storage:
+  # S3-compatible object storage for receipts and group cover photos (AWS S3 or
+  # Cloudflare R2). Uploads are off unless endpoint, bucket and both keys are set.
+  endpoint: "$STORAGE_ENDPOINT:"
+  bucket: "$STORAGE_BUCKET:"
+  accessKey: "$STORAGE_ACCESS_KEY:"
+  secretKey: "$STORAGE_SECRET_KEY:"
+  # "auto" for R2; the bucket's region (e.g. eu-west-1) for AWS.
+  region: "$STORAGE_REGION:auto"
+  # Optional public host for cover photos. Without it covers use signed links too.
+  publicBaseUrl: "$STORAGE_PUBLIC_BASE_URL:"
+
 features:
   # Wallet, top-up, withdrawal, payment methods and peer transfers. Leave off until a
   # payment provider is integrated: a top-up currently credits without charging.

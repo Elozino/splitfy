@@ -41,6 +41,12 @@ object ApiRoutes {
         fun archive(id: String) = "$BASE/$id/archive"
         fun invite(id: String) = "$BASE/$id/invite"
         fun resetInvite(id: String) = "$BASE/$id/invite/reset"
+        fun uploads(id: String) = "$BASE/$id/uploads"
+    }
+
+    /** Object-storage uploads. Slots are requested per group, see [Groups.uploads]. */
+    object Uploads {
+        const val CONFIG = "$API_PREFIX/uploads/config"
     }
 
     /** Invite links, looked up by their token. Preview is public; accepting needs a session. */
@@ -53,6 +59,7 @@ object ApiRoutes {
     object Expenses {
         fun forGroup(groupId: String) = "${Groups.BASE}/$groupId/expenses"
         fun byId(groupId: String, expenseId: String) = "${Groups.BASE}/$groupId/expenses/$expenseId"
+        fun receipt(groupId: String, expenseId: String) = "${Groups.BASE}/$groupId/expenses/$expenseId/receipt"
     }
 
     object Settlements {
@@ -90,6 +97,13 @@ object ApiRoutes {
         const val BASE = "$API_PREFIX/notifications"
         fun read(id: String) = "$BASE/$id/read"
         const val READ_ALL = "$BASE/read-all"
+        const val PREFERENCES = "$BASE/preferences"
+    }
+
+    /** Push tokens for the caller's devices. */
+    object Devices {
+        const val BASE = "$API_PREFIX/devices"
+        const val UNREGISTER = "$BASE/unregister"
     }
 
     object Contacts {

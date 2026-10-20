@@ -11,6 +11,9 @@
 	<!-- Read by platformGoogleClientId() in SocialSignIn.ios.kt. -->
 	<key>GoogleIosClientId</key>
 	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
+	<!-- Lets FCM wake the app for silent data and badge updates. -->
+	<key>UIBackgroundModes</key>
+	<array><string>remote-notification</string></array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>

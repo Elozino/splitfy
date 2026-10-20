@@ -6,9 +6,12 @@ import com.elozino.splitfy.api.dto.CreateGroupRequest
 import com.elozino.splitfy.api.dto.GroupBalancesResponse
 import com.elozino.splitfy.api.dto.GroupSummary
 import com.elozino.splitfy.api.dto.UpdateGroupRequest
+import com.elozino.splitfy.api.dto.UploadPurpose
+import com.elozino.splitfy.api.FieldError
 import com.elozino.splitfy.backend.repositories.ExpenseRepository
 import com.elozino.splitfy.backend.repositories.GroupRepository
 import com.elozino.splitfy.backend.repositories.SettlementRepository
+import com.elozino.splitfy.backend.repositories.UploadRepository
 import com.elozino.splitfy.backend.repositories.UserRepository
 import com.elozino.splitfy.backend.utils.AppException
 import com.elozino.splitfy.domain.model.Group
@@ -24,6 +27,7 @@ class GroupService(
     private val users: UserRepository,
     private val expenses: ExpenseRepository,
     private val settlements: SettlementRepository,
+    private val uploads: UploadRepository,
 ) {
 
     suspend fun create(request: CreateGroupRequest, callerId: UUID): Group {
@@ -35,7 +39,13 @@ class GroupService(
             val found = users.findAllByIds(requestedIds).map { UUID.fromString(it.id.value) }.toSet()
             (requestedIds - found).firstOrNull()?.let { throw AppException.NotFound("User $it") }
         }
-        return groups.create(request, callerId)
+        // Uploads are scoped to an existing group, so there is no key to point at yet.
+        if (!request.coverImageUrl.isNullOrBlank()) {
+            throw AppException.Validation(
+                listOf(FieldError("coverImageUrl", "Create the group first, then upload its cover photo"))
+            )
+        }
+        return groups.create(request.copy(coverImageUrl = null), callerId)
     }
 
     suspend fun get(groupId: UUID, callerId: UUID): Group = requireMembership(groupId, callerId).first
@@ -63,6 +73,10 @@ class GroupService(
         requireManager(groupId, callerId)
         request.name?.let { name ->
             Validators.displayName(name, "name")?.let { throw AppException.Validation(listOf(it)) }
+        }
+        // An empty string removes the cover; anything else must be a key issued here.
+        request.coverImageUrl?.takeIf { it.isNotEmpty() }?.let { key ->
+            uploads.requireIssuedUpload(key, groupId, UploadPurpose.GROUP_COVER, "coverImageUrl")
         }
         return groups.update(
             id = groupId,

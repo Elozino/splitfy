@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -43,7 +44,6 @@ fun ExpenseDetailScreen(
     groupId: String,
     expenseId: String,
     onNavigateBack: () -> Unit,
-    onViewReceipt: () -> Unit,
     viewModel: GroupDetailViewModel = koinViewModel { parametersOf(groupId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -51,6 +51,23 @@ fun ExpenseDetailScreen(
     val payer = state.group?.members?.firstOrNull { it.userId == expense?.paidBy }
     val paidByYou = expense?.paidBy?.value == state.currentUserId
     val yourShare = expense?.shares?.firstOrNull { it.userId.value == state.currentUserId }?.amount
+    val uriHandler = LocalUriHandler.current
+    val snackbar = remember { SnackbarHostState() }
+
+    // The link is signed for minutes, so it is opened as soon as it arrives and never kept.
+    LaunchedEffect(state.receiptLinkToOpen) {
+        state.receiptLinkToOpen?.let { url ->
+            viewModel.consumeReceiptLink()
+            runCatching { uriHandler.openUri(url) }
+                .onFailure { snackbar.showSnackbar("Couldn't open the receipt") }
+        }
+    }
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let {
+            snackbar.showSnackbar(it)
+            viewModel.consumeError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -64,7 +81,8 @@ fun ExpenseDetailScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White
+        containerColor = Color.White,
+        snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -146,15 +164,20 @@ fun ExpenseDetailScreen(
                 
                 Spacer(modifier = Modifier.weight(1f))
                 
+                val isOpening = state.openingReceiptFor == expenseId
                 Button(
-                    onClick = onViewReceipt,
-                    enabled = expense?.receiptUrl != null,
+                    onClick = { viewModel.openReceipt(expenseId) },
+                    enabled = expense?.receiptUrl != null && !isOpening,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
                 ) {
                     Text(
-                        text = if (expense?.receiptUrl != null) "View Receipt" else "No receipt attached",
+                        text = when {
+                            isOpening -> "Opening…"
+                            expense?.receiptUrl != null -> "View Receipt"
+                            else -> "No receipt attached"
+                        },
                         color = Color.Black,
                         fontWeight = FontWeight.Bold
                     )

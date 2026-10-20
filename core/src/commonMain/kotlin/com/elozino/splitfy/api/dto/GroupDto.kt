@@ -16,6 +16,7 @@ data class CreateGroupRequest(
     val description: String? = null,
     val category: GroupCategory = GroupCategory.OTHER,
     val currency: CurrencyCode,
+    /** Must be null: covers are uploaded once the group exists, then set with an update. */
     val coverImageUrl: String? = null,
     /** Existing users to add on creation; the creator is always included as OWNER. */
     val memberIds: List<UserId> = emptyList(),
@@ -26,6 +27,7 @@ data class UpdateGroupRequest(
     val name: String? = null,
     val description: String? = null,
     val category: GroupCategory? = null,
+    /** A GROUP_COVER `objectKey` issued for this group, or an empty string to remove the cover. */
     val coverImageUrl: String? = null,
 )
 

@@ -1,5 +1,6 @@
 package com.elozino.splitfy.backend.repositories
 
+import com.elozino.splitfy.backend.schema.dbNow
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.PaymentMethodsTable
@@ -38,7 +39,7 @@ class PaymentMethodRepository {
 
     suspend fun add(userId: UUID, request: AddPaymentMethodRequest): PaymentMethod = dbQuery {
         val id = UUID.randomUUID()
-        val now = Clock.System.now()
+        val now = dbNow()
 
         // The first method a user adds is their default, whatever they asked for.
         val isFirst = PaymentMethodsTable.selectAll()

@@ -1,5 +1,6 @@
 package com.elozino.splitfy.backend.repositories
 
+import com.elozino.splitfy.backend.schema.dbNow
 import com.elozino.splitfy.api.dto.CreateGroupRequest
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.GroupMembersTable
@@ -7,6 +8,7 @@ import com.elozino.splitfy.backend.schema.GroupsTable
 import com.elozino.splitfy.backend.schema.toJava
 import com.elozino.splitfy.backend.schema.toKotlin
 import com.elozino.splitfy.backend.schema.UsersTable
+import com.elozino.splitfy.backend.storage.ObjectKeys
 import com.elozino.splitfy.domain.model.CurrencyCode
 import com.elozino.splitfy.domain.model.Group
 import com.elozino.splitfy.domain.model.GroupCategory
@@ -27,10 +29,14 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.update
 
-class GroupRepository {
+/**
+ * [coverUrl] turns a stored cover key into something a client can display (a public
+ * or signed URL), or null when it can't be served.
+ */
+class GroupRepository(private val coverUrl: (String) -> String? = { null }) {
 
     suspend fun create(request: CreateGroupRequest, creatorId: UUID): Group = dbQuery {
-        val now = Clock.System.now()
+        val now = dbNow()
         val groupId = UUID.randomUUID()
 
         GroupsTable.insert {
@@ -76,7 +82,7 @@ class GroupRepository {
             .toList()
 
         val membersByGroup = loadMembers(rows.map { it[GroupsTable.id] })
-        rows.map { it.toGroup(membersByGroup[it[GroupsTable.id]].orEmpty()) }
+        rows.map { it.toGroup(membersByGroup[it[GroupsTable.id]].orEmpty()).withCoverUrl() }
     }
 
     suspend fun update(
@@ -90,14 +96,14 @@ class GroupRepository {
             name?.let { statement[GroupsTable.name] = it.trim() }
             description?.let { statement[GroupsTable.description] = it }
             category?.let { statement[GroupsTable.category] = it }
-            coverImageUrl?.let { statement[GroupsTable.coverImageUrl] = it }
+            coverImageUrl?.let { statement[GroupsTable.coverImageUrl] = it.ifEmpty { null } }
             statement[updatedAt] = Clock.System.now().toJava()
         }
         loadGroup(id)
     }
 
     suspend fun setArchived(id: UUID, archived: Boolean): Group? = dbQuery {
-        val now = Clock.System.now()
+        val now = dbNow()
         GroupsTable.update({ GroupsTable.id eq id }) {
             it[archivedAt] = if (archived) now.toJava() else null
             it[updatedAt] = now.toJava()
@@ -143,8 +149,12 @@ class GroupRepository {
 
     private fun loadGroup(id: UUID): Group? {
         val row = GroupsTable.selectAll().where { GroupsTable.id eq id }.singleOrNull() ?: return null
-        return row.toGroup(loadMembers(listOf(id))[id].orEmpty())
+        return row.toGroup(loadMembers(listOf(id))[id].orEmpty()).withCoverUrl()
     }
+
+    /** Only keys this server issued are resolved; anything else stored earlier is dropped. */
+    private fun Group.withCoverUrl(): Group =
+        copy(coverImageUrl = coverImageUrl?.takeIf(ObjectKeys::isOurs)?.let(coverUrl))
 
     private fun loadMembers(groupIds: List<UUID>): Map<UUID, List<GroupMember>> {
         if (groupIds.isEmpty()) return emptyMap()
