@@ -219,6 +219,25 @@ class WalletAndTransferTest {
     }
 
     @Test
+    fun `marking a notification read twice is not an error`() = testApplication {
+        useTestConfig(database)
+        val client = jsonClient()
+        val ada = client.register("ada@example.com")
+        val first = client.get(ApiRoutes.Notifications.BASE) { bearerAuth(ada.token) }
+            .body<NotificationsResponse>().items.first()
+
+        repeat(2) {
+            val response = client.post(ApiRoutes.Notifications.read(first.id)) { bearerAuth(ada.token) }
+            assertEquals(HttpStatusCode.OK, response.status)
+        }
+
+        // Someone else's notification id is still not found.
+        val bayo = client.register("bayo@example.com")
+        val response = client.post(ApiRoutes.Notifications.read(first.id)) { bearerAuth(bayo.token) }
+        assertEquals(HttpStatusCode.NotFound, response.status)
+    }
+
+    @Test
     fun `with the wallet disabled its endpoints do not exist`() = testApplication {
         useTestConfig(database, walletEnabled = false)
         val client = jsonClient()

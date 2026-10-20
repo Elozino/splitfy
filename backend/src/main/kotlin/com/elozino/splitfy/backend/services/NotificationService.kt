@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 
@@ -54,14 +55,17 @@ class NotificationRepository {
         NotificationsTable.selectAll().where { NotificationsTable.id eq id }.single().toNotification()
     }
 
+    /**
+     * Marks one notification read. Returns false only when the user has no such
+     * notification: one that is already read is still a success, so a double tap
+     * does not surface an error.
+     */
     suspend fun markRead(userId: UUID, id: UUID): Boolean = dbQuery {
-        NotificationsTable.update({
-            (NotificationsTable.id eq id) and
-                (NotificationsTable.userId eq userId) and
-                NotificationsTable.readAt.isNull()
-        }) {
+        val owned = (NotificationsTable.id eq id) and (NotificationsTable.userId eq userId)
+        NotificationsTable.update({ owned and NotificationsTable.readAt.isNull() }) {
             it[readAt] = Clock.System.now().toJava()
-        } > 0
+        }
+        NotificationsTable.selectAll().where { owned }.any()
     }
 
     suspend fun markAllRead(userId: UUID): Int = dbQuery {

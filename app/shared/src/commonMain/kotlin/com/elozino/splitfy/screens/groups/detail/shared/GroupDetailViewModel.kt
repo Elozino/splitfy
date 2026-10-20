@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elozino.splitfy.api.dto.CreateExpenseRequest
 import com.elozino.splitfy.api.dto.SplitPayload
+import com.elozino.splitfy.DataError
 import com.elozino.splitfy.DataResult
 import com.elozino.splitfy.domain.model.Balance
 import com.elozino.splitfy.domain.model.Expense
@@ -157,6 +158,54 @@ class GroupDetailViewModel(
                 is DataResult.Success -> load()
                 is DataResult.Failure -> _state.update {
                     it.copy(errorMessage = result.error.userMessage())
+                }
+            }
+        }
+    }
+
+    fun setAddMemberDialogVisible(isVisible: Boolean) = _state.update {
+        it.copy(isAddMemberDialogVisible = isVisible, memberEmail = "", memberError = null)
+    }
+
+    fun onMemberEmailChange(value: String) = _state.update { it.copy(memberEmail = value, memberError = null) }
+
+    /** Adds an existing splitfy user by email. People without an account need an invite. */
+    fun addMember() {
+        val email = _state.value.memberEmail.trim()
+        if (_state.value.isUpdatingMembers) return
+        if (!email.contains('@')) {
+            _state.update { it.copy(memberError = "Enter a valid email address") }
+            return
+        }
+
+        viewModelScope.launch {
+            _state.update { it.copy(isUpdatingMembers = true, memberError = null) }
+            when (val result = groupRepository.addMemberByEmail(groupId, email)) {
+                is DataResult.Success -> _state.update {
+                    it.copy(group = result.data, isUpdatingMembers = false, isAddMemberDialogVisible = false)
+                }
+                is DataResult.Failure -> _state.update {
+                    it.copy(
+                        isUpdatingMembers = false,
+                        memberError = when (result.error) {
+                            is DataError.NotFound -> "No one with that email uses splitfy yet"
+                            else -> result.error.userMessage()
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    fun removeMember(userId: String) {
+        if (_state.value.isUpdatingMembers) return
+        viewModelScope.launch {
+            _state.update { it.copy(isUpdatingMembers = true) }
+            when (val result = groupRepository.removeMember(groupId, userId)) {
+                is DataResult.Success -> _state.update { it.copy(group = result.data, isUpdatingMembers = false) }
+                // The server refuses while the member still has a balance; say why.
+                is DataResult.Failure -> _state.update {
+                    it.copy(isUpdatingMembers = false, errorMessage = result.error.userMessage())
                 }
             }
         }

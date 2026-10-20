@@ -280,8 +280,7 @@ fun NavSetup() {
                         navController.navigate(Route.SettleUp(route.groupId))
                     },
                     onNavigateToSettings = {
-                        // Using SplitDetail route for settings as mock
-                        navController.navigate(Route.SplitDetail(route.groupId))
+                        navController.navigate(Route.GroupSettings(route.groupId))
                     },
                     onNavigateToExpenseDetail = { expenseId ->
                         navController.navigate(Route.ExpenseDetail(route.groupId, expenseId))
@@ -304,8 +303,8 @@ fun NavSetup() {
                     onNavigateBack = { navController.popBackStack() },
                     onViewReceipt = { /* Open full receipt */ })
             }
-            composable<Route.SplitDetail> { backStackEntry ->
-                val route: Route.SplitDetail = backStackEntry.toRoute()
+            composable<Route.GroupSettings> { backStackEntry ->
+                val route: Route.GroupSettings = backStackEntry.toRoute()
                 GroupSettingsScreen(
                     groupId = route.groupId, onNavigateBack = { navController.popBackStack() })
             }
