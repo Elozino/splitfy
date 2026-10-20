@@ -1,5 +1,6 @@
 package com.elozino.splitfy.backend.repositories
 
+import com.elozino.splitfy.backend.schema.dbNow
 import com.elozino.splitfy.api.dto.CreateGroupRequest
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.GroupMembersTable
@@ -35,7 +36,7 @@ import org.jetbrains.exposed.sql.update
 class GroupRepository(private val coverUrl: (String) -> String? = { null }) {
 
     suspend fun create(request: CreateGroupRequest, creatorId: UUID): Group = dbQuery {
-        val now = Clock.System.now()
+        val now = dbNow()
         val groupId = UUID.randomUUID()
 
         GroupsTable.insert {
@@ -102,7 +103,7 @@ class GroupRepository(private val coverUrl: (String) -> String? = { null }) {
     }
 
     suspend fun setArchived(id: UUID, archived: Boolean): Group? = dbQuery {
-        val now = Clock.System.now()
+        val now = dbNow()
         GroupsTable.update({ GroupsTable.id eq id }) {
             it[archivedAt] = if (archived) now.toJava() else null
             it[updatedAt] = now.toJava()

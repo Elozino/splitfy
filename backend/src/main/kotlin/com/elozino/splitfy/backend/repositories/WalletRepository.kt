@@ -27,7 +27,7 @@ class WalletRepository {
 
     suspend fun getOrCreate(userId: UUID, currency: CurrencyCode): Wallet = dbQuery {
         loadWallet(userId) ?: run {
-            val now = Clock.System.now()
+            val now = dbNow()
             WalletsTable.insert {
                 it[WalletsTable.userId] = userId
                 it[WalletsTable.currency] = currency.code
@@ -61,7 +61,7 @@ class WalletRepository {
 
         val currency = locked?.get(WalletsTable.currency)?.let(::CurrencyCode) ?: write.amount.currency
         val current = locked?.get(WalletsTable.balance) ?: 0L
-        val now = Clock.System.now()
+        val now = dbNow()
 
         if (locked == null) {
             WalletsTable.insert {

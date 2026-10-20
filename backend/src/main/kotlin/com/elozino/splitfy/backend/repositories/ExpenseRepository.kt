@@ -1,5 +1,6 @@
 package com.elozino.splitfy.backend.repositories
 
+import com.elozino.splitfy.backend.schema.dbNow
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.ExpenseSharesTable
 import com.elozino.splitfy.backend.schema.ExpensesTable
@@ -48,7 +49,7 @@ data class NewExpense(
 class ExpenseRepository {
 
     suspend fun create(new: NewExpense): Expense = dbQuery {
-        val now = Clock.System.now()
+        val now = dbNow()
         val expenseId = UUID.randomUUID()
 
         ExpensesTable.insert {
@@ -154,7 +155,7 @@ class ExpenseRepository {
      */
     suspend fun softDelete(id: UUID): Boolean = dbQuery {
         ExpensesTable.update({ (ExpensesTable.id eq id) and ExpensesTable.deletedAt.isNull() }) {
-            val now = Clock.System.now()
+            val now = dbNow()
             it[deletedAt] = now.toJava()
             it[updatedAt] = now.toJava()
         } > 0
