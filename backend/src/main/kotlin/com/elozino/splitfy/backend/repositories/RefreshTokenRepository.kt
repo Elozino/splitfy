@@ -88,32 +88,36 @@ class RefreshTokenRepository {
 }
 
 /** One-time codes for the forgot-password flow. Codes are stored hashed. */
-class PasswordResetRepository {
+/**
+ * One-time codes for a purpose (password reset, email verification), each in its
+ * own table so a code issued for one can never be redeemed for the other.
+ */
+open class OneTimeCodeRepository(private val table: OneTimeCodesTable) {
 
     suspend fun create(userId: UUID, codeHash: String, expiresAt: Instant): UUID = dbQuery {
         val id = UUID.randomUUID()
-        PasswordResetsTable.insert {
-            it[PasswordResetsTable.id] = id
-            it[PasswordResetsTable.userId] = userId
-            it[PasswordResetsTable.codeHash] = codeHash
-            it[PasswordResetsTable.expiresAt] = expiresAt.toJava()
-            it[createdAt] = Clock.System.now().toJava()
+        table.insert {
+            it[table.id] = id
+            it[table.userId] = userId
+            it[table.codeHash] = codeHash
+            it[table.expiresAt] = expiresAt.toJava()
+            it[table.createdAt] = Clock.System.now().toJava()
         }
         id
     }
 
     /** An unused, unexpired code that has not been guessed at too often. */
     suspend fun findActive(userId: UUID, codeHash: String, now: Instant): UUID? = dbQuery {
-        PasswordResetsTable.selectAll()
+        table.selectAll()
             .where {
-                (PasswordResetsTable.userId eq userId) and
-                        (PasswordResetsTable.codeHash eq codeHash) and
-                        PasswordResetsTable.consumedAt.isNull() and
-                        (PasswordResetsTable.expiresAt greater now.toJava()) and
-                        (PasswordResetsTable.attempts less MAX_ATTEMPTS)
+                (table.userId eq userId) and
+                        (table.codeHash eq codeHash) and
+                        table.consumedAt.isNull() and
+                        (table.expiresAt greater now.toJava()) and
+                        (table.attempts less MAX_ATTEMPTS)
             }
             .singleOrNull()
-            ?.get(PasswordResetsTable.id)
+            ?.get(table.id)
     }
 
     /**
@@ -121,23 +125,23 @@ class PasswordResetRepository {
      * million combinations; without this the per-IP rate limit was the only brake.
      */
     suspend fun recordFailedAttempt(userId: UUID, now: Instant): Unit = dbQuery {
-        PasswordResetsTable.update({
-            (PasswordResetsTable.userId eq userId) and
-                PasswordResetsTable.consumedAt.isNull() and
-                (PasswordResetsTable.expiresAt greater now.toJava())
+        table.update({
+            (table.userId eq userId) and
+                table.consumedAt.isNull() and
+                (table.expiresAt greater now.toJava())
         }) {
-            it[attempts] = attempts + 1
+            it[table.attempts] = table.attempts + 1
         }
     }
 
     /** When the most recent code for [userId] was issued, for the resend cooldown. */
     suspend fun latestIssuedAt(userId: UUID): Instant? = dbQuery {
-        PasswordResetsTable.selectAll()
-            .where { PasswordResetsTable.userId eq userId }
-            .orderBy(PasswordResetsTable.createdAt, SortOrder.DESC)
+        table.selectAll()
+            .where { table.userId eq userId }
+            .orderBy(table.createdAt, SortOrder.DESC)
             .limit(1)
             .singleOrNull()
-            ?.get(PasswordResetsTable.createdAt)
+            ?.get(table.createdAt)
             ?.toKotlin()
     }
 
@@ -146,10 +150,14 @@ class PasswordResetRepository {
     }
 
     suspend fun consume(id: UUID): Boolean = dbQuery {
-        PasswordResetsTable.update({
-            (PasswordResetsTable.id eq id) and PasswordResetsTable.consumedAt.isNull()
+        table.update({
+            (table.id eq id) and table.consumedAt.isNull()
         }) {
-            it[consumedAt] = Clock.System.now().toJava()
+            it[table.consumedAt] = Clock.System.now().toJava()
         } > 0
     }
 }
+
+class PasswordResetRepository : OneTimeCodeRepository(PasswordResetsTable)
+
+class EmailVerificationRepository : OneTimeCodeRepository(EmailVerificationsTable)

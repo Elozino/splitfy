@@ -43,6 +43,7 @@ import com.elozino.splitfy.screens.auth.landing.AuthScreen
 import com.elozino.splitfy.screens.auth.login.LoginScreen
 import com.elozino.splitfy.screens.auth.new_password.NewPasswordScreen
 import com.elozino.splitfy.screens.auth.otp.OtpScreen
+import com.elozino.splitfy.screens.auth.otp.VerifyEmailScreen
 import com.elozino.splitfy.screens.auth.shared.AuthViewModel
 import com.elozino.splitfy.screens.auth.signup.SignUpScreen
 import com.elozino.splitfy.screens.contacts.main.ContactScreen
@@ -90,6 +91,11 @@ fun NavSetup() {
     val sessionManager: SessionManager = koinInject()
     val sessionState by sessionManager.state.collectAsStateWithLifecycle()
     val isAuthenticated = sessionState is SessionState.SignedIn
+
+    // Chosen once. Recomputing it from the live session rebuilt the graph the moment
+    // sign-up or login succeeded, resetting the back stack to Home and discarding
+    // whatever screen the flow had just navigated to (such as email verification).
+    val startDestination = remember { if (isAuthenticated) Route.Home else Route.Onboarding }
 
     // A 401 anywhere in the app (or an explicit sign-out) unwinds the whole back
     // stack exactly once, so no authenticated screen is left behind it.
@@ -142,7 +148,7 @@ fun NavSetup() {
         }) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = if (isAuthenticated) Route.Home else Route.Onboarding,
+            startDestination = startDestination,
             modifier = Modifier.fillMaxSize()
                 // Reserve the bar's height so the last row of a tab screen — the final
                 // favourite, the last group — is not hidden underneath it. Only while the
@@ -167,7 +173,23 @@ fun NavSetup() {
                     viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToLogin = { navController.navigate(Route.Login) },
-                    onSignUpSuccess = { navController.navigate(Route.Home) })
+                    onSignUpSuccess = {
+                        authViewModel.resetOtpTimer()
+                        navController.navigate(Route.VerifyEmail) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    })
+            }
+            composable<Route.VerifyEmail> {
+                val signedInEmail = (sessionState as? SessionState.SignedIn)?.user?.email
+                VerifyEmailScreen(
+                    viewModel = authViewModel,
+                    email = signedInEmail ?: authViewModel.state.value.email,
+                    onDone = {
+                        navController.navigate(Route.Home) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    })
             }
             composable<Route.Login> {
                 LoginScreen(
@@ -212,7 +234,12 @@ fun NavSetup() {
                             restoreState = true
                         }
                     },
-                    onNavigateToGroupDetail = { groupId -> navController.navigate(Route.GroupDetail(groupId)) })
+                    onNavigateToGroupDetail = { groupId -> navController.navigate(Route.GroupDetail(groupId)) },
+                    onNavigateToVerifyEmail = {
+                        authViewModel.resetOtpTimer()
+                        authViewModel.resendVerification()
+                        navController.navigate(Route.VerifyEmail)
+                    })
             }
             composable<Route.Pay> {
                 PayScreenWrapper(

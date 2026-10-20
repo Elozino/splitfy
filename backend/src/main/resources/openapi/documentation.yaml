@@ -138,6 +138,49 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResponse" }
 
+  /api/v1/auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Confirm the signed-in user's email with the code sent at sign-up
+      description: |
+        A code is emailed on registration. After five wrong guesses the code stops
+        working and a new one must be requested. Verifying an already-verified
+        account is a no-op.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        "200":
+          description: Verified; the updated profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400":
+          description: The code is wrong, expired, or has been guessed at too often (code INVALID_CREDENTIALS)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/auth/verify-email/resend:
+    post:
+      tags: [Auth]
+      summary: Email a new verification code
+      description: At most one email per minute; extra requests are accepted silently.
+      responses:
+        "202":
+          description: A code is on its way (or the account is already verified)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /api/v1/auth/logout/all:
     post:
       tags: [Auth]
@@ -1149,6 +1192,9 @@ components:
         avatarUrl: { type: string, nullable: true }
         defaultCurrency: { type: string }
         createdAt: { type: string, format: date-time }
+        emailVerified:
+          type: boolean
+          description: Whether the user has confirmed their email. Only verified accounts can be found or added by email.
 
     TokenPair:
       type: object

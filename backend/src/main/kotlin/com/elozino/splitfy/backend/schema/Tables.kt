@@ -24,6 +24,7 @@ object UsersTable : Table("users") {
     val phoneNumber = varchar("phone_number", 20).nullable()
     val avatarUrl = text("avatar_url").nullable()
     val defaultCurrency = char("default_currency", 3)
+    val emailVerifiedAt = timestamp("email_verified_at").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 
@@ -53,7 +54,8 @@ object RefreshTokensTable : Table("refresh_tokens") {
     }
 }
 
-object PasswordResetsTable : Table("password_resets") {
+/** A hashed one-time code sent to a user's email, with expiry and a count of wrong guesses. */
+abstract class OneTimeCodesTable(name: String) : Table(name) {
     val id = uuid("id")
     val userId = uuid("user_id").references(UsersTable.id, onDelete = ReferenceOption.CASCADE)
     val codeHash = varchar("code_hash", 64)
@@ -65,9 +67,13 @@ object PasswordResetsTable : Table("password_resets") {
     override val primaryKey = PrimaryKey(id)
 
     init {
-        index("ix_password_resets_user", false, userId)
+        index("ix_${name}_user", false, userId)
     }
 }
+
+object PasswordResetsTable : OneTimeCodesTable("password_resets")
+
+object EmailVerificationsTable : OneTimeCodesTable("email_verifications")
 
 object GroupsTable : Table("groups") {
     val id = uuid("id")

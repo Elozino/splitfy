@@ -19,6 +19,8 @@ object ApiRoutes {
         const val FORGOT_PASSWORD = "$BASE/forgot-password"
         const val RESET_PASSWORD = "$BASE/reset-password"
         const val VERIFY_OTP = "$BASE/verify-otp"
+        const val VERIFY_EMAIL = "$BASE/verify-email"
+        const val RESEND_VERIFICATION = "$BASE/verify-email/resend"
     }
 
     object Users {

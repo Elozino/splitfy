@@ -49,6 +49,8 @@ class PasswordResetTest {
         override suspend fun sendPasswordResetCode(email: String, code: String) {
             sent += email to code
         }
+
+        override suspend fun sendEmailVerificationCode(email: String, code: String) = Unit
     }
 
     private val notifier = CapturingNotifier()

@@ -2,6 +2,7 @@ package com.elozino.splitfy.backend.di
 
 import com.elozino.splitfy.backend.repositories.ExpenseRepository
 import com.elozino.splitfy.backend.repositories.GroupRepository
+import com.elozino.splitfy.backend.repositories.EmailVerificationRepository
 import com.elozino.splitfy.backend.repositories.PasswordResetRepository
 import com.elozino.splitfy.backend.repositories.PaymentMethodRepository
 import com.elozino.splitfy.backend.repositories.RefreshTokenRepository
@@ -72,6 +73,7 @@ fun serverModule(config: AppConfig) = module {
     single { UserRepository() }
     single { RefreshTokenRepository() }
     single { PasswordResetRepository() }
+    single { EmailVerificationRepository() }
     single { GroupRepository() }
     single { ExpenseRepository() }
     single { SettlementRepository() }
@@ -82,7 +84,7 @@ fun serverModule(config: AppConfig) = module {
     single { ContactFavoriteRepository() }
 
     // Services
-    single { AuthService(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { UserService(get()) }
     single { GroupService(get(), get(), get(), get()) }
     single { ExpenseService(get(), get()) }

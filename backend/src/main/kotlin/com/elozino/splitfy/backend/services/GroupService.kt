@@ -85,7 +85,9 @@ class GroupService(
         val requestedEmail = request.email
         val user = when {
             requestedId != null -> users.findById(UUID.fromString(requestedId.value))
-            requestedEmail != null -> users.findByEmail(requestedEmail)?.user
+            // Only a verified address proves who is behind it; otherwise someone could
+            // register a friend's email and be added to groups meant for that friend.
+            requestedEmail != null -> users.findVerifiedByEmail(requestedEmail)
             else -> throw AppException.BadRequest("Provide either a userId or an email")
         } ?: throw AppException.NotFound("User")
 

@@ -27,6 +27,9 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     object Otp : Route("otp", false)
 
     @Serializable
+    object VerifyEmail : Route("verify_email", true)
+
+    @Serializable
     object Home : Route("home", true)
 
     @Serializable
