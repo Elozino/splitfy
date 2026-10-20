@@ -2,10 +2,13 @@ package com.elozino.splitfy.backend.services
 
 import com.elozino.splitfy.api.ApiErrorCode
 import com.elozino.splitfy.api.dto.CreateExpenseRequest
+import com.elozino.splitfy.api.dto.NotificationCategory
+import com.elozino.splitfy.api.dto.PushData
 import com.elozino.splitfy.api.dto.UpdateExpenseRequest
 import com.elozino.splitfy.api.FieldError
 import com.elozino.splitfy.backend.repositories.ExpenseRepository
 import com.elozino.splitfy.backend.repositories.NewExpense
+import com.elozino.splitfy.backend.repositories.UserRepository
 import com.elozino.splitfy.backend.utils.AppException
 import com.elozino.splitfy.backend.utils.Cursor
 import com.elozino.splitfy.domain.model.Expense
@@ -25,6 +28,8 @@ import kotlin.time.Clock
 class ExpenseService(
     private val expenses: ExpenseRepository,
     private val groupService: GroupService,
+    private val notifications: NotificationService,
+    private val users: UserRepository,
 ) {
 
     suspend fun create(groupId: UUID, request: CreateExpenseRequest, callerId: UUID): Expense {
@@ -44,7 +49,7 @@ class ExpenseService(
 
         val shares = computeShares(request.total, input)
 
-        return expenses.create(
+        val created = expenses.create(
             NewExpense(
                 groupId = groupId,
                 description = request.description,
@@ -60,6 +65,30 @@ class ExpenseService(
                 clientRequestId = request.clientRequestId,
             )
         )
+        notifyMembers(group, created, callerId)
+        return created
+    }
+
+    /** Everyone else in the group hears about a new expense, with their own share when they have one. */
+    private suspend fun notifyMembers(group: Group, expense: Expense, callerId: UUID) {
+        val actor = users.findById(callerId)?.displayName ?: "Someone"
+        val caller = UserId(callerId.toString())
+        for (member in group.members) {
+            if (member.userId == caller) continue
+            val share = expense.shares.firstOrNull { it.userId == member.userId }?.amount
+            val message = buildString {
+                append("$actor added ${expense.description} (${expense.total.display()}).")
+                if (share != null && share.isPositive) append(" Your share: ${share.display()}.")
+            }
+            notifications.notify(
+                userId = UUID.fromString(member.userId.value),
+                category = NotificationCategory.GROUP,
+                title = "New expense in ${group.name}",
+                message = message,
+                topic = PushTopic.EXPENSES,
+                data = mapOf(PushData.GROUP_ID to group.id.value, PushData.TYPE to "expense"),
+            )
+        }
     }
 
     suspend fun get(groupId: UUID, expenseId: UUID, callerId: UUID): Expense {
