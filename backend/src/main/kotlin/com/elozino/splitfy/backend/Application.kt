@@ -7,6 +7,7 @@ import com.elozino.splitfy.backend.plugins.configureHttp
 import com.elozino.splitfy.backend.plugins.configureObservability
 import com.elozino.splitfy.backend.plugins.configureRateLimiting
 import com.elozino.splitfy.backend.plugins.configureRouting
+import com.elozino.splitfy.backend.plugins.configureScheduling
 import com.elozino.splitfy.backend.plugins.configureSecurity
 import com.elozino.splitfy.backend.plugins.configureStatusPages
 import com.elozino.splitfy.backend.schema.DatabaseFactory
@@ -56,4 +57,5 @@ fun Application.configureApp(overrides: List<Module>) {
     configureRateLimiting()
     configureStatusPages()
     configureRouting(connection, config, metrics)
+    configureScheduling(config.push)
 }

@@ -9,6 +9,7 @@ import com.elozino.splitfy.backend.routes.groupRoutes
 import com.elozino.splitfy.backend.routes.healthRoutes
 import com.elozino.splitfy.backend.routes.notificationRoutes
 import com.elozino.splitfy.backend.routes.openApiRoutes
+import com.elozino.splitfy.backend.routes.pushRoutes
 import com.elozino.splitfy.backend.routes.settlementRoutes
 import com.elozino.splitfy.backend.routes.transferRoutes
 import com.elozino.splitfy.backend.routes.userRoutes
@@ -90,6 +91,7 @@ fun Application.configureRouting(database: Database, config: AppConfig, metrics:
                 }
                 activityRoutes(activityService)
                 notificationRoutes(notificationService)
+                pushRoutes(notificationService)
                 contactRoutes(contactService)
                 uploadRoutes(uploadService)
             }

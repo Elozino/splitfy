@@ -93,6 +93,9 @@ platform's secret store, never in the repository or the image.
 | `SENTRY_DSN` | empty | Error reporting; empty turns it off. |
 | `APP_VERSION` | image tag | Set by the release workflow; tags Sentry events. |
 | `METRICS_TOKEN` | empty | Enables `/metrics` behind this bearer token (≥ 24 chars). |
+| `FCM_SERVICE_ACCOUNT_JSON` / `FCM_SERVICE_ACCOUNT_PATH` | empty | Secret. Firebase service-account key (JSON, or a path to it); empty means pushes are only logged. See `docs/PUSH_NOTIFICATIONS.md`. |
+| `PAYMENT_REMINDERS_ENABLED` | `true` | Daily reminder for old balances; safe with several instances. |
+| `PAYMENT_REMINDER_AFTER_DAYS` / `PAYMENT_REMINDER_EVERY_DAYS` / `PAYMENT_REMINDER_HOUR_UTC` | `3` / `7` / `9` | |
 | `LOG_FORMAT` | `json` in the image | `text` for humans. |
 | `LOG_LEVEL` / `APP_LOG_LEVEL` | `INFO` / `DEBUG` | Root and `com.elozino.splitfy` levels. Consider `INFO` for the latter in production. |
 | `SHUTDOWN_GRACE_MS` / `SHUTDOWN_TIMEOUT_MS` | `5000` / `20000` | See [shutdown](#health-checks-and-shutdown). |

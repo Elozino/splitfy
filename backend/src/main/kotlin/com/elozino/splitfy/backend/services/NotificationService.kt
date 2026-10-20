@@ -1,13 +1,20 @@
 package com.elozino.splitfy.backend.services
 
+import com.elozino.splitfy.api.FieldError
 import com.elozino.splitfy.api.dto.AppNotification
+import com.elozino.splitfy.api.dto.NotificationPreferences
+import com.elozino.splitfy.api.dto.RegisterDeviceRequest
+import com.elozino.splitfy.api.dto.UpdateNotificationPreferencesRequest
 import com.elozino.splitfy.api.dto.NotificationCategory
 import com.elozino.splitfy.api.dto.NotificationsResponse
+import com.elozino.splitfy.backend.repositories.DeviceTokenRepository
+import com.elozino.splitfy.backend.repositories.NotificationPreferencesRepository
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.NotificationsTable
 import com.elozino.splitfy.backend.schema.toJava
 import com.elozino.splitfy.backend.schema.toKotlin
 import com.elozino.splitfy.backend.utils.AppException
+import com.elozino.splitfy.domain.model.Money
 import java.util.UUID
 import kotlin.time.Clock
 import org.jetbrains.exposed.sql.and
@@ -78,12 +85,17 @@ class NotificationRepository {
 }
 
 /**
- * In-app notifications.
+ * In-app notifications, mirrored to the user's phones as push notifications.
  *
  * [notify] never throws: a failed notification must not roll back the payment or
  * expense that triggered it.
  */
-class NotificationService(private val repository: NotificationRepository) {
+class NotificationService(
+    private val repository: NotificationRepository,
+    private val push: PushDispatcher,
+    private val devices: DeviceTokenRepository,
+    private val preferences: NotificationPreferencesRepository,
+) {
 
     private val logger = LoggerFactory.getLogger(NotificationService::class.java)
 
@@ -102,14 +114,43 @@ class NotificationService(private val repository: NotificationRepository) {
         return list(userId, DEFAULT_LIMIT)
     }
 
+    /**
+     * Stores an in-app notification and pushes it, unless the user switched [topic]
+     * off. [data] rides along in the push for the app to route a tap (see `PushData`).
+     */
     suspend fun notify(
         userId: UUID,
         category: NotificationCategory,
         title: String,
         message: String,
+        topic: PushTopic = PushTopic.defaultFor(category),
+        data: Map<String, String> = emptyMap(),
     ) {
         runCatching { repository.create(userId, category, title, message) }
             .onFailure { logger.warn("Could not store notification for {}: {}", userId, it.message) }
+        runCatching { push.dispatch(userId, topic, PushMessage(title.take(120), message.take(400), data)) }
+            .onFailure { logger.warn("Could not queue push for {}: {}", userId, it.message) }
+    }
+
+    suspend fun registerDevice(userId: UUID, request: RegisterDeviceRequest) {
+        devices.register(userId, validToken(request.token), request.platform)
+    }
+
+    suspend fun unregisterDevice(userId: UUID, token: String) {
+        devices.unregister(userId, validToken(token))
+    }
+
+    suspend fun preferences(userId: UUID): NotificationPreferences = preferences.get(userId)
+
+    suspend fun updatePreferences(userId: UUID, request: UpdateNotificationPreferencesRequest): NotificationPreferences =
+        preferences.update(userId, request)
+
+    private fun validToken(token: String): String {
+        val trimmed = token.trim()
+        if (trimmed.isEmpty() || trimmed.length > MAX_TOKEN_LENGTH) {
+            throw AppException.Validation(listOf(FieldError("token", "Not a valid push token")))
+        }
+        return trimmed
     }
 
     /** Called once at sign-up so the notification screen is never empty on day one. */
@@ -130,6 +171,7 @@ class NotificationService(private val repository: NotificationRepository) {
 
     companion object {
         const val DEFAULT_LIMIT = 50
+        private const val MAX_TOKEN_LENGTH = 512
     }
 }
 
@@ -141,3 +183,6 @@ private fun ResultRow.toNotification() = AppNotification(
     isRead = this[NotificationsTable.readAt] != null,
     createdAt = this[NotificationsTable.createdAt].toKotlin(),
 )
+
+/** `NGN 1250.00`: unambiguous in a notification, where there is no locale to format for. */
+internal fun Money.display(): String = "${currency.code} ${toPlainString()}"

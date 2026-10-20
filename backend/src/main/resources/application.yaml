@@ -72,6 +72,18 @@ observability:
   # endpoint (404). At least 24 characters when set.
   metricsToken: "$METRICS_TOKEN:"
 
+push:
+  # Firebase Cloud Messaging service-account key: the JSON itself, or a path to the
+  # file. With neither, pushes are only logged; push is optional and never blocks boot.
+  fcmServiceAccountJson: "$FCM_SERVICE_ACCOUNT_JSON:"
+  fcmServiceAccountPath: "$FCM_SERVICE_ACCOUNT_PATH:"
+  # Daily nudge for balances owed longer than reminderAfterDays, at most once per
+  # group every reminderEveryDays. Safe with several instances: one claims each day.
+  remindersEnabled: "$PAYMENT_REMINDERS_ENABLED:true"
+  reminderAfterDays: "$PAYMENT_REMINDER_AFTER_DAYS:3"
+  reminderEveryDays: "$PAYMENT_REMINDER_EVERY_DAYS:7"
+  reminderHourUtc: "$PAYMENT_REMINDER_HOUR_UTC:9"
+
 storage:
   # S3-compatible object storage for receipts and group cover photos (AWS S3 or
   # Cloudflare R2). Uploads are off unless endpoint, bucket and both keys are set.

@@ -6,6 +6,8 @@ import Sentry
 
 @main
 struct iOSApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     init() {
         startCrashReporting()
     }

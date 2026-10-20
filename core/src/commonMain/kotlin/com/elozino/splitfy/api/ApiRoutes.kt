@@ -97,6 +97,13 @@ object ApiRoutes {
         const val BASE = "$API_PREFIX/notifications"
         fun read(id: String) = "$BASE/$id/read"
         const val READ_ALL = "$BASE/read-all"
+        const val PREFERENCES = "$BASE/preferences"
+    }
+
+    /** Push tokens for the caller's devices. */
+    object Devices {
+        const val BASE = "$API_PREFIX/devices"
+        const val UNREGISTER = "$BASE/unregister"
     }
 
     object Contacts {

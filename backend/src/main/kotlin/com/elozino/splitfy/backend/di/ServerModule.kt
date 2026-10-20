@@ -31,6 +31,14 @@ import com.elozino.splitfy.backend.services.NotificationRepository
 import com.elozino.splitfy.backend.services.NotificationService
 import com.elozino.splitfy.backend.services.OtpNotifier
 import com.elozino.splitfy.backend.services.ResendOtpNotifier
+import com.elozino.splitfy.backend.repositories.DeviceTokenRepository
+import com.elozino.splitfy.backend.repositories.JobRunRepository
+import com.elozino.splitfy.backend.repositories.NotificationPreferencesRepository
+import com.elozino.splitfy.backend.repositories.PaymentReminderRepository
+import com.elozino.splitfy.backend.services.PaymentReminderJob
+import com.elozino.splitfy.backend.services.PushDispatcher
+import com.elozino.splitfy.backend.services.PushSender
+import com.elozino.splitfy.backend.services.pushSender
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -78,6 +86,9 @@ fun serverModule(config: AppConfig) = module {
         }
     }.withOptions { onClose { it?.close() } }
 
+    single<PushSender> { pushSender(config.push, get()) }
+    single { PushDispatcher(get(), get(), get()) }.withOptions { onClose { it?.close() } }
+
     // Repositories
     single { UserRepository() }
     single { RefreshTokenRepository() }
@@ -95,6 +106,10 @@ fun serverModule(config: AppConfig) = module {
     single { TransferRepository() }
     single { NotificationRepository() }
     single { ContactFavoriteRepository() }
+    single { DeviceTokenRepository() }
+    single { NotificationPreferencesRepository() }
+    single { JobRunRepository() }
+    single { PaymentReminderRepository() }
 
     // Services
     single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -111,10 +126,11 @@ fun serverModule(config: AppConfig) = module {
         )
     }
     single { GroupService(get(), get(), get(), get(), get()) }
-    single { ExpenseService(get(), get(), get(), get()) }
+    single { ExpenseService(get(), get(), get(), get(), get(), get()) }
     single { UploadService(get(), get(), get()) }
-    single { SettlementService(get(), get()) }
-    single { NotificationService(get()) }
+    single { SettlementService(get(), get(), get(), get()) }
+    single { NotificationService(get(), get(), get(), get()) }
+    single { PaymentReminderJob(get(), get(), get(), get(), get(), get(), get(), get(), config.push) }
     single { WalletService(get(), get(), get(), get()) }
     single { TransferService(get(), get(), get(), get()) }
     single { ActivityService(get(), get(), get(), get()) }

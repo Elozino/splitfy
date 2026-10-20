@@ -7,6 +7,15 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+// Firebase reads its project settings from google-services.json, which is
+// per-developer and gitignored. Without it the plugin is skipped and the app builds
+// and runs with push turned off (SplitfyApplication checks for a FirebaseApp).
+if (file("google-services.json").exists()) {
+    apply(plugin = libs.plugins.googleServices.get().pluginId)
+} else {
+    logger.info("app/androidApp/google-services.json not found; building without push notifications")
+}
+
 /**
  * A deliberately thin Android host: manifest, launcher icons, and a single Activity
  * that hands off to the shared Compose UI in `:app:shared`.
@@ -140,6 +149,10 @@ dependencies {
     implementation(libs.compose.uiToolingPreview)
     implementation(libs.koin.android)
     implementation(platform(libs.koin.bom))
+
+    // Push notifications. Inert until google-services.json is present.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     debugImplementation(libs.compose.uiTooling)
 }

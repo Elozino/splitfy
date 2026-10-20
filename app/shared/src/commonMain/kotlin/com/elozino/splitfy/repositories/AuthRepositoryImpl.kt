@@ -28,6 +28,8 @@ class AuthRepositoryImpl(
     private val client: HttpClient,
     private val caller: ApiCaller,
     private val session: SessionManager,
+    /** Runs before sign-out while requests can still authenticate (unregistering push). */
+    private val beforeLogout: suspend () -> Unit = {},
 ) : AuthRepository {
 
     override suspend fun register(
@@ -84,6 +86,7 @@ class AuthRepositoryImpl(
      * "sign out" while offline must still end up signed out on the device.
      */
     override suspend fun logout(): DataResult<Unit> {
+        runCatching { beforeLogout() }
         val refreshToken = session.currentTokens()?.refreshToken
         val result = if (refreshToken != null) {
             caller.execute<MessageResponse> {

@@ -3,6 +3,7 @@ package com.elozino.splitfy.backend.services
 import com.elozino.splitfy.api.dto.GroupInvite
 import com.elozino.splitfy.api.dto.InvitePreview
 import com.elozino.splitfy.api.dto.NotificationCategory
+import com.elozino.splitfy.api.dto.PushData
 import com.elozino.splitfy.backend.repositories.GroupInviteRepository
 import com.elozino.splitfy.backend.repositories.GroupRepository
 import com.elozino.splitfy.backend.repositories.InviteRecord
@@ -67,6 +68,7 @@ class InviteService(
                 category = NotificationCategory.GROUP,
                 title = "$joiner joined ${group.name}",
                 message = "They joined with your invite link.",
+                data = mapOf(PushData.GROUP_ID to group.id.value, PushData.TYPE to "group"),
             )
         }
         return groups.findById(invite.groupId) ?: throw AppException.NotFound("Group")

@@ -2,6 +2,7 @@ package com.elozino.splitfy.android
 
 import android.app.Application
 import com.elozino.splitfy.BuildConfig
+import com.elozino.splitfy.android.push.SplitfyMessagingService
 import com.elozino.splitfy.crash.CrashReporting
 import com.elozino.splitfy.di.initKoin
 import org.koin.android.ext.koin.androidContext
@@ -30,5 +31,6 @@ class SplitfyApplication : Application() {
             androidLogger(if (BuildConfig.DEBUG) Level.ERROR else Level.NONE)
             androidContext(this@SplitfyApplication)
         }
+        SplitfyMessagingService.initialise(this)
     }
 }

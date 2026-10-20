@@ -6,8 +6,10 @@ import com.elozino.splitfy.api.dto.AuthResponse
 import com.elozino.splitfy.api.dto.CreateExpenseRequest
 import com.elozino.splitfy.api.dto.CreateGroupRequest
 import com.elozino.splitfy.api.dto.CreateSettlementRequest
+import com.elozino.splitfy.api.dto.DevicePlatform
 import com.elozino.splitfy.api.dto.GroupBalancesResponse
 import com.elozino.splitfy.api.dto.LoginRequest
+import com.elozino.splitfy.api.dto.RegisterDeviceRequest
 import com.elozino.splitfy.api.dto.RefreshTokenRequest
 import com.elozino.splitfy.api.dto.RegisterRequest
 import com.elozino.splitfy.api.dto.SplitPayload
@@ -77,6 +79,11 @@ class AccountDeletionTest {
         }.body<Settlement>()
         client.post(ApiRoutes.Settlements.confirm(group.id.value, settlement.id.value)) { bearerAuth(ada.tokens.accessToken) }
         val before = client.balances(group, ada)
+        client.post(ApiRoutes.Devices.BASE) {
+            bearerAuth(ada.tokens.accessToken)
+            contentType(ContentType.Application.Json)
+            setBody(RegisterDeviceRequest("ada-phone", DevicePlatform.ANDROID))
+        }
 
         // Ada owns the group; deleting hands ownership to Bode.
         val deleted = client.delete(ApiRoutes.Users.ME) { bearerAuth(ada.tokens.accessToken) }
@@ -108,9 +115,12 @@ class AccountDeletionTest {
                     assertNotNull(it.getTimestamp(3))
                 }
             }
-            conn.prepareStatement("SELECT count(*) FROM refresh_tokens WHERE user_id = ?::uuid").use { st ->
-                st.setString(1, ada.user.id.value)
-                st.executeQuery().use { it.next(); assertEquals(0, it.getInt(1)) }
+            // The user row survives, so these are cleared explicitly rather than by cascade.
+            for (table in listOf("refresh_tokens", "device_tokens")) {
+                conn.prepareStatement("SELECT count(*) FROM $table WHERE user_id = ?::uuid").use { st ->
+                    st.setString(1, ada.user.id.value)
+                    st.executeQuery().use { it.next(); assertEquals(0, it.getInt(1), table) }
+                }
             }
         }
 

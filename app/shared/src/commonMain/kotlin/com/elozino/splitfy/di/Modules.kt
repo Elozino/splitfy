@@ -81,7 +81,12 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
         ).create()
     }
 
-    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
+    single<AuthRepository> {
+        val push = get<com.elozino.splitfy.push.PushRegistrar>()
+        AuthRepositoryImpl(get(), get(), get(), beforeLogout = push::unregister)
+    }
+    single<com.elozino.splitfy.push.PushRepository> { com.elozino.splitfy.push.PushRepositoryImpl(get(), get()) }
+    single { com.elozino.splitfy.push.PushRegistrar(get(), get(), get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
     single { com.elozino.splitfy.invites.InviteRepository(get(), get()) }
     single<GroupRepository> { GroupRepositoryImpl(get(), get()) }
@@ -117,6 +122,7 @@ val viewModelModule: Module = module {
     factory { TransactionViewModel(get(), get(), get()) }
     factory { ActivityViewModel(get(), get()) }
     factory { NotificationViewModel(get()) }
+    factory { com.elozino.splitfy.screens.account.notification_settings.NotificationSettingsViewModel(get()) }
     factory { ContactsViewModel(get(), get()) }
     factory { AccountViewModel(get(), get(), get(), get(), get()) }
 }
@@ -136,7 +142,10 @@ fun initKoin(
 ): KoinApplication = startKoin {
     platformConfig?.invoke(this)
     modules(platformModule(), dataModule(isDebug, apiBaseUrl, googleClientId), viewModelModule)
-}.also { com.elozino.splitfy.invites.InviteLinks.bind(it.koin.get()) }
+}.also {
+    com.elozino.splitfy.invites.InviteLinks.bind(it.koin.get())
+    it.koin.get<com.elozino.splitfy.push.PushRegistrar>().start()
+}
 
 /** Convenience for `koinViewModel { parametersOf(groupId) }` call sites. */
 fun groupParams(groupId: String) = parametersOf(groupId)
