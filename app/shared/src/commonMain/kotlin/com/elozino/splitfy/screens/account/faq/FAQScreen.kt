@@ -107,6 +107,8 @@ import com.elozino.splitfy.domain.model.PaymentMethodType
 import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
+import com.elozino.splitfy.screens.account.legal.LegalCopy
+import androidx.compose.foundation.horizontalScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,15 +129,16 @@ fun FAQScreen(
         }, containerColor = Color.White
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
-            val categories = listOf("General", "Account", "Payment", "Group")
+            val categories = LegalCopy.faqCategories
+            val selected = state.selectedFaqCategory.takeIf { it in categories } ?: categories.first()
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 categories.forEach { cat ->
                     FilterChip(
-                        selected = state.selectedFaqCategory == cat,
+                        selected = selected == cat,
                         onClick = { viewModel.selectFaqCategory(cat) },
                         label = { Text(cat) },
                         shape = RoundedCornerShape(100.dp),
@@ -144,13 +147,7 @@ fun FAQScreen(
                 }
             }
 
-            val faqs = listOf(
-                "What is splitfy?" to "splitfy is a bill-splitting app that helps you manage group expenses effectively.",
-                "How does splitfy work?" to "Create a group, add expenses, and splitfy automatically calculates who owes whom.",
-                "Is splitfy free to use?" to "Yes, basic features are free. Premium plan offers extra benefits.",
-                "Can I split bills with multiple friends?" to "Absolutely! You can create groups with as many people as you want.",
-                "How do I receive payments?" to "Connect your wallet or bank account to receive payments directly."
-            )
+            val faqs = LegalCopy.faqs.filter { it.category == selected }.map { it.question to it.answer }
 
             LazyColumn {
                 items(faqs) { (q, a) ->

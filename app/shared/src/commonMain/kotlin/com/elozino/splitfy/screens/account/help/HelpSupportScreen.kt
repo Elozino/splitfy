@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.help
 
+import com.elozino.splitfy.screens.account.legal.rememberSupportMailer
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,19 +48,16 @@ fun HelpSupportScreen(
             )
         }, containerColor = Color.White
     ) { padding ->
+        val sendMail = rememberSupportMailer()
+        // Only entries that lead somewhere. Add store-rating and website links once
+        // those exist rather than shipping rows that do nothing.
         val items = listOf(
             "FAQ" to onNavigateToFAQ,
             "Contact Support" to onNavigateToContactSupport,
+            "Send Feedback" to { sendMail("splitfy feedback"); Unit },
             "Privacy Policy" to onNavigateToPrivacyPolicy,
             "Terms of Service" to onNavigateToTermsOfService,
-            "Partner" to {},
-            "Job Vacancy" to {},
-            "Accessibility" to {},
-            "Feedback" to {},
-            "About Us" to {},
-            "Rate Us" to {},
-            "Visit Our Website" to {},
-            "Follow Us on Social Media" to {})
+        )
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             items(items) { (title, onClick) ->
                 Row(
