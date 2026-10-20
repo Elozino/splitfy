@@ -52,6 +52,11 @@ sealed class AppException(
         code: ApiErrorCode = ApiErrorCode.CONFLICT,
     ) : AppException(HttpStatusCode.Conflict, code, message)
 
+    class Unavailable(
+        message: String,
+        code: ApiErrorCode = ApiErrorCode.STORAGE_UNAVAILABLE,
+    ) : AppException(HttpStatusCode.ServiceUnavailable, code, message)
+
     class Internal(
         message: String = "Something went wrong on our end",
         cause: Throwable? = null,

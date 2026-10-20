@@ -136,7 +136,7 @@ class ExpenseRepository {
             category?.let { statement[ExpensesTable.category] = it }
             paidBy?.let { statement[ExpensesTable.paidBy] = it }
             splitMethod?.let { statement[ExpensesTable.splitMethod] = it }
-            receiptUrl?.let { statement[ExpensesTable.receiptUrl] = it }
+            receiptUrl?.let { statement[ExpensesTable.receiptUrl] = it.ifEmpty { null } }
             notes?.let { statement[ExpensesTable.notes] = it }
             incurredAt?.let { statement[ExpensesTable.incurredAt] = it.toJava() }
             statement[updatedAt] = Clock.System.now().toJava()
