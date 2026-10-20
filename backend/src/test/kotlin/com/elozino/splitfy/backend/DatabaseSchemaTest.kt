@@ -36,6 +36,8 @@ class DatabaseSchemaTest {
     private val database = TestDatabase("splitfy_schema")
 
     private val tables = listOf(
+        com.elozino.splitfy.backend.payments.PaymentIntents,
+        com.elozino.splitfy.backend.payments.PaymentEffects,
         UsersTable,
         RefreshTokensTable,
         PasswordResetsTable,
