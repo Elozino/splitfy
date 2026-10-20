@@ -51,6 +51,15 @@ oauth:
   googleClientIds: "$GOOGLE_CLIENT_IDS:"
   appleClientIds: "$APPLE_CLIENT_IDS:"
 
+links:
+  # Invite links are $PUBLIC_BASE_URL/i/<token>; that host must route to this API.
+  publicBaseUrl: "$PUBLIC_BASE_URL:https://splitfy.app"
+  androidPackage: "$ANDROID_PACKAGE:com.elozino.splitfy"
+  # Comma-separated. Release signing certificate SHA-256 (keytool -list -v).
+  androidCertSha256: "$ANDROID_CERT_SHA256:"
+  # Comma-separated TEAMID.bundle ids, e.g. ABCDE12345.com.elozino.splitfy
+  appleAppIds: "$APPLE_APP_IDS:"
+
 features:
   # Wallet, top-up, withdrawal, payment methods and peer transfers. Leave off until a
   # payment provider is integrated: a top-up currently credits without charging.

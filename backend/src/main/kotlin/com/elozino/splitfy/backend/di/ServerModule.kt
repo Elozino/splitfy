@@ -4,7 +4,9 @@ import com.elozino.splitfy.backend.repositories.ExpenseRepository
 import com.elozino.splitfy.backend.repositories.GroupRepository
 import com.elozino.splitfy.backend.repositories.EmailVerificationRepository
 import com.elozino.splitfy.backend.repositories.PasswordResetRepository
+import com.elozino.splitfy.backend.repositories.GroupInviteRepository
 import com.elozino.splitfy.backend.repositories.UserIdentityRepository
+import com.elozino.splitfy.backend.services.InviteService
 import com.elozino.splitfy.backend.services.IdentityTokenVerifier
 import com.elozino.splitfy.backend.services.SocialAuthService
 import com.elozino.splitfy.backend.repositories.PaymentMethodRepository
@@ -78,6 +80,7 @@ fun serverModule(config: AppConfig) = module {
     single { PasswordResetRepository() }
     single { EmailVerificationRepository() }
     single { UserIdentityRepository() }
+    single { GroupInviteRepository() }
     single { GroupRepository() }
     single { ExpenseRepository() }
     single { SettlementRepository() }
@@ -90,6 +93,7 @@ fun serverModule(config: AppConfig) = module {
     // Services
     single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { UserService(get()) }
+    single { InviteService(get(), get(), get(), get(), get(), config.links.publicBaseUrl) }
     single {
         SocialAuthService(
             get(), get(), get(), get(), get(), get(),

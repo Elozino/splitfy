@@ -110,6 +110,23 @@ fun NavSetup() {
         wasSignedIn = signedIn
     }
 
+    val inviteToken by com.elozino.splitfy.invites.InviteLinks.token.collectAsStateWithLifecycle()
+    var inviteWaitingForAuth by androidx.compose.runtime.saveable.rememberSaveable(inviteToken) { mutableStateOf(false) }
+    LaunchedEffect(inviteToken) { if (inviteToken == null) inviteWaitingForAuth = false }
+    // Wait until the existing authentication flow reaches Home; sign-up must finish verification first.
+    val inviteAuthFinished = isAuthenticated && currentDestination?.hasRoute(Route.Home::class) == true
+    if (inviteToken != null && (!inviteWaitingForAuth || inviteAuthFinished)) {
+        com.elozino.splitfy.invites.InvitePreviewDialog(
+            token = inviteToken!!,
+            signedIn = isAuthenticated,
+            onSignIn = { inviteWaitingForAuth = true; navController.navigate(Route.Auth) },
+            onJoined = { id ->
+                inviteWaitingForAuth = false
+                navController.navigate(Route.GroupDetail(id))
+            },
+        )
+    }
+
     val showBottomBar =
         showBottomBarOverride && (currentDestination?.hasRoute(Route.Home::class) == true || currentDestination?.hasRoute(
             Route.Groups::class
@@ -311,12 +328,17 @@ fun NavSetup() {
                     onNavigateToSettleUp = {
                         navController.navigate(Route.SettleUp(route.groupId))
                     },
+                    onNavigateToInvite = { navController.navigate(Route.ShareInvite(route.groupId)) },
                     onNavigateToSettings = {
                         navController.navigate(Route.GroupSettings(route.groupId))
                     },
                     onNavigateToExpenseDetail = { expenseId ->
                         navController.navigate(Route.ExpenseDetail(route.groupId, expenseId))
                     })
+            }
+            composable<Route.ShareInvite> { backStackEntry ->
+                val route: Route.ShareInvite = backStackEntry.toRoute()
+                com.elozino.splitfy.invites.ShareInviteScreen(route.groupId) { navController.popBackStack() }
             }
             composable<Route.SettleUp> { backStackEntry ->
                 val route: Route.SettleUp = backStackEntry.toRoute()

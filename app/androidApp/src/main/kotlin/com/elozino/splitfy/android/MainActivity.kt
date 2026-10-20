@@ -1,6 +1,8 @@
 package com.elozino.splitfy.android
 
 import android.os.Bundle
+import android.content.Intent
+import com.elozino.splitfy.invites.InviteLinks
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,7 +16,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) intent?.dataString?.let(InviteLinks::open)
         setContent { App() }
+    }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.dataString?.let(InviteLinks::open)
     }
 }
 

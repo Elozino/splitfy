@@ -79,6 +79,7 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
 
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
+    single { com.elozino.splitfy.invites.InviteRepository(get(), get()) }
     single<GroupRepository> { GroupRepositoryImpl(get(), get()) }
     single<ExpenseRepository> { ExpenseRepositoryImpl(get(), get()) }
     single<SettlementRepository> { SettlementRepositoryImpl(get(), get()) }
@@ -129,7 +130,7 @@ fun initKoin(
 ): KoinApplication = startKoin {
     platformConfig?.invoke(this)
     modules(platformModule(), dataModule(isDebug, apiBaseUrl, googleClientId), viewModelModule)
-}
+}.also { com.elozino.splitfy.invites.InviteLinks.bind(it.koin.get()) }
 
 /** Convenience for `koinViewModel { parametersOf(groupId) }` call sites. */
 fun groupParams(groupId: String) = parametersOf(groupId)

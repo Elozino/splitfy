@@ -39,6 +39,15 @@ object ApiRoutes {
         fun balances(id: String) = "$BASE/$id/balances"
         fun settleUp(id: String) = "$BASE/$id/settle-up"
         fun archive(id: String) = "$BASE/$id/archive"
+        fun invite(id: String) = "$BASE/$id/invite"
+        fun resetInvite(id: String) = "$BASE/$id/invite/reset"
+    }
+
+    /** Invite links, looked up by their token. Preview is public; accepting needs a session. */
+    object Invites {
+        const val BASE = "$API_PREFIX/invites"
+        fun byToken(token: String) = "$BASE/$token"
+        fun accept(token: String) = "$BASE/$token/accept"
     }
 
     object Expenses {

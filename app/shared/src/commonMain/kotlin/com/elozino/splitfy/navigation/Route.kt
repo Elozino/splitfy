@@ -84,6 +84,9 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     data class GroupSettings(val groupId: String) : Route("group_settings", true)
 
     @Serializable
+    data class ShareInvite(val groupId: String) : Route("share_invite", true)
+
+    @Serializable
     object UpgradePlan : Route("upgrade_plan", true)
 
     @Serializable
