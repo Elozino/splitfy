@@ -42,6 +42,10 @@ data class Expense(
     val paidBy: UserId,
     val splitMethod: SplitMethod,
     val shares: List<ExpenseShare>,
+    /**
+     * The receipt's storage key, not a URL: receipts are private, so a viewer asks
+     * `ApiRoutes.Expenses.receipt` for a short-lived link instead.
+     */
     val receiptUrl: String? = null,
     val notes: String? = null,
     val incurredAt: Instant,

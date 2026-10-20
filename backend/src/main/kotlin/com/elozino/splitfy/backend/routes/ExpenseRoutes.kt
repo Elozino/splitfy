@@ -65,6 +65,15 @@ fun Route.expenseRoutes(service: ExpenseService) {
         call.respond(HttpStatusCode.OK, expense)
     }
 
+    get(ApiRoutes.Expenses.receipt("{groupId}", "{expenseId}")) {
+        val link = service.receiptLink(
+            groupId = call.uuidParam("groupId"),
+            expenseId = call.uuidParam("expenseId"),
+            callerId = call.requireUser().userId,
+        )
+        call.respond(HttpStatusCode.OK, link)
+    }
+
     delete(ApiRoutes.Expenses.byId("{groupId}", "{expenseId}")) {
         service.delete(
             groupId = call.uuidParam("groupId"),

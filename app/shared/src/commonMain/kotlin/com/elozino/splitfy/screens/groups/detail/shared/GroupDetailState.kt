@@ -35,11 +35,21 @@ data class GroupDetailState(
     val memberEmail: String = "",
     val memberError: String? = null,
     val isUpdatingMembers: Boolean = false,
+    /** Whether the server accepts uploads; without storage the cover edit button is hidden. */
+    val uploadsEnabled: Boolean = false,
+    val isUploadingCover: Boolean = false,
+    val openingReceiptFor: String? = null,
+    /** A freshly signed receipt link waiting to be opened; consumed once shown. */
+    val receiptLinkToOpen: String? = null,
 ) {
     /** Owners and admins may add and remove members; the server enforces the same rule. */
     val canManageMembers: Boolean
         get() = group?.members?.firstOrNull { it.userId.value == currentUserId }?.role
             ?.let { it == GroupRole.OWNER || it == GroupRole.ADMIN } == true
+
+    /** Changing the cover follows the same rule as editing the group. */
+    val canEditCover: Boolean
+        get() = canManageMembers && uploadsEnabled && group?.isArchived == false
 
     /** Whether [member] can be removed by the viewer: never the owner, never yourself (leave instead). */
     fun canRemove(member: GroupMember): Boolean =

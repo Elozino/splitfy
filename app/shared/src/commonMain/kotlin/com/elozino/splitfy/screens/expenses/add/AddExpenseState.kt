@@ -26,7 +26,13 @@ data class AddExpenseState(
     val paidBy: UserId? = null,
     val participantIds: Set<String> = emptySet(),
     val weights: Map<String, Long> = emptyMap(),
+    /** The uploaded receipt's object key; what gets saved with the expense. */
     val receiptUrl: String? = null,
+    /** The compressed image being (or already) uploaded, shown as a thumbnail. */
+    val receiptPreview: ByteArray? = null,
+    val isUploadingReceipt: Boolean = false,
+    /** Whether the server accepts uploads. Without storage the receipt row is hidden. */
+    val uploadsEnabled: Boolean = false,
     val isSaving: Boolean = false,
     val saved: Boolean = false,
     val errorMessage: String? = null,
@@ -42,7 +48,8 @@ data class AddExpenseState(
     fun weightOf(userId: UserId): Long = weights[userId.value] ?: 0L
     val canSave: Boolean
         get() = title.isNotBlank() && amount?.isPositive == true &&
-            participants.isNotEmpty() && paidBy != null && !isSaving && splitError == null
+            participants.isNotEmpty() && paidBy != null && !isSaving && splitError == null &&
+            !isUploadingReceipt
     val previewShares: List<ExpenseShare>
         get() = when (val result = outcome) {
             is SplitOutcome.Success -> result.shares

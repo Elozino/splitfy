@@ -4,6 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elozino.splitfy.api.dto.CreateExpenseRequest
 import com.elozino.splitfy.api.dto.SplitPayload
+import com.elozino.splitfy.api.dto.UpdateGroupRequest
+import com.elozino.splitfy.api.dto.UploadPurpose
+import com.elozino.splitfy.api.dto.UploadRules
+import com.elozino.splitfy.uploads.ImageCompressor
+import com.elozino.splitfy.uploads.UploadFile
+import com.elozino.splitfy.uploads.UploadRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.elozino.splitfy.DataError
 import com.elozino.splitfy.DataResult
 import com.elozino.splitfy.domain.model.Balance
@@ -33,6 +42,10 @@ class GroupDetailViewModel(
     private val groupRepository: GroupRepository,
     private val expenseRepository: ExpenseRepository,
     private val sessionManager: SessionManager,
+    private val uploadRepository: UploadRepository,
+    private val imageCompressor: ImageCompressor,
+    /** Where photos are decoded and re-encoded; tests pass their own dispatcher. */
+    private val imageDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(GroupDetailState())
@@ -42,6 +55,10 @@ class GroupDetailViewModel(
 
     init {
         load()
+        viewModelScope.launch {
+            val enabled = uploadRepository.config().getOrNull()?.enabled == true
+            _state.update { it.copy(uploadsEnabled = enabled) }
+        }
     }
 
     fun load() {
@@ -210,6 +227,55 @@ class GroupDetailViewModel(
             }
         }
     }
+
+    /** Shrinks the picked photo, uploads it, then points the group's cover at it. */
+    fun onCoverImage(bytes: ByteArray?) {
+        if (!_state.value.canEditCover || _state.value.isUploadingCover) return
+        if (bytes == null) {
+            _state.update { it.copy(errorMessage = "Couldn't read that photo. Try again.") }
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(isUploadingCover = true, errorMessage = null) }
+            val compressed = withContext(imageDispatcher) { imageCompressor.compress(bytes) }
+            if (compressed == null) {
+                _state.update { it.copy(isUploadingCover = false, errorMessage = "That file isn't a photo we can read") }
+                return@launch
+            }
+            val uploaded = uploadRepository.upload(groupId, UploadPurpose.GROUP_COVER, UploadFile(compressed, UploadRules.JPEG))
+            val key = when (uploaded) {
+                is DataResult.Success -> uploaded.data
+                is DataResult.Failure -> {
+                    _state.update { it.copy(isUploadingCover = false, errorMessage = uploaded.error.userMessage()) }
+                    return@launch
+                }
+            }
+            when (val result = groupRepository.update(groupId, UpdateGroupRequest(coverImageUrl = key))) {
+                is DataResult.Success -> _state.update { it.copy(isUploadingCover = false, group = result.data) }
+                is DataResult.Failure -> _state.update {
+                    it.copy(isUploadingCover = false, errorMessage = result.error.userMessage())
+                }
+            }
+        }
+    }
+
+    /** Receipts are private: each view asks the server for a link that lasts minutes. */
+    fun openReceipt(expenseId: String) {
+        if (_state.value.openingReceiptFor != null) return
+        viewModelScope.launch {
+            _state.update { it.copy(openingReceiptFor = expenseId) }
+            when (val result = uploadRepository.receiptLink(groupId, expenseId)) {
+                is DataResult.Success -> _state.update {
+                    it.copy(openingReceiptFor = null, receiptLinkToOpen = result.data.url)
+                }
+                is DataResult.Failure -> _state.update {
+                    it.copy(openingReceiptFor = null, errorMessage = result.error.userMessage())
+                }
+            }
+        }
+    }
+
+    fun consumeReceiptLink() = _state.update { it.copy(receiptLinkToOpen = null) }
 
     fun consumeError() = _state.update { it.copy(errorMessage = null) }
 }

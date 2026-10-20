@@ -44,6 +44,10 @@ import com.elozino.splitfy.screens.transactions.shared.TransactionViewModel
 import com.elozino.splitfy.screens.wallet.shared.WalletViewModel
 import com.elozino.splitfy.SessionManager
 import com.elozino.splitfy.storage.SessionStorage
+import com.elozino.splitfy.uploads.UploadRepository
+import com.elozino.splitfy.uploads.UploadRepositoryImpl
+import com.elozino.splitfy.uploads.platformImageCompressor
+import com.elozino.splitfy.uploads.storageHttpClient
 import io.ktor.client.HttpClient
 import org.koin.core.context.startKoin
 import org.koin.core.KoinApplication
@@ -88,6 +92,8 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
     single<ActivityRepository> { ActivityRepositoryImpl(get(), get()) }
     single<NotificationRepository> { NotificationRepositoryImpl(get(), get()) }
     single<ContactRepository> { ContactRepositoryImpl(get(), get()) }
+    single<UploadRepository> { UploadRepositoryImpl(get(), get(), storageHttpClient()) }
+    single { platformImageCompressor() }
 
     // Swap for the payment provider's SDK before taking real payments.
     single<CardTokenizer> { DevCardTokenizer() }
@@ -103,8 +109,8 @@ val viewModelModule: Module = module {
     factory { HomeViewModel(get(), get(), get(), get(), get()) }
     factory { GroupsViewModel(get()) }
     factory { NewGroupViewModel(get(), get()) }
-    factory { (groupId: String) -> GroupDetailViewModel(groupId, get(), get(), get()) }
-    factory { (groupId: String) -> AddExpenseViewModel(groupId, get(), get(), get()) }
+    factory { (groupId: String) -> GroupDetailViewModel(groupId, get(), get(), get(), get(), get()) }
+    factory { (groupId: String) -> AddExpenseViewModel(groupId, get(), get(), get(), get(), get()) }
     factory { (groupId: String) -> GroupSettingsViewModel(groupId, get(), get()) }
     factory { (groupId: String) -> SettleUpViewModel(groupId, get(), get(), get()) }
     factory { WalletViewModel(get()) }
