@@ -6,6 +6,7 @@ import com.elozino.splitfy.backend.schema.EmailVerificationsTable
 import com.elozino.splitfy.backend.schema.ExpenseSharesTable
 import com.elozino.splitfy.backend.schema.ExpensesTable
 import com.elozino.splitfy.backend.schema.GroupMembersTable
+import com.elozino.splitfy.backend.schema.GroupInvitesTable
 import com.elozino.splitfy.backend.schema.GroupsTable
 import com.elozino.splitfy.backend.schema.LedgerEntriesTable
 import com.elozino.splitfy.backend.schema.NotificationsTable
@@ -41,6 +42,7 @@ class DatabaseSchemaTest {
         PasswordResetsTable,
         EmailVerificationsTable,
         UserIdentitiesTable,
+        GroupInvitesTable,
         GroupsTable,
         com.elozino.splitfy.backend.schema.GroupInvitesTable,
         GroupMembersTable,
