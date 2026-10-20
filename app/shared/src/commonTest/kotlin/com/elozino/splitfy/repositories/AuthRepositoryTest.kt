@@ -2,6 +2,8 @@ package com.elozino.splitfy.repositories
 
 import com.elozino.splitfy.DataError
 import com.elozino.splitfy.DataResult
+import com.elozino.splitfy.api.ApiErrorCode
+import com.elozino.splitfy.userMessage
 import com.elozino.splitfy.network.ApiCaller
 import com.elozino.splitfy.SessionManager
 import com.elozino.splitfy.SessionState
@@ -94,11 +96,26 @@ class AuthRepositoryTest {
     }
 
     @Test
-    fun `a 401 maps to Unauthenticated and clears the session`() = runTest {
+    fun `wrong credentials are reported as such and leave the session alone`() = runTest {
         val body = """{"code":"INVALID_CREDENTIALS","message":"Email or password is incorrect"}"""
-        val (repository, session, storage) = repository(HttpStatusCode.Unauthorized, body)
+        val (repository, session, _) = repository(HttpStatusCode.Unauthorized, body)
+        val stateBefore = session.state.value
 
         val result = repository.login("ada@example.com", "wrong")
+
+        val failure = assertIs<DataResult.Failure>(result)
+        val error = assertIs<DataError.Api>(failure.error)
+        assertEquals(ApiErrorCode.INVALID_CREDENTIALS, error.code)
+        assertEquals("Email or password is incorrect", failure.error.userMessage())
+        assertEquals(stateBefore, session.state.value)
+    }
+
+    @Test
+    fun `an expired session maps to Unauthenticated and clears it`() = runTest {
+        val body = """{"code":"TOKEN_EXPIRED","message":"Refresh token has expired"}"""
+        val (repository, session, storage) = repository(HttpStatusCode.Unauthorized, body)
+
+        val result = repository.login("ada@example.com", "Password123")
 
         assertIs<DataResult.Failure>(result)
         assertEquals(DataError.Unauthenticated, result.error)
