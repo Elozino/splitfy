@@ -226,6 +226,9 @@ class AuthService(
             .onFailure { logger.error("Could not send email verification code", it) }
     }
 
+    /** A fresh session for an account another flow has already authenticated. */
+    suspend fun startSession(user: User): AuthResponse = AuthResponse(user, issueTokens(user, deviceId = null))
+
     private suspend fun issueTokens(user: User, deviceId: String?): TokenPair {
         val userId = UUID.fromString(user.id.value)
         val refreshToken = TokenGenerator.opaqueToken()

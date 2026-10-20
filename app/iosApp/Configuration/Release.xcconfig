@@ -4,6 +4,11 @@
 API_SCHEME = https
 API_HOST = api.splitfy.app
 
+// Sign in with Apple. Needs a paid developer team with the capability enabled for
+// the bundle id; personal teams cannot sign it, which is why Debug leaves it off.
+// To try Apple sign-in in a Debug build, add this same line to Local.xcconfig.
+CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements
+
 // Last, so a local override — a signing TEAM_ID, most likely — beats everything
 // above it. Optional include: the file is gitignored.
 #include? "Local.xcconfig"

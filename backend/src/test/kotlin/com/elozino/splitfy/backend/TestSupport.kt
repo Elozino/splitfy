@@ -51,6 +51,16 @@ class TestDatabase(private val name: String) {
             }
     }
 
+    /** Marks an account's email as verified without going through the code flow. */
+    fun markVerified(email: String) {
+        DriverManager.getConnection(jdbcUrl, username, password).use { connection ->
+            connection.prepareStatement("UPDATE users SET email_verified_at = now() WHERE email = ?").use {
+                it.setString(1, email)
+                it.executeUpdate()
+            }
+        }
+    }
+
     val username: String get() = TestPostgres.USER
     val password: String get() = TestPostgres.PASSWORD
 }

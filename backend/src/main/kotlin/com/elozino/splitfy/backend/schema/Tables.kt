@@ -73,6 +73,20 @@ abstract class OneTimeCodesTable(name: String) : Table(name) {
 
 object PasswordResetsTable : OneTimeCodesTable("password_resets")
 
+object UserIdentitiesTable : Table("user_identities") {
+    val provider = varchar("provider", 20)
+    val subject = varchar("subject", 255)
+    val userId = uuid("user_id").references(UsersTable.id, onDelete = ReferenceOption.CASCADE)
+    val email = varchar("email", 254).nullable()
+    val createdAt = timestamp("created_at")
+
+    override val primaryKey = PrimaryKey(provider, subject)
+
+    init {
+        index("ix_user_identities_user", false, userId)
+    }
+}
+
 object EmailVerificationsTable : OneTimeCodesTable("email_verifications")
 
 object GroupsTable : Table("groups") {

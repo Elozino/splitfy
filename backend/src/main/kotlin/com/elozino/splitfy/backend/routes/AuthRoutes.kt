@@ -5,6 +5,8 @@ import com.elozino.splitfy.api.dto.ForgotPasswordRequest
 import com.elozino.splitfy.api.dto.LoginRequest
 import com.elozino.splitfy.api.dto.LogoutRequest
 import com.elozino.splitfy.api.dto.MessageResponse
+import com.elozino.splitfy.api.dto.OAuthProvider
+import com.elozino.splitfy.api.dto.OAuthSignInRequest
 import com.elozino.splitfy.api.dto.RefreshTokenRequest
 import com.elozino.splitfy.api.dto.RegisterRequest
 import com.elozino.splitfy.api.dto.ResetPasswordRequest
@@ -15,6 +17,8 @@ import com.elozino.splitfy.backend.plugins.RateLimitScope
 import com.elozino.splitfy.backend.plugins.scopeName
 import com.elozino.splitfy.backend.services.AuthService
 import com.elozino.splitfy.backend.services.JwtService
+import com.elozino.splitfy.backend.services.SocialAuthService
+import com.elozino.splitfy.backend.utils.AppException
 import com.elozino.splitfy.backend.utils.requireUser
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
@@ -24,7 +28,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.Route
 
-fun Route.authRoutes(service: AuthService) {
+fun Route.authRoutes(service: AuthService, social: SocialAuthService) {
 
     // Credential endpoints are the prime target for stuffing attacks: keep them
     // on the tightest bucket.
@@ -45,6 +49,12 @@ fun Route.authRoutes(service: AuthService) {
                 HttpStatusCode.Accepted,
                 MessageResponse("If that account exists, a reset code is on its way"),
             )
+        }
+
+        post(ApiRoutes.Auth.oauth("{provider}")) {
+            val provider = OAuthProvider.entries.firstOrNull { it.path == call.parameters["provider"] }
+                ?: throw AppException.NotFound("Sign-in provider")
+            call.respond(HttpStatusCode.OK, social.signIn(provider, call.receive<OAuthSignInRequest>()))
         }
 
         post(ApiRoutes.Auth.VERIFY_OTP) {

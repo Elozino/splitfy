@@ -8,6 +8,8 @@ import com.elozino.splitfy.api.dto.LogoutRequest
 import com.elozino.splitfy.api.dto.MessageResponse
 import com.elozino.splitfy.api.dto.RegisterRequest
 import com.elozino.splitfy.api.dto.ResetPasswordRequest
+import com.elozino.splitfy.api.dto.OAuthProvider
+import com.elozino.splitfy.api.dto.OAuthSignInRequest
 import com.elozino.splitfy.api.dto.VerifyEmailRequest
 import com.elozino.splitfy.api.dto.VerifyOtpRequest
 import com.elozino.splitfy.api.dto.VerifyOtpResponse
@@ -67,6 +69,11 @@ class AuthRepositoryImpl(
         caller.execute<User> {
             client.post(ApiRoutes.Auth.VERIFY_EMAIL) { setBody(VerifyEmailRequest(code)) }
         }.onSuccess(session::onUserLoaded)
+
+    override suspend fun signInWithProvider(provider: OAuthProvider, request: OAuthSignInRequest): DataResult<User> =
+        caller.execute<AuthResponse> {
+            client.post(ApiRoutes.Auth.oauth(provider.path)) { setBody(request) }
+        }.onSuccess { session.onAuthenticated(it.user, it.tokens) }.map { it.user }
 
     override suspend fun resendVerification(): DataResult<Unit> =
         caller.execute<MessageResponse> { client.post(ApiRoutes.Auth.RESEND_VERIFICATION) }.map { }

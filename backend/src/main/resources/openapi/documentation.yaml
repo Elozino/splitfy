@@ -219,6 +219,51 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResponse" }
 
+  /api/v1/auth/oauth/{provider}:
+    post:
+      tags: [Auth]
+      summary: Sign in with a Google or Apple ID token
+      description: |
+        Verifies the provider's ID token (signature, issuer, audience, expiry, and
+        nonce when sent), then signs into the linked account, links an existing
+        account with the same verified email, or creates one. An unverified password
+        account holding the same email is taken over by the provider-verified owner,
+        and its password and sessions are revoked.
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string, enum: [google, apple] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken: { type: string }
+                nonce: { type: string, nullable: true, description: "For Apple, the SHA-256 of the raw nonce" }
+                displayName: { type: string, nullable: true, description: "Apple shares the name only on first sign-in" }
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "400":
+          description: The provider did not share a verified email
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404":
+          description: Unknown provider, or the provider is not configured on this server
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+
   /api/v1/auth/verify-otp:
     post:
       tags: [Auth]

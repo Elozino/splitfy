@@ -14,6 +14,7 @@ import com.elozino.splitfy.backend.schema.PaymentMethodsTable
 import com.elozino.splitfy.backend.schema.RefreshTokensTable
 import com.elozino.splitfy.backend.schema.SettlementsTable
 import com.elozino.splitfy.backend.schema.TransfersTable
+import com.elozino.splitfy.backend.schema.UserIdentitiesTable
 import com.elozino.splitfy.backend.schema.UsersTable
 import com.elozino.splitfy.backend.schema.WalletsTable
 import io.ktor.server.testing.testApplication
@@ -39,6 +40,7 @@ class DatabaseSchemaTest {
         RefreshTokensTable,
         PasswordResetsTable,
         EmailVerificationsTable,
+        UserIdentitiesTable,
         GroupsTable,
         GroupMembersTable,
         ExpensesTable,
