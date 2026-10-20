@@ -2,6 +2,9 @@ package com.elozino.splitfy.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.elozino.splitfy.FeatureFlags
 import com.elozino.splitfy.SessionManager
 import com.elozino.splitfy.SessionState
 import com.elozino.splitfy.screens.account.add_payment_method.AddPaymentMethodScreen
@@ -130,9 +134,10 @@ fun NavSetup() {
                         launchSingleTop = true
                         restoreState = true
                     }
-                }, onScanClick = {
-                    navController.navigate(Route.Scan)
-                })
+                }, onCenterClick = {
+                    navController.navigate(if (FeatureFlags.WALLET) Route.Scan else Route.NewGroup)
+                }, centerIcon = if (FeatureFlags.WALLET) Icons.Default.QrCodeScanner else Icons.Default.Add,
+                    centerContentDescription = if (FeatureFlags.WALLET) "Scan" else "New group")
             }
         }) { innerPadding ->
         NavHost(
@@ -198,7 +203,16 @@ fun NavSetup() {
                     onNavigateToRequest = { navController.navigate(Route.Request) },
                     onNavigateToTopUp = { navController.navigate(Route.TopUp) },
                     onNavigateToWithdraw = { navController.navigate(Route.Withdraw) },
-                    onNavigateToTransactionHistory = { navController.navigate(Route.TransactionHistory) })
+                    onNavigateToTransactionHistory = { navController.navigate(Route.TransactionHistory) },
+                    onNavigateToNewGroup = { navController.navigate(Route.NewGroup) },
+                    onNavigateToGroups = {
+                        navController.navigate(Route.Groups) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onNavigateToGroupDetail = { groupId -> navController.navigate(Route.GroupDetail(groupId)) })
             }
             composable<Route.Pay> {
                 PayScreenWrapper(
@@ -227,8 +241,9 @@ fun NavSetup() {
             composable<Route.Activity> {
                 ActivityScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToPay = { navController.navigate(Route.Pay) },
-                    onNavigateToRequest = { navController.navigate(Route.Request) })
+                    onNavigateToPay = { navController.navigate(Route.Pay) }.takeIf { FeatureFlags.WALLET },
+                    onNavigateToRequest = { navController.navigate(Route.Request) }.takeIf { FeatureFlags.WALLET },
+                    onNavigateToSettleUp = { groupId -> navController.navigate(Route.SettleUp(groupId)) })
             }
             composable<Route.Groups> {
                 GroupsScreen(
@@ -296,12 +311,15 @@ fun NavSetup() {
             }
             composable<Route.Account> {
                 AccountScreen(
-                    onNavigateToUpgrade = { navController.navigate(Route.UpgradePlan) },
+                    // Paid plans and payment methods depend on the wallet's payment provider.
+                    onNavigateToUpgrade = { navController.navigate(Route.UpgradePlan) }.takeIf { FeatureFlags.WALLET },
                     onNavigateToPersonalInfo = { navController.navigate(Route.PersonalInfo) },
                     onNavigateToNotification = { navController.navigate(Route.NotificationSettings) },
                     onNavigateToSecurity = { navController.navigate(Route.SecuritySettings) },
-                    onNavigateToPaymentMethods = { navController.navigate(Route.PaymentMethods) },
-                    onNavigateToBilling = { navController.navigate(Route.BillingSubscriptions) },
+                    onNavigateToPaymentMethods = { navController.navigate(Route.PaymentMethods) }
+                        .takeIf { FeatureFlags.WALLET },
+                    onNavigateToBilling = { navController.navigate(Route.BillingSubscriptions) }
+                        .takeIf { FeatureFlags.WALLET },
                     onNavigateToLinkedAccounts = { navController.navigate(Route.LinkedAccounts) },
                     onNavigateToAppearance = { navController.navigate(Route.AppAppearance) },
                     onNavigateToDataAnalytics = { navController.navigate(Route.DataAnalytics) },

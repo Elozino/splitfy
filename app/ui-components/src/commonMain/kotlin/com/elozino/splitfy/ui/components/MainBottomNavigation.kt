@@ -22,6 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,7 +32,9 @@ import androidx.compose.ui.unit.sp
 fun MainBottomNavigation(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
-    onScanClick: () -> Unit = {}
+    onCenterClick: () -> Unit = {},
+    centerIcon: ImageVector = Icons.Default.QrCodeScanner,
+    centerContentDescription: String = "Scan",
 ) {
     NavigationBar(
         containerColor = Color.White,
@@ -66,7 +69,7 @@ fun MainBottomNavigation(
             )
         )
         
-        // Scan Button
+        // Primary action button
         Box(
             modifier = Modifier
                 .weight(1f),
@@ -81,12 +84,12 @@ fun MainBottomNavigation(
                 shadowElevation = 4.dp
             ) {
                 Box(
-                    modifier = Modifier.clickable { onScanClick() },
+                    modifier = Modifier.clickable { onCenterClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.QrCodeScanner,
-                        contentDescription = "Scan",
+                        imageVector = centerIcon,
+                        contentDescription = centerContentDescription,
                         modifier = Modifier.size(24.dp),
                         tint = Color.Black
                     )

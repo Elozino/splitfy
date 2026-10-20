@@ -20,6 +20,7 @@ data class AppConfig(
     val jwt: JwtConfig,
     val security: SecurityConfig,
     val cors: CorsConfig,
+    val features: FeaturesConfig = FeaturesConfig(),
 ) {
     enum class Environment {
         LOCAL, STAGING, PRODUCTION;
@@ -54,6 +55,15 @@ data class AppConfig(
 
     data class CorsConfig(
         val allowedHosts: List<String>,
+    )
+
+    data class FeaturesConfig(
+        /**
+         * The in-app wallet: balances, top-up, withdrawal, payment methods and
+         * peer transfers. Off until a payment provider backs it — today a top-up
+         * credits the balance without charging anyone, so it must not be reachable.
+         */
+        val wallet: Boolean = false,
     )
 
     companion object {
@@ -109,6 +119,9 @@ data class AppConfig(
                 ),
                 cors = CorsConfig(
                     allowedHosts = config.propertyOrNull("cors.allowedHosts")?.getList().orEmpty(),
+                ),
+                features = FeaturesConfig(
+                    wallet = config.propertyOrNull("features.wallet")?.getString()?.toBooleanStrict() ?: false,
                 ),
             )
         }

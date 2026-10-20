@@ -6,6 +6,7 @@ import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.api.dto.UpdateProfileRequest
 import com.elozino.splitfy.CardTokenizer
 import com.elozino.splitfy.DataResult
+import com.elozino.splitfy.FeatureFlags
 import com.elozino.splitfy.domain.model.CurrencyCode
 import com.elozino.splitfy.domain.model.PaymentMethod
 import com.elozino.splitfy.repositories.AuthRepository
@@ -46,8 +47,8 @@ class AccountViewModel(
             _state.update { it.copy(isLoading = true, errorMessage = null) }
 
             val profile = async { userRepository.me() }
-            val wallet = async { walletRepository.wallet() }
-            val methods = async { walletRepository.paymentMethods() }
+            val wallet = async { if (FeatureFlags.WALLET) walletRepository.wallet() else null }
+            val methods = async { if (FeatureFlags.WALLET) walletRepository.paymentMethods() else null }
 
             val profileResult = profile.await()
             val walletResult = wallet.await()

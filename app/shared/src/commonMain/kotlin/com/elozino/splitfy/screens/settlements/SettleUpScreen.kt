@@ -158,7 +158,8 @@ fun SettleUpScreen(
 
                 section("History", state.history) { settlement ->
                     HistoryRow(
-                        title = "${state.nameOf(settlement.fromUserId)} paid ${state.nameOf(settlement.toUserId)}",
+                        title = "${state.nameOf(settlement.fromUserId)} paid " +
+                            state.nameOf(settlement.toUserId, startsSentence = false),
                         settlement = settlement,
                     )
                 }

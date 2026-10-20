@@ -38,3 +38,8 @@ security:
 cors:
   # Empty outside production means "any host", which suits local web tooling.
   allowedHosts: []
+
+features:
+  # Wallet, top-up, withdrawal, payment methods and peer transfers. Leave off until a
+  # payment provider is integrated: a top-up currently credits without charging.
+  wallet: "$FEATURE_WALLET:false"

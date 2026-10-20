@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitfy.FeatureFlags
+import com.elozino.splitfy.api.dto.GroupSummary
 import com.elozino.splitfy.domain.model.LedgerEntry
 import com.elozino.splitfy.screens.home.main.HomeState
 import com.elozino.splitfy.screens.home.main.HomeViewModel
@@ -39,7 +41,10 @@ fun HomeScreen(
     onNavigateToRequest: () -> Unit = {},
     onNavigateToTopUp: () -> Unit = {},
     onNavigateToWithdraw: () -> Unit = {},
-    onNavigateToTransactionHistory: () -> Unit = {}
+    onNavigateToTransactionHistory: () -> Unit = {},
+    onNavigateToNewGroup: () -> Unit = {},
+    onNavigateToGroups: () -> Unit = {},
+    onNavigateToGroupDetail: (String) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -99,19 +104,35 @@ fun HomeScreen(
                     )
                 )
         ) {
-            BalanceHeader(
-                state = state,
-                onSendClick = onNavigateToPay,
-                onRequestClick = onNavigateToRequest,
-                onTopUpClick = onNavigateToTopUp,
-                onWithdrawClick = onNavigateToWithdraw,
-                onHistoryClick = onNavigateToTransactionHistory
-            )
-            ActivitySection(
-                state = state,
-                modifier = Modifier.weight(1f),
-                onViewAllClick = onNavigateToActivity
-            )
+            if (FeatureFlags.WALLET) {
+                BalanceHeader(
+                    state = state,
+                    onSendClick = onNavigateToPay,
+                    onRequestClick = onNavigateToRequest,
+                    onTopUpClick = onNavigateToTopUp,
+                    onWithdrawClick = onNavigateToWithdraw,
+                    onHistoryClick = onNavigateToTransactionHistory
+                )
+                ActivitySection(
+                    state = state,
+                    modifier = Modifier.weight(1f),
+                    onViewAllClick = onNavigateToActivity
+                )
+            } else {
+                PositionHeader(
+                    state = state,
+                    onNewGroupClick = onNavigateToNewGroup,
+                    onGroupsClick = onNavigateToGroups,
+                    onActivityClick = onNavigateToActivity,
+                )
+                GroupsSection(
+                    state = state,
+                    modifier = Modifier.weight(1f),
+                    onViewAllClick = onNavigateToGroups,
+                    onGroupClick = onNavigateToGroupDetail,
+                    onNewGroupClick = onNavigateToNewGroup,
+                )
+            }
         }
     }
 }
@@ -337,6 +358,194 @@ private fun RecentEntryRow(entry: LedgerEntry) {
             fontWeight = FontWeight.Bold,
             color = if (entry.type.isCredit) Color(0xFF2E7D32) else Color.Black
         )
+    }
+}
+
+/**
+ * The header when there is no wallet: where you stand across all your groups,
+ * which is the number a bill-splitting app is opened to check.
+ */
+@Composable
+fun PositionHeader(
+    state: HomeState,
+    onNewGroupClick: () -> Unit,
+    onGroupsClick: () -> Unit,
+    onActivityClick: () -> Unit,
+) {
+    val net = state.netPosition
+    Surface(color = Color(0xFFFEBB1B)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center) {
+                Text(
+                    text = net.abs().toPlainString(),
+                    fontSize = 56.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Text(
+                    text = net.currency.code,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp, start = 6.dp),
+                    color = Color.Black
+                )
+            }
+            Text(
+                text = when {
+                    state.isLoading && state.groups.isEmpty() -> " "
+                    net.isPositive -> "You are owed overall"
+                    net.isNegative -> "You owe overall"
+                    else -> "You're all settled up"
+                },
+                fontSize = 14.sp,
+                color = Color.Black.copy(alpha = 0.8f),
+                fontWeight = FontWeight.Medium
+            )
+
+            if (!state.totalOwedToYou.isZero && !state.totalYouOwe.isZero) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Owed to you ${state.totalOwedToYou.toPlainString()}  ·  " +
+                        "You owe ${state.totalYouOwe.toPlainString()}",
+                    fontSize = 13.sp,
+                    color = Color.Black.copy(alpha = 0.8f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            if (state.hasOtherCurrencies) {
+                Text(
+                    text = "Groups in other currencies are not included",
+                    fontSize = 12.sp,
+                    color = Color.Black.copy(alpha = 0.6f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                ActionItem(icon = Icons.Default.GroupAdd, label = "New group", onClick = onNewGroupClick)
+                ActionItem(icon = Icons.Default.Groups, label = "Groups", onClick = onGroupsClick)
+                ActionItem(icon = Icons.Default.History, label = "Activity", onClick = onActivityClick)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+fun GroupsSection(
+    state: HomeState,
+    modifier: Modifier = Modifier,
+    onViewAllClick: () -> Unit,
+    onGroupClick: (String) -> Unit,
+    onNewGroupClick: () -> Unit,
+) {
+    Column(modifier = modifier.fillMaxSize().padding(24.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Your groups", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            if (state.groups.isNotEmpty()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onViewAllClick() }
+                ) {
+                    Text("View All", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        if (state.isLoading && state.groups.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFFEBB1B))
+            }
+            return@Column
+        }
+
+        if (state.groups.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Groups,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp),
+                    tint = Color.LightGray
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("No groups yet", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Create a group for a trip, a flat or a night out, then add what everyone spent.",
+                    fontSize = 16.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onNewGroupClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEBB1B)),
+                ) {
+                    Text("Create a group", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            }
+            return@Column
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        state.groups
+            .sortedByDescending { kotlin.math.abs(it.yourBalance.amount) }
+            .take(HOME_GROUP_LIMIT)
+            .forEach { summary -> GroupRow(summary, onClick = { onGroupClick(summary.group.id.value) }) }
+    }
+}
+
+private const val HOME_GROUP_LIMIT = 5
+
+@Composable
+private fun GroupRow(summary: GroupSummary, onClick: () -> Unit) {
+    val balance = summary.yourBalance
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(summary.group.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+            Text(
+                text = when {
+                    balance.isPositive -> "You are owed"
+                    balance.isNegative -> "You owe"
+                    else -> "Settled up"
+                },
+                fontSize = 13.sp,
+                color = Color.Gray
+            )
+        }
+        if (!balance.isZero) {
+            Text(
+                text = "${balance.abs().toPlainString()} ${balance.currency.code}",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (balance.isPositive) Color(0xFF2E7D32) else Color(0xFFC62828)
+            )
+        }
     }
 }
 

@@ -60,7 +60,7 @@ class TestDatabase(private val name: String) {
  * The module is installed explicitly because replacing the config also drops the
  * `ktor.application.modules` entry that `application.yaml` normally provides.
  */
-fun ApplicationTestBuilder.useTestConfig(database: TestDatabase) {
+fun ApplicationTestBuilder.useTestConfig(database: TestDatabase, walletEnabled: Boolean = true) {
     application { module() }
     environment {
         config = MapApplicationConfig(
@@ -79,6 +79,7 @@ fun ApplicationTestBuilder.useTestConfig(database: TestDatabase) {
             "jwt.refreshTokenDays" to "30",
             "security.bcryptCost" to "4",
             "security.otpMinutes" to "10",
+            "features.wallet" to walletEnabled.toString(),
         )
     }
 }
