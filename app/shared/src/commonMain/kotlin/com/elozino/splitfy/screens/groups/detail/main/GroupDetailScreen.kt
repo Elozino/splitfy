@@ -43,6 +43,7 @@ fun GroupDetailScreen(
     groupId: String,
     onNavigateBack: () -> Unit,
     onNavigateToAddExpense: () -> Unit,
+    onNavigateToSettleUp: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToExpenseDetail: (String) -> Unit,
     viewModel: GroupDetailViewModel = koinViewModel { parametersOf(groupId) },
@@ -120,7 +121,7 @@ fun GroupDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { /* TODO: Settle Up */ },
+                        onClick = onNavigateToSettleUp,
                         modifier = Modifier.weight(1f).height(56.dp),
                         shape = RoundedCornerShape(100.dp),
                         border = BorderStroke(1.dp, primaryLight)
@@ -203,7 +204,7 @@ fun GroupDetailScreen(
                     state = state,
                     onExpenseClick = { expenseId -> onNavigateToExpenseDetail(expenseId) }
                 )
-                1 -> BalancesList(state)
+                1 -> BalancesList(state, onSettleUp = onNavigateToSettleUp)
                 2 -> TotalsList(state)
                 3 -> GroupInfoList(state)
             }
@@ -316,7 +317,7 @@ private fun ExpenseItem(data: ExpenseItemData, onClick: () -> Unit) {
 }
 
 @Composable
-private fun BalancesList(state: GroupDetailState) {
+private fun BalancesList(state: GroupDetailState, onSettleUp: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -347,18 +348,23 @@ private fun BalancesList(state: GroupDetailState) {
             Text("Everyone is settled up 🎉", color = Color.Gray, fontSize = 14.sp)
         }
         state.suggestedTransfers.forEach { transfer ->
-            val names = state.group?.members.orEmpty().associate { it.userId to it.displayName }
             val youArePayer = transfer.from.value == state.currentUserId
-            val counterparty = if (youArePayer) transfer.to else transfer.from
+            val youArePayee = transfer.to.value == state.currentUserId
+            val amount = transfer.amount.toPlainString()
             BalanceItem(
-                name = names[counterparty] ?: "Someone",
-                details = if (youArePayer) {
-                    "you owe ${transfer.amount.toPlainString()}"
-                } else {
-                    "owes you ${transfer.amount.toPlainString()}"
+                name = when {
+                    youArePayer -> names[transfer.to] ?: "Someone"
+                    youArePayee -> names[transfer.from] ?: "Someone"
+                    else -> names[transfer.from] ?: "Someone"
+                },
+                details = when {
+                    youArePayer -> "you owe $amount"
+                    youArePayee -> "owes you $amount"
+                    else -> "owes ${names[transfer.to] ?: "someone"} $amount"
                 },
                 isOwed = !youArePayer,
-                showRequest = !youArePayer
+                showSettle = youArePayer || youArePayee,
+                onSettle = onSettleUp,
             )
         }
     }
@@ -385,7 +391,13 @@ private fun BalanceBar(name: String, progress: Float, color: Color, amount: Stri
 }
 
 @Composable
-private fun BalanceItem(name: String, details: String, isOwed: Boolean, showRequest: Boolean = false) {
+private fun BalanceItem(
+    name: String,
+    details: String,
+    isOwed: Boolean,
+    showSettle: Boolean = false,
+    onSettle: () -> Unit = {},
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -396,15 +408,15 @@ private fun BalanceItem(name: String, details: String, isOwed: Boolean, showRequ
             Text(name, fontWeight = FontWeight.Bold)
             Text(details, color = if (isOwed) Color(0xFF4CAF50) else Color.Red, fontSize = 12.sp)
         }
-        if (showRequest) {
+        if (showSettle) {
             TextButton(
-                onClick = { /* TODO */ },
+                onClick = onSettle,
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 modifier = Modifier.height(32.dp).border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
             ) {
                 Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.Black)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Request", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Settle", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

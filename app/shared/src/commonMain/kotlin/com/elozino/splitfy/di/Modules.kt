@@ -33,6 +33,7 @@ import com.elozino.splitfy.screens.contacts.main.ContactsViewModel
 import com.elozino.splitfy.screens.expenses.add.AddExpenseViewModel
 import com.elozino.splitfy.screens.groups.create.shared.NewGroupViewModel
 import com.elozino.splitfy.screens.groups.detail.shared.GroupDetailViewModel
+import com.elozino.splitfy.screens.settlements.SettleUpViewModel
 import com.elozino.splitfy.screens.groups.list.GroupsViewModel
 import com.elozino.splitfy.screens.groups.settings.GroupSettingsViewModel
 import com.elozino.splitfy.screens.home.main.HomeViewModel
@@ -100,6 +101,7 @@ val viewModelModule: Module = module {
     factory { (groupId: String) -> GroupDetailViewModel(groupId, get(), get(), get()) }
     factory { (groupId: String) -> AddExpenseViewModel(groupId, get(), get(), get()) }
     factory { (groupId: String) -> GroupSettingsViewModel(groupId, get(), get()) }
+    factory { (groupId: String) -> SettleUpViewModel(groupId, get(), get(), get()) }
     factory { WalletViewModel(get()) }
     factory { TransactionViewModel(get(), get(), get()) }
     factory { ActivityViewModel(get(), get()) }

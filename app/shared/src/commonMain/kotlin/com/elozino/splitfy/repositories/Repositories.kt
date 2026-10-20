@@ -80,6 +80,7 @@ interface SettlementRepository {
     suspend fun list(groupId: String): DataResult<List<Settlement>>
     suspend fun create(groupId: String, request: CreateSettlementRequest): DataResult<Settlement>
     suspend fun confirm(groupId: String, settlementId: String): DataResult<Settlement>
+    suspend fun cancel(groupId: String, settlementId: String): DataResult<Settlement>
 }
 
 interface WalletRepository {
