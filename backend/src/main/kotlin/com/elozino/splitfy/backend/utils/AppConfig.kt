@@ -21,6 +21,7 @@ data class AppConfig(
     val security: SecurityConfig,
     val cors: CorsConfig,
     val features: FeaturesConfig = FeaturesConfig(),
+    val email: EmailConfig = EmailConfig(),
 ) {
     enum class Environment {
         LOCAL, STAGING, PRODUCTION;
@@ -55,6 +56,12 @@ data class AppConfig(
 
     data class CorsConfig(
         val allowedHosts: List<String>,
+    )
+
+    data class EmailConfig(
+        /** Resend API key. Blank means "log codes instead", which production refuses. */
+        val resendApiKey: String = "",
+        val from: String = "splitfy <no-reply@splitfy.app>",
     )
 
     data class FeaturesConfig(
@@ -119,6 +126,10 @@ data class AppConfig(
                 ),
                 cors = CorsConfig(
                     allowedHosts = config.propertyOrNull("cors.allowedHosts")?.getList().orEmpty(),
+                ),
+                email = EmailConfig(
+                    resendApiKey = config.propertyOrNull("email.resendApiKey")?.getString().orEmpty(),
+                    from = config.propertyOrNull("email.from")?.getString() ?: EmailConfig().from,
                 ),
                 features = FeaturesConfig(
                     wallet = config.propertyOrNull("features.wallet")?.getString()?.toBooleanStrict() ?: false,

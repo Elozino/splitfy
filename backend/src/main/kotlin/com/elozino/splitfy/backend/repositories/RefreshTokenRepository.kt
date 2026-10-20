@@ -1,5 +1,7 @@
 package com.elozino.splitfy.backend.repositories
 
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import org.jetbrains.exposed.sql.SortOrder
 import com.elozino.splitfy.backend.schema.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
@@ -100,16 +102,47 @@ class PasswordResetRepository {
         id
     }
 
+    /** An unused, unexpired code that has not been guessed at too often. */
     suspend fun findActive(userId: UUID, codeHash: String, now: Instant): UUID? = dbQuery {
         PasswordResetsTable.selectAll()
             .where {
                 (PasswordResetsTable.userId eq userId) and
                         (PasswordResetsTable.codeHash eq codeHash) and
                         PasswordResetsTable.consumedAt.isNull() and
-                        (PasswordResetsTable.expiresAt greater now.toJava())
+                        (PasswordResetsTable.expiresAt greater now.toJava()) and
+                        (PasswordResetsTable.attempts less MAX_ATTEMPTS)
             }
             .singleOrNull()
             ?.get(PasswordResetsTable.id)
+    }
+
+    /**
+     * Counts a wrong guess against every live code for [userId]. Six digits is only a
+     * million combinations; without this the per-IP rate limit was the only brake.
+     */
+    suspend fun recordFailedAttempt(userId: UUID, now: Instant): Unit = dbQuery {
+        PasswordResetsTable.update({
+            (PasswordResetsTable.userId eq userId) and
+                PasswordResetsTable.consumedAt.isNull() and
+                (PasswordResetsTable.expiresAt greater now.toJava())
+        }) {
+            it[attempts] = attempts + 1
+        }
+    }
+
+    /** When the most recent code for [userId] was issued, for the resend cooldown. */
+    suspend fun latestIssuedAt(userId: UUID): Instant? = dbQuery {
+        PasswordResetsTable.selectAll()
+            .where { PasswordResetsTable.userId eq userId }
+            .orderBy(PasswordResetsTable.createdAt, SortOrder.DESC)
+            .limit(1)
+            .singleOrNull()
+            ?.get(PasswordResetsTable.createdAt)
+            ?.toKotlin()
+    }
+
+    companion object {
+        const val MAX_ATTEMPTS = 5
     }
 
     suspend fun consume(id: UUID): Boolean = dbQuery {
