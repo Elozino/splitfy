@@ -14,7 +14,6 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -24,6 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/** Complements GroupInvitesTest: link stability, the public preview, and unauthenticated access. */
 class InviteTest {
 
     private val database = TestDatabase("splitfy_invites")
@@ -75,60 +75,12 @@ class InviteTest {
     }
 
     @Test
-    fun `only members can get the link and only managers can reset it`() = testApplication {
-        useTestConfig(database)
-        val client = jsonClient()
-        val owner = client.register("owner@example.com", "Owner")
-        val stranger = client.register("stranger@example.com", "Stranger")
-        val group = client.createGroup(owner.tokens.accessToken)
-        val invite = client.invite(owner.tokens.accessToken, group.id.value)
-
-        val outsider = client.get(ApiRoutes.Groups.invite(group.id.value)) { bearerAuth(stranger.tokens.accessToken) }
-        assertEquals(HttpStatusCode.NotFound, outsider.status)
-
-        client.accept(stranger.tokens.accessToken, invite.token)
-        val memberReset = client.post(ApiRoutes.Groups.resetInvite(group.id.value)) {
-            bearerAuth(stranger.tokens.accessToken)
-        }
-        assertEquals(HttpStatusCode.Forbidden, memberReset.status)
-    }
-
-    @Test
     fun `an unknown token is not found and accepting needs a session`() = testApplication {
         useTestConfig(database)
         val client = jsonClient()
 
         assertEquals(HttpStatusCode.NotFound, client.get(ApiRoutes.Invites.byToken("nope")).status)
         assertEquals(HttpStatusCode.Unauthorized, client.post(ApiRoutes.Invites.accept("nope")).status)
-    }
-
-    @Test
-    fun `the web page names the group and escapes it`() = testApplication {
-        useTestConfig(database)
-        val client = jsonClient()
-        val owner = client.register("owner@example.com", "Owner")
-        val group = client.createGroup(owner.tokens.accessToken, name = "<b>Flat</b>")
-        val invite = client.invite(owner.tokens.accessToken, group.id.value)
-
-        val page = client.get("/i/${invite.token}").bodyAsText()
-
-        assertTrue("&lt;b&gt;Flat&lt;/b&gt;" in page)
-        assertTrue("<b>Flat</b>" !in page)
-        assertTrue("splitfy://invite/${invite.token}" in page)
-    }
-
-    @Test
-    fun `app link verification files are served`() = testApplication {
-        useTestConfig(database)
-        val client = jsonClient()
-
-        val android = client.get("/.well-known/assetlinks.json")
-        val apple = client.get("/.well-known/apple-app-site-association")
-
-        assertEquals(HttpStatusCode.OK, android.status)
-        assertTrue("com.elozino.splitfy" in android.bodyAsText())
-        assertEquals(HttpStatusCode.OK, apple.status)
-        assertTrue("/i/*" in apple.bodyAsText())
     }
 
     private suspend fun HttpClient.register(email: String, name: String) = post(ApiRoutes.Auth.REGISTER) {
