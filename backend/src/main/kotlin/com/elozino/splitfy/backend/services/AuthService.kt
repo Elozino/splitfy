@@ -19,6 +19,7 @@ import com.elozino.splitfy.domain.model.User
 import com.elozino.splitfy.validation.Validators
 import java.util.UUID
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 import org.slf4j.LoggerFactory
 
 /**
@@ -115,13 +116,23 @@ class AuthService(
         Validators.email(request.email)?.let { throw AppException.Validation(listOf(it)) }
 
         val record = users.findByEmail(request.email) ?: return
+        val userId = UUID.fromString(record.user.id.value)
+
+        // One email per address per cooldown, however many devices or IPs ask, so
+        // this endpoint cannot be used to flood someone's inbox.
+        val lastIssued = passwordResets.latestIssuedAt(userId)
+        if (lastIssued != null && Clock.System.now() - lastIssued < RESEND_COOLDOWN) return
+
         val code = TokenGenerator.numericOtp()
         passwordResets.create(
-            userId = UUID.fromString(record.user.id.value),
+            userId = userId,
             codeHash = TokenGenerator.sha256(code),
             expiresAt = Clock.System.now().plus(config.security.otpTtl),
         )
-        notifier.sendPasswordResetCode(record.user.email, code)
+        // A delivery failure is logged rather than returned: reporting it would tell
+        // an anonymous caller that the address has an account.
+        runCatching { notifier.sendPasswordResetCode(record.user.email, code) }
+            .onFailure { logger.error("Could not send password reset code", it) }
     }
 
     /** Exchanges a valid OTP for a single-use reset token. */
@@ -129,11 +140,15 @@ class AuthService(
         val record = users.findByEmail(request.email) ?: throw AppException.InvalidCredentials("Code is not valid")
         val userId = UUID.fromString(record.user.id.value)
 
+        val now = Clock.System.now()
         val resetId = passwordResets.findActive(
             userId = userId,
             codeHash = TokenGenerator.sha256(request.code),
-            now = Clock.System.now(),
-        ) ?: throw AppException.InvalidCredentials("Code is not valid or has expired")
+            now = now,
+        ) ?: run {
+            passwordResets.recordFailedAttempt(userId, now)
+            throw AppException.InvalidCredentials("Code is not valid or has expired")
+        }
 
         passwordResets.consume(resetId)
 
@@ -184,6 +199,9 @@ class AuthService(
     }
 
     private companion object {
+        /** Minimum gap between two reset emails to the same address. */
+        val RESEND_COOLDOWN = 60.seconds
+
         /** A real BCrypt hash of a random value, used only to equalise timing. */
         const val DUMMY_HASH = "\$2a\$12\$C6UzMDM.H6dfI/f/IKcEe.0000000000000000000000000000000000"
     }

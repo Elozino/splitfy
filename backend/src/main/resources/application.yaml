@@ -39,6 +39,13 @@ cors:
   # Empty outside production means "any host", which suits local web tooling.
   allowedHosts: []
 
+email:
+  # Password-reset codes go through Resend when a key is set. Without one they are
+  # only logged, and the server refuses to start in PRODUCTION.
+  resendApiKey: "$RESEND_API_KEY:"
+  # Must be on a domain verified in Resend.
+  from: "$EMAIL_FROM:splitfy <no-reply@splitfy.app>"
+
 features:
   # Wallet, top-up, withdrawal, payment methods and peer transfers. Leave off until a
   # payment provider is integrated: a top-up currently credits without charging.

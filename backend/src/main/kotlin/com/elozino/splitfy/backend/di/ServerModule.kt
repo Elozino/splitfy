@@ -20,6 +20,15 @@ import com.elozino.splitfy.backend.services.LoggingOtpNotifier
 import com.elozino.splitfy.backend.services.NotificationRepository
 import com.elozino.splitfy.backend.services.NotificationService
 import com.elozino.splitfy.backend.services.OtpNotifier
+import com.elozino.splitfy.backend.services.ResendOtpNotifier
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
+import org.koin.core.module.dsl.onClose
+import org.koin.core.module.dsl.withOptions
 import com.elozino.splitfy.backend.services.SettlementService
 import com.elozino.splitfy.backend.services.TransferService
 import com.elozino.splitfy.backend.services.UserService
@@ -42,7 +51,22 @@ fun serverModule(config: AppConfig) = module {
 
     single { JwtService(config.jwt) }
     single { PasswordHasher(config.security.bcryptCost) }
-    single<OtpNotifier> { LoggingOtpNotifier(config.environment) }
+    single<OtpNotifier> {
+        if (config.email.resendApiKey.isNotBlank()) {
+            ResendOtpNotifier(get(), config.email.resendApiKey, config.email.from)
+        } else {
+            LoggingOtpNotifier(config.environment)
+        }
+    }
+
+    // One outbound HTTP client for third-party APIs, closed with the application.
+    single<HttpClient> {
+        HttpClient(CIO) {
+            install(ContentNegotiation) { json(Json { explicitNulls = false }) }
+            install(HttpTimeout) { requestTimeoutMillis = 10_000 }
+            expectSuccess = false
+        }
+    }.withOptions { onClose { it?.close() } }
 
     // Repositories
     single { UserRepository() }

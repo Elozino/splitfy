@@ -1,42 +1,48 @@
-# splitfy-server
+# splitfy backend
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+Ktor API backed by PostgreSQL. Flyway applies `backend/src/main/resources/db/migration`
+on start-up. See the root `README.md` for how to run it.
 
-Here are some useful links to get you started:
+## Configuration
 
-* [Ktor Documentation](https://ktor.io/docs/home.html)
-* [Ktor GitHub page](https://github.com/ktorio/ktor)
-* [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). [Request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up).
+Every setting comes from an environment variable read by `application.yaml`. The
+defaults suit local development; the server **refuses to start in `PRODUCTION`**
+while an insecure default is still in place (noted below).
 
-## Features
+| Variable | Default | Notes |
+|---|---|---|
+| `APP_ENV` | `LOCAL` | `LOCAL`, `STAGING` or `PRODUCTION`. Outside `LOCAL`, `X-Forwarded-For` is trusted, so run behind a proxy. |
+| `PORT` | `8080` | |
+| `DATABASE_URL` | `jdbc:postgresql://localhost:5432/splitfy` | |
+| `DATABASE_USER` | `splitfy` | |
+| `DATABASE_PASSWORD` | `splitfy` | **Required in production.** |
+| `DATABASE_POOL_SIZE` | `10` | |
+| `DATABASE_RUN_MIGRATIONS` | `true` | |
+| `DATABASE_STATEMENT_TIMEOUT_SECONDS` | `30` | Upper bound for any single statement. |
+| `JWT_SECRET` | dev value | **Required in production**, at least 32 characters. |
+| `JWT_ISSUER` / `JWT_AUDIENCE` / `JWT_REALM` | | |
+| `JWT_ACCESS_MINUTES` / `JWT_REFRESH_DAYS` | `15` / `30` | |
+| `BCRYPT_COST` | `12` | |
+| `OTP_MINUTES` | `10` | Lifetime of a password-reset code. |
+| `RESEND_API_KEY` | empty | **Required in production.** Without it, reset codes are only logged. |
+| `EMAIL_FROM` | `splitfy <no-reply@splitfy.app>` | Must be on a domain verified in Resend. |
+| `FEATURE_WALLET` | `false` | Wallet, top-up, withdrawal, payment methods and transfers. Leave off until a payment provider is integrated. |
 
-Here's a list of features included in this project:
+## Email (Resend)
 
-| Name                                                                                  | Description                                                                        |
-|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [CORS](https://start.ktor.io/p/io.ktor/server-cors)                                   | Enables Cross-Origin Resource Sharing (CORS)                                       |
-| [Swagger](https://start.ktor.io/p/io.ktor/server-swagger)                             | Serves Swagger UI for your project                                                 |
-| [Authentication](https://start.ktor.io/p/io.ktor/server-auth)                         | Provides extension point for handling the Authorization header                     |
-| [Authentication JWT](https://start.ktor.io/p/io.ktor/server-auth-jwt)                 | Handles JSON Web Token (JWT) bearer authentication scheme                          |
-| [Authentication OAuth](https://start.ktor.io/p/io.ktor/server-auth-oauth)             | Handles OAuth Bearer authentication scheme                                         |
-| [Request Validation](https://start.ktor.io/p/io.ktor/server-request-validation)       | Adds validation for incoming requests                                              |
-| [Status Pages](https://start.ktor.io/p/io.ktor/server-status-pages)                   | Provides exception handling for routes                                             |
-| [KHealth](https://start.ktor.io/p/dev.hayden/server-khealth)                          | A simple and customizable health plugin                                            |
-| [Content Negotiation](https://start.ktor.io/p/io.ktor/server-content-negotiation)     | Provides automatic content conversion according to Content-Type and Accept headers |
-| [kotlinx.serialization](https://start.ktor.io/p/io.ktor/server-kotlinx-serialization) | Handles JSON serialization using kotlinx.serialization library                     |
-| [PostgreSQL](https://start.ktor.io/p/org.jetbrains/server-postgres)                   | Adds Postgres database support                                                     |
-| [Rate Limiting](https://start.ktor.io/p/io.github.flaxoos/server-rate-limiting)       | Manage request rate limiting as you see fit                                        |
+1. Create an account at resend.com and add your sending domain; publish the DNS
+   records it gives you (SPF, DKIM) and wait for it to verify.
+2. Create an API key with "sending access" for that domain.
+3. Set `RESEND_API_KEY` and `EMAIL_FROM` (an address on the verified domain).
 
-## Building & Running
+Without a key, `LoggingOtpNotifier` writes codes to the log at INFO, which is how
+you read them during local development.
 
-To build or run the project, use one of the following tasks:
+## Tests
 
-| Task | Description |
-|------|-------------|
-
-If the server starts successfully, you'll see the following output:
-
+```bash
+./gradlew :backend:test
 ```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
-```
+
+Tests run against real PostgreSQL binaries started inside the JVM (no Docker), with
+every migration applied.

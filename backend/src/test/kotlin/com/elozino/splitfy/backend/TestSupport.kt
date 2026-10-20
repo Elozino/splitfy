@@ -1,5 +1,6 @@
 package com.elozino.splitfy.backend
 
+import org.koin.core.module.Module
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
@@ -60,11 +61,16 @@ class TestDatabase(private val name: String) {
  * The module is installed explicitly because replacing the config also drops the
  * `ktor.application.modules` entry that `application.yaml` normally provides.
  */
-fun ApplicationTestBuilder.useTestConfig(database: TestDatabase, walletEnabled: Boolean = true) {
-    application { module() }
+fun ApplicationTestBuilder.useTestConfig(
+    database: TestDatabase,
+    walletEnabled: Boolean = true,
+    overrides: List<Module> = emptyList(),
+    environment: String = "LOCAL",
+) {
+    application { configureApp(overrides) }
     environment {
         config = MapApplicationConfig(
-            "app.environment" to "LOCAL",
+            "app.environment" to environment,
             "database.jdbcUrl" to database.jdbcUrl,
             "database.username" to database.username,
             "database.password" to database.password,
