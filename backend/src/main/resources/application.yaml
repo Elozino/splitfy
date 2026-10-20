@@ -14,10 +14,12 @@ app:
 database:
   jdbcUrl: "$DATABASE_URL:jdbc:postgresql://localhost:5432/splitfy"
   username: "$DATABASE_USER:splitfy"
+  # The app refuses to boot in PRODUCTION while this default is still in place.
   password: "$DATABASE_PASSWORD:splitfy"
   driver: "$DATABASE_DRIVER:org.postgresql.Driver"
   maxPoolSize: "$DATABASE_POOL_SIZE:10"
   runMigrations: "$DATABASE_RUN_MIGRATIONS:true"
+  statementTimeoutSeconds: "$DATABASE_STATEMENT_TIMEOUT_SECONDS:30"
 
 jwt:
   # Override in every deployed environment. The app refuses to boot in PRODUCTION

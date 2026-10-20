@@ -5,6 +5,7 @@ import io.ktor.server.config.ApplicationConfig
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Typed configuration, read once at start-up.
@@ -33,6 +34,8 @@ data class AppConfig(
         val driver: String,
         val maxPoolSize: Int,
         val runMigrations: Boolean,
+        /** Upper bound on any single statement, so one bad query cannot hold a pooled connection. */
+        val statementTimeout: Duration,
     )
 
     data class JwtConfig(
@@ -70,17 +73,24 @@ data class AppConfig(
                 "Refusing to start production with the development JWT secret"
             }
 
+            val databasePassword = config.property("database.password").getString()
+            require(!(environment.isProduction && databasePassword == INSECURE_DEV_DATABASE_PASSWORD)) {
+                "Refusing to start production with the development database password"
+            }
+
             return AppConfig(
                 environment = environment,
                 database = DatabaseConfig(
                     jdbcUrl = config.property("database.jdbcUrl").getString(),
                     username = config.property("database.username").getString(),
-                    password = config.property("database.password").getString(),
+                    password = databasePassword,
                     driver = config.propertyOrNull("database.driver")?.getString()
                         ?: "org.postgresql.Driver",
                     maxPoolSize = config.propertyOrNull("database.maxPoolSize")?.getString()?.toInt() ?: 10,
                     runMigrations = config.propertyOrNull("database.runMigrations")?.getString()
                         ?.toBooleanStrict() ?: true,
+                    statementTimeout = config.propertyOrNull("database.statementTimeoutSeconds")?.getString()
+                        ?.toLong()?.seconds ?: 30.seconds,
                 ),
                 jwt = JwtConfig(
                     secret = jwtSecret,
@@ -104,6 +114,7 @@ data class AppConfig(
         }
 
         const val INSECURE_DEV_SECRET = "local-development-secret-do-not-use-in-production"
+        const val INSECURE_DEV_DATABASE_PASSWORD = "splitfy"
         private const val MIN_JWT_SECRET_LENGTH = 32
     }
 }

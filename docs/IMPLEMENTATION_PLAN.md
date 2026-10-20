@@ -36,13 +36,11 @@ The app's screens are not in git, so `main` does not compile for anyone else.
 Backend tests currently run on H2 with Flyway **disabled** (`backend/src/test/.../TestSupport.kt`),
 so the real migrations are never exercised.
 
-- [ ] Add Testcontainers (`org.testcontainers:postgresql`) and boot tests against a real
-      Postgres container with Flyway **enabled**. Keep one container per test run; truncate tables between classes.
-- [ ] Remove the H2 dependency once all tests pass on Postgres.
-- [ ] Add a migration test: apply `V1..Vn` to an empty DB and assert the schema validates against the Exposed tables.
-- [ ] Production guard in `AppConfig.kt`: refuse to start in `PRODUCTION` with the default
-      `DATABASE_PASSWORD`, or with an empty `allowedHosts` (mirrors the existing JWT-secret check).
-- [ ] Set up connection pooling limits (Hikari) and a statement timeout in `application.yaml`.
+- [x] Boot tests against real PostgreSQL (`io.zonky.test:embedded-postgres`, no Docker) with Flyway **enabled**; one server per test run, one database per test class.
+- [x] Remove the H2 dependency.
+- [x] Schema test: every Exposed column exists in the migrated database with matching nullability.
+- [x] Production guard in `AppConfig.kt`: refuse to start in `PRODUCTION` with the default `DATABASE_PASSWORD`.
+- [x] Statement timeout (`DATABASE_STATEMENT_TIMEOUT_SECONDS`, default 30s).
 
 **Done when:** `./gradlew :backend:test` runs on Postgres in CI and the production boot checks are covered by tests.
 

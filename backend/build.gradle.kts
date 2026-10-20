@@ -75,7 +75,9 @@ dependencies {
     testImplementation(ktorLibs.server.testHost)
     testImplementation(ktorLibs.client.contentNegotiation)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.h2database)
+    // Real PostgreSQL binaries started inside the test JVM: the migrations run
+    // exactly as they do in production, without needing Docker.
+    testImplementation(libs.embedded.postgres)
 }
 
 tasks.withType<Test>().configureEach {
