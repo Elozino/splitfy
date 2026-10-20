@@ -22,6 +22,10 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
+        <!-- Sentry is started from SplitfyApplication, and only when a DSN is set;
+             stop the Android SDK from also trying to start itself. -->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
+
         <activity
             android:name=".android.MainActivity"
             android:exported="true"
