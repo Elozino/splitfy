@@ -30,6 +30,8 @@ import com.elozino.splitfy.backend.services.SettlementService
 import com.elozino.splitfy.backend.services.TransferService
 import com.elozino.splitfy.backend.services.UserService
 import com.elozino.splitfy.backend.services.WalletService
+import com.elozino.splitfy.backend.services.UploadService
+import com.elozino.splitfy.backend.routes.uploadRoutes
 import io.ktor.server.application.Application
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
@@ -59,6 +61,7 @@ fun Application.configureRouting(database: Database, config: AppConfig) {
     val activityService by inject<ActivityService>()
     val notificationService by inject<NotificationService>()
     val contactService by inject<ContactService>()
+    val uploadService by inject<UploadService>()
 
     routing {
         swaggerUI(path = ApiRoutes.System.OPENAPI, swaggerFile = "openapi/documentation.yaml")
@@ -86,6 +89,7 @@ fun Application.configureRouting(database: Database, config: AppConfig) {
                 notificationRoutes(notificationService)
                 pushRoutes(notificationService)
                 contactRoutes(contactService)
+                uploadRoutes(uploadService)
             }
         }
     }

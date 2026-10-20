@@ -2,6 +2,9 @@ package com.elozino.splitfy.backend.di
 
 import com.elozino.splitfy.backend.repositories.ExpenseRepository
 import com.elozino.splitfy.backend.repositories.GroupRepository
+import com.elozino.splitfy.backend.repositories.UploadRepository
+import com.elozino.splitfy.backend.services.UploadService
+import com.elozino.splitfy.backend.storage.ObjectStorage
 import com.elozino.splitfy.backend.repositories.EmailVerificationRepository
 import com.elozino.splitfy.backend.repositories.PasswordResetRepository
 import com.elozino.splitfy.backend.repositories.GroupInviteRepository
@@ -92,7 +95,9 @@ fun serverModule(config: AppConfig) = module {
     single { EmailVerificationRepository() }
     single { UserIdentityRepository() }
     single { GroupInviteRepository() }
-    single { GroupRepository() }
+    single { ObjectStorage(config.storage) }
+    single { UploadRepository() }
+    single { GroupRepository(get<ObjectStorage>()::displayUrl) }
     single { ExpenseRepository() }
     single { SettlementRepository() }
     single { WalletRepository() }
@@ -118,8 +123,9 @@ fun serverModule(config: AppConfig) = module {
             ),
         )
     }
-    single { GroupService(get(), get(), get(), get()) }
-    single { ExpenseService(get(), get(), get(), get()) }
+    single { GroupService(get(), get(), get(), get(), get()) }
+    single { ExpenseService(get(), get(), get(), get(), get(), get()) }
+    single { UploadService(get(), get(), get()) }
     single { SettlementService(get(), get(), get(), get()) }
     single { NotificationService(get(), get(), get(), get()) }
     single { PaymentReminderJob(get(), get(), get(), get(), get(), get(), get(), get(), config.push) }

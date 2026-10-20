@@ -7,7 +7,9 @@ import com.elozino.splitfy.backend.schema.DeviceTokensTable
 import com.elozino.splitfy.backend.schema.JobRunsTable
 import com.elozino.splitfy.backend.schema.NotificationPreferencesTable
 import com.elozino.splitfy.backend.schema.PaymentRemindersTable
+import com.elozino.splitfy.backend.schema.dbNow
 import com.elozino.splitfy.backend.schema.dbQuery
+import com.elozino.splitfy.backend.schema.toJava
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -26,7 +28,7 @@ class DeviceTokenRepository {
      * to someone else (a shared phone, sign-out without unregister) moves to [userId].
      */
     suspend fun register(userId: UUID, token: String, platform: DevicePlatform): Unit = dbQuery {
-        val now = Instant.now()
+        val now = dbNow().toJava()
         DeviceTokensTable.upsert(
             onUpdateExclude = listOf(DeviceTokensTable.createdAt),
         ) {
@@ -73,7 +75,7 @@ class NotificationPreferencesRepository {
             it[settlements] = next.settlements
             it[groupActivity] = next.groupActivity
             it[paymentReminders] = next.paymentReminders
-            it[updatedAt] = Instant.now()
+            it[updatedAt] = dbNow().toJava()
         }
         next
     }
@@ -101,7 +103,7 @@ class JobRunRepository {
         JobRunsTable.insertIgnore {
             it[JobRunsTable.job] = job
             it[runOn] = day
-            it[claimedAt] = Instant.now()
+            it[claimedAt] = dbNow().toJava()
         }.insertedCount == 1
     }
 }

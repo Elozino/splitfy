@@ -59,6 +59,7 @@ class DatabaseSchemaTest {
         com.elozino.splitfy.backend.schema.NotificationPreferencesTable,
         com.elozino.splitfy.backend.schema.JobRunsTable,
         com.elozino.splitfy.backend.schema.PaymentRemindersTable,
+        com.elozino.splitfy.backend.schema.UploadsTable,
     )
 
     @BeforeTest

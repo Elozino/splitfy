@@ -38,6 +38,7 @@ data class Group(
     val description: String? = null,
     val category: GroupCategory = GroupCategory.OTHER,
     val currency: CurrencyCode,
+    /** A displayable URL for the cover photo. Signed links expire, so don't persist it. */
     val coverImageUrl: String? = null,
     val members: List<GroupMember> = emptyList(),
     val createdBy: UserId,

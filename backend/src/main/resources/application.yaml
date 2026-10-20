@@ -72,6 +72,18 @@ push:
   reminderEveryDays: "$PAYMENT_REMINDER_EVERY_DAYS:7"
   reminderHourUtc: "$PAYMENT_REMINDER_HOUR_UTC:9"
 
+storage:
+  # S3-compatible object storage for receipts and group cover photos (AWS S3 or
+  # Cloudflare R2). Uploads are off unless endpoint, bucket and both keys are set.
+  endpoint: "$STORAGE_ENDPOINT:"
+  bucket: "$STORAGE_BUCKET:"
+  accessKey: "$STORAGE_ACCESS_KEY:"
+  secretKey: "$STORAGE_SECRET_KEY:"
+  # "auto" for R2; the bucket's region (e.g. eu-west-1) for AWS.
+  region: "$STORAGE_REGION:auto"
+  # Optional public host for cover photos. Without it covers use signed links too.
+  publicBaseUrl: "$STORAGE_PUBLIC_BASE_URL:"
+
 features:
   # Wallet, top-up, withdrawal, payment methods and peer transfers. Leave off until a
   # payment provider is integrated: a top-up currently credits without charging.
