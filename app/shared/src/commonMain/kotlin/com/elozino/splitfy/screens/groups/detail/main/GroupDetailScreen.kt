@@ -26,7 +26,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.elozino.splitfy.domain.model.Expense
+import com.preat.peekaboo.image.picker.ResizeOptions
+import com.preat.peekaboo.image.picker.SelectionMode
+import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
+import androidx.compose.ui.layout.ContentScale
 import com.elozino.splitfy.domain.model.ExpenseCategory
 import com.elozino.splitfy.domain.model.Money
 import com.elozino.splitfy.ui.components.SearchField
@@ -61,6 +66,13 @@ fun GroupDetailScreen(
     var isSearching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val coverPicker = rememberImagePickerLauncher(
+        selectionMode = SelectionMode.Single,
+        scope = scope,
+        resizeOptions = ResizeOptions(width = 2048, height = 2048, compressionQuality = 0.9),
+        onResult = { images -> images.firstOrNull()?.let(viewModel::onCoverImage) },
+    )
 
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
@@ -178,12 +190,37 @@ fun GroupDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
+                    .background(Color.LightGray)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.LightGray)
-                )
+                state.group?.coverImageUrl?.let { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = "Cover photo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                if (state.isUploadingCover) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(color = Color.White)
+                    }
+                }
+                if (state.canEditCover) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
+                            .size(36.dp)
+                            .background(primaryLight, CircleShape)
+                            .clickable(enabled = !state.isUploadingCover) { coverPicker.launch() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Change cover photo", modifier = Modifier.size(18.dp), tint = Color.Black)
+                    }
+                }
             }
 
             // Tabs

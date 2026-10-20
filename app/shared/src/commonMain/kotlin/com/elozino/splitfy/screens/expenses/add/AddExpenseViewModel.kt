@@ -4,6 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elozino.splitfy.api.dto.CreateExpenseRequest
 import com.elozino.splitfy.api.dto.SplitPayload
+import com.elozino.splitfy.api.dto.UploadPurpose
+import com.elozino.splitfy.api.dto.UploadRules
+import com.elozino.splitfy.uploads.ImageCompressor
+import com.elozino.splitfy.uploads.UploadFile
+import com.elozino.splitfy.uploads.UploadRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import com.elozino.splitfy.DataResult
 import com.elozino.splitfy.domain.model.CurrencyCode
 import com.elozino.splitfy.domain.model.ExpenseCategory
@@ -39,13 +48,23 @@ class AddExpenseViewModel(
     private val groupRepository: GroupRepository,
     private val expenseRepository: ExpenseRepository,
     private val sessionManager: SessionManager,
+    private val uploadRepository: UploadRepository,
+    private val imageCompressor: ImageCompressor,
+    /** Where photos are decoded and re-encoded; tests pass their own dispatcher. */
+    private val imageDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AddExpenseState())
     val state: StateFlow<AddExpenseState> = _state.asStateFlow()
 
+    private var receiptUpload: Job? = null
+
     init {
         load()
+        viewModelScope.launch {
+            val enabled = uploadRepository.config().getOrNull()?.enabled == true
+            _state.update { it.copy(uploadsEnabled = enabled) }
+        }
     }
 
     fun load() {
@@ -110,7 +129,46 @@ class AddExpenseViewModel(
         current.copy(weights = current.weights + (userId.value to parsed))
     }
 
-    fun onReceiptCaptured(url: String) = _state.update { it.copy(receiptUrl = url) }
+    /**
+     * A photo from the camera or the gallery: shrink it, then upload it straight to
+     * storage. The expense only references the returned key, and only once saved.
+     */
+    fun onReceiptImage(bytes: ByteArray?) {
+        _state.update { it.copy(step = AddExpenseStep.DETAILS) }
+        if (bytes == null) {
+            _state.update { it.copy(errorMessage = "Couldn't read that photo. Try again.") }
+            return
+        }
+        receiptUpload?.cancel()
+        receiptUpload = viewModelScope.launch {
+            _state.update {
+                it.copy(isUploadingReceipt = true, receiptUrl = null, receiptPreview = null, errorMessage = null)
+            }
+            val compressed = withContext(imageDispatcher) { imageCompressor.compress(bytes) }
+            if (compressed == null) {
+                _state.update { it.copy(isUploadingReceipt = false, errorMessage = "That file isn't a photo we can read") }
+                return@launch
+            }
+            _state.update { it.copy(receiptPreview = compressed) }
+
+            when (val result = uploadRepository.upload(groupId, UploadPurpose.RECEIPT, UploadFile(compressed, UploadRules.JPEG))) {
+                is DataResult.Success -> _state.update { it.copy(isUploadingReceipt = false, receiptUrl = result.data) }
+                is DataResult.Failure -> _state.update {
+                    it.copy(
+                        isUploadingReceipt = false,
+                        receiptPreview = null,
+                        errorMessage = result.error.userMessage(),
+                    )
+                }
+            }
+        }
+    }
+
+    /** Drops the attachment before saving. The orphaned object is harmless and unreferenced. */
+    fun removeReceipt() {
+        receiptUpload?.cancel()
+        _state.update { it.copy(receiptUrl = null, receiptPreview = null, isUploadingReceipt = false) }
+    }
 
     fun navigateTo(step: AddExpenseStep) = _state.update { it.copy(step = step) }
 
@@ -123,6 +181,8 @@ class AddExpenseViewModel(
         val current = _state.value
         val total = current.amount ?: return
         val payer = current.paidBy ?: return
+        // Saving mid-upload would silently drop the receipt.
+        if (current.isUploadingReceipt) return
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, errorMessage = null) }

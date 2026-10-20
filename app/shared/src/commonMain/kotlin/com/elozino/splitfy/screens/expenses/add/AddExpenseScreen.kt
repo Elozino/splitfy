@@ -27,7 +27,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import com.elozino.splitfy.PermissionStatus
+import com.elozino.splitfy.PermissionType
+import com.elozino.splitfy.checkPermission
 import com.elozino.splitfy.domain.model.ExpenseCategory
+import com.elozino.splitfy.rememberPermissionLauncher
+import com.preat.peekaboo.image.picker.ResizeOptions
+import androidx.compose.ui.layout.ContentScale
 import com.elozino.splitfy.domain.model.SplitMethod
 import com.elozino.splitfy.ui.theme.primaryLight
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
@@ -52,6 +59,16 @@ fun AddExpenseScreen(
         if (state.saved) onNavigateBack()
     }
 
+    // Peekaboo already JPEG-encodes and downscales gallery picks; the view model
+    // compresses again so camera shots and picks end up the same size.
+    val scope = rememberCoroutineScope()
+    val galleryLauncher = rememberImagePickerLauncher(
+        selectionMode = SelectionMode.Single,
+        scope = scope,
+        resizeOptions = ResizeOptions(width = 2048, height = 2048, compressionQuality = 0.9),
+        onResult = { images -> images.firstOrNull()?.let(viewModel::onReceiptImage) },
+    )
+
     when (state.step) {
         AddExpenseStep.DETAILS -> ExpenseDetailsScreen(
             state = state,
@@ -69,7 +86,11 @@ fun AddExpenseScreen(
         )
         AddExpenseStep.CAMERA -> ReceiptCaptureScreen(
             onNavigateBack = { viewModel.navigateTo(AddExpenseStep.DETAILS) },
-            onCapture = { viewModel.navigateTo(AddExpenseStep.DETAILS) },
+            onCapture = viewModel::onReceiptImage,
+            onOpenGallery = {
+                viewModel.navigateTo(AddExpenseStep.DETAILS)
+                galleryLauncher.launch()
+            },
         )
     }
     
@@ -82,6 +103,7 @@ fun AddExpenseScreen(
             },
             onGallery = {
                 viewModel.setImageSheetVisible(false)
+                galleryLauncher.launch()
             }
         )
     }
@@ -101,6 +123,14 @@ private fun ExpenseDetailsScreen(
     val amount = state.amountInput
     val notes = state.notes
     val selectedSplitType = state.splitMethod.label()
+    val snackbar = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let {
+            snackbar.showSnackbar(it)
+            viewModel.consumeError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -115,6 +145,7 @@ private fun ExpenseDetailsScreen(
             )
         },
         containerColor = Color.White,
+        snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -282,8 +313,80 @@ private fun ExpenseDetailsScreen(
                 )
             }
 
-            // Receipt attachments arrive with uploads (Phase 5); the old mock always
-            // showed a fake file and its camera saved nothing.
+            // Hidden entirely when the server has no storage configured.
+            if (state.uploadsEnabled) {
+                item {
+                    Text("Receipt", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    ReceiptAttachment(
+                        preview = state.receiptPreview,
+                        isUploading = state.isUploadingReceipt,
+                        isAttached = state.receiptUrl != null,
+                        onAdd = onAddImage,
+                        onRemove = viewModel::removeReceipt,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReceiptAttachment(
+    preview: ByteArray?,
+    isUploading: Boolean,
+    isAttached: Boolean,
+    onAdd: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    if (preview == null && !isUploading) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable(onClick = onAdd),
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFF5F5F5)
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = Color.Gray)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Add a photo of the receipt", color = Color.Gray, fontWeight = FontWeight.Medium)
+            }
+        }
+        return
+    }
+
+    Box(
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .size(width = 120.dp, height = 160.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFFF5F5F5))
+    ) {
+        if (preview != null) {
+            AsyncImage(
+                model = preview,
+                contentDescription = "Receipt",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        if (isUploading) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+            }
+        }
+        if (isAttached || isUploading) {
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .size(28.dp)
+                    .background(Color.Black.copy(alpha = 0.55f), CircleShape),
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Remove receipt", tint = Color.White, modifier = Modifier.size(16.dp))
+            }
         }
     }
 }
@@ -340,8 +443,18 @@ private fun ImagePickerSheet(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ReceiptCaptureScreen(onNavigateBack: () -> Unit, onCapture: () -> Unit) {
-    val cameraState = rememberPeekabooCameraState(onCapture = { onCapture() })
+private fun ReceiptCaptureScreen(
+    onNavigateBack: () -> Unit,
+    onCapture: (ByteArray?) -> Unit,
+    onOpenGallery: () -> Unit,
+) {
+    val cameraState = rememberPeekabooCameraState(onCapture = onCapture)
+    // Peekaboo only re-asks after a denial, so the first request is ours to make.
+    var permission by remember { mutableStateOf(checkPermission(PermissionType.CAMERA)) }
+    val requestPermission = rememberPermissionLauncher(PermissionType.CAMERA) { permission = it }
+    LaunchedEffect(Unit) {
+        if (permission != PermissionStatus.GRANTED) requestPermission()
+    }
 
     Scaffold(
         topBar = {
@@ -352,18 +465,33 @@ private fun ReceiptCaptureScreen(onNavigateBack: () -> Unit, onCapture: () -> Un
                         Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
                     }
                 },
-                actions = {
-                    IconButton(onClick = { /* Settings */ }) {
-                        Icon(Icons.Default.Settings, contentDescription = null, tint = Color.White)
-                    }
-                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Black)
             )
         },
         containerColor = Color.Black
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            PeekabooCamera(state = cameraState, modifier = Modifier.fillMaxSize())
+            if (permission == PermissionStatus.GRANTED) {
+                PeekabooCamera(state = cameraState, modifier = Modifier.fillMaxSize())
+            } else {
+                Column(
+                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        "Allow camera access to photograph receipts, or pick one from your photos.",
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = requestPermission,
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryLight),
+                    ) {
+                        Text("Allow camera", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
 
             Box(
                 modifier = Modifier
@@ -381,8 +509,8 @@ private fun ReceiptCaptureScreen(onNavigateBack: () -> Unit, onCapture: () -> Un
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { /* Gallery */ }) {
-                    Icon(Icons.Default.Image, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                IconButton(onClick = onOpenGallery) {
+                    Icon(Icons.Default.Image, contentDescription = "Choose from photos", tint = Color.White, modifier = Modifier.size(32.dp))
                 }
                 
                 Box(
