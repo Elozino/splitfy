@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.expenses.add
 
+import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -45,7 +46,7 @@ fun AddExpenseScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Stable per screen entry: a retry after a timeout must not create a duplicate.
-    val clientRequestId = remember { "expense-$groupId-${'$'}{state.hashCode()}" }
+    val clientRequestId = remember { newClientRequestId() }
 
     LaunchedEffect(state.saved) {
         if (state.saved) onNavigateBack()

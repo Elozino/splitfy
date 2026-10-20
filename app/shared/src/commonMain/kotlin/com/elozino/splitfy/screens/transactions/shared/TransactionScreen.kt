@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.transactions.shared
 
+import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -73,9 +74,10 @@ internal fun TransactionScreen(
         if (type == TransactionType.REQUEST) user.owesYou else !user.owesYou
     }
 
-    // Stable across recomposition so a retried tap cannot send twice.
-    val clientRequestId = remember(state.selectedUser) {
-        "transfer-${'$'}{type.name}-${'$'}{state.selectedUser?.userId?.value.orEmpty()}"
+    // Stable across recomposition and retries so a retried tap cannot send twice, but
+    // renewed once a transfer completes so the next one is not mistaken for a retry.
+    val clientRequestId = remember(type, state.selectedUser, state.lastTransfer) {
+        newClientRequestId()
     }
 
     // The success sheet appears only after the server has recorded the transfer.
