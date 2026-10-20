@@ -42,6 +42,7 @@ class DatabaseSchemaTest {
         EmailVerificationsTable,
         UserIdentitiesTable,
         GroupsTable,
+        com.elozino.splitfy.backend.schema.GroupInvitesTable,
         GroupMembersTable,
         ExpensesTable,
         ExpenseSharesTable,

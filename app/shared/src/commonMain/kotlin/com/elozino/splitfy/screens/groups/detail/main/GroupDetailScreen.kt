@@ -48,6 +48,7 @@ fun GroupDetailScreen(
     onNavigateToAddExpense: () -> Unit,
     onNavigateToSettleUp: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToInvite: () -> Unit,
     onNavigateToExpenseDetail: (String) -> Unit,
     viewModel: GroupDetailViewModel = koinViewModel { parametersOf(groupId) },
 ) {
@@ -109,6 +110,14 @@ fun GroupDetailScreen(
                             onDismissRequest = { viewModel.setOverflowMenuVisible(false) },
                             modifier = Modifier.background(Color.White)
                         ) {
+                            if (state.group?.isArchived == false) DropdownMenuItem(
+                                text = { Text("Invite by link") },
+                                onClick = {
+                                    viewModel.setOverflowMenuVisible(false)
+                                    onNavigateToInvite()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                            )
                             // Editing, leaving and archiving all live in settings, behind confirmations.
                             DropdownMenuItem(
                                 text = { Text("Group settings") },

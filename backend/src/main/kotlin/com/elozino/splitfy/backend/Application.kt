@@ -53,5 +53,5 @@ fun Application.configureApp(overrides: List<Module>) {
     configureSecurity()
     configureRateLimiting()
     configureStatusPages()
-    configureRouting(connection, config.features)
+    configureRouting(connection, config)
 }

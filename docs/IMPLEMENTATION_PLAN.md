@@ -1,10 +1,11 @@
 # Splitfy — Implementation Plan to Launch
 
-Status as of 2026-10-20. Derived from a readiness review of `main` (`a0ab83d`) against
-`docs/split_bill_app_prd.md`.
+Initial review: 2026-10-20, based on `main` (`a0ab83d`) against
+`docs/split_bill_app_prd.md`. Phase 4 was updated after the invite implementation;
+other phase checkboxes still reflect the original review.
 
 **Database:** PostgreSQL is the system of record. Every schema change in this plan is a
-new Flyway migration in `backend/src/main/resources/db/migration/` (next is `V3__…`).
+new Flyway migration in `backend/src/main/resources/db/migration/` (next is `V6__…`, after the local invite migration).
 The on-device cache in Phase 8 is SQLite (via SQLDelight); it is a cache of
 Postgres data, not a second source of truth.
 
@@ -85,13 +86,26 @@ The production server refuses to boot because only `LoggingOtpNotifier` exists (
 
 ## Phase 4 — Group invites · M
 
-The PRD requires inviting people by link; today members can only be added directly.
+Implemented locally on 2026-10-20, continuing the unfinished invite backend.
 
-- [ ] Migration `V3__group_invites.sql`: `group_invites(id, group_id, token UNIQUE, created_by, expires_at, max_uses, use_count, revoked_at)`.
-- [ ] Endpoints: create invite, revoke, preview (public: group name and inviter), accept (authenticated). Add routes to `core/.../ApiRoutes.kt` so client and server share them.
-- [ ] Deep links: Android App Links and iOS Universal Links for `https://splitfy.app/i/{token}`; route through sign-up when signed out.
-- [ ] Share sheet from group detail.
-- [ ] Phone-number invites (SMS) are deferred until an SMS provider is chosen.
+- [x] Migration `V5__group_invites.sql`, repository, service and shared API contracts.
+      V3 and V4 are already used by email verification and social identities.
+- [x] Member-only shared link creation/retrieval, owner/admin reset (revokes old links),
+      public preview and authenticated, idempotent acceptance.
+- [x] Android App Links and iOS Universal Links for `https://splitfy.app/i/{token}`,
+      with `splitfy://invite/{token}` fallback and a browser landing page.
+- [x] Share sheet from group detail; preview and join dialog; persist pending links
+      through existing sign-in/sign-up flows and app restarts. Onboarding UI unchanged.
+- [x] Tests for permissions, expiry, revoked/archived links, repeated/concurrent joins,
+      link parsing and pending-link storage; include invite table in schema validation.
+- [ ] Production domain verification: route `/i/*` and `/.well-known/*` to the backend,
+      set signing-certificate fingerprints and Apple app identifiers, then verify links
+      and native sharing on signed Android/iOS builds.
+- [ ] Optional maximum-use limits: the current shared-link design has a 30-day expiry,
+      reset/revocation and use counting, but no configurable `max_uses` cap.
+- [ ] Phone-number invites (SMS) remain deferred until an SMS provider is chosen.
+
+Deployment setup and device checks: [GROUP_INVITES.md](GROUP_INVITES.md).
 
 ## Phase 5 — Receipts and group images · M
 

@@ -73,6 +73,24 @@ abstract class OneTimeCodesTable(name: String) : Table(name) {
 
 object PasswordResetsTable : OneTimeCodesTable("password_resets")
 
+object GroupInvitesTable : Table("group_invites") {
+    val id = uuid("id")
+    val groupId = uuid("group_id").references(GroupsTable.id, onDelete = ReferenceOption.CASCADE)
+    val token = varchar("token", 64)
+    val createdBy = uuid("created_by").references(UsersTable.id)
+    val createdAt = timestamp("created_at")
+    val expiresAt = timestamp("expires_at")
+    val revokedAt = timestamp("revoked_at").nullable()
+    val useCount = integer("use_count").default(0)
+
+    override val primaryKey = PrimaryKey(id)
+
+    init {
+        uniqueIndex("uq_group_invites_token", token)
+        index("ix_group_invites_group", false, groupId)
+    }
+}
+
 object UserIdentitiesTable : Table("user_identities") {
     val provider = varchar("provider", 20)
     val subject = varchar("subject", 255)

@@ -17,6 +17,9 @@ import com.elozino.splitfy.backend.services.ActivityService
 import com.elozino.splitfy.backend.utils.AppConfig
 import com.elozino.splitfy.backend.services.AuthService
 import com.elozino.splitfy.backend.services.SocialAuthService
+import com.elozino.splitfy.backend.services.InviteService
+import com.elozino.splitfy.backend.routes.inviteRoutes
+import com.elozino.splitfy.backend.routes.publicInviteRoutes
 import com.elozino.splitfy.backend.services.ContactService
 import com.elozino.splitfy.backend.services.ExpenseService
 import com.elozino.splitfy.backend.services.GroupService
@@ -41,9 +44,11 @@ import org.koin.ktor.ext.inject
  * new endpoint is protected by default — forgetting an `authenticate {}` block
  * cannot silently expose data.
  */
-fun Application.configureRouting(database: Database, features: AppConfig.FeaturesConfig) {
+fun Application.configureRouting(database: Database, config: AppConfig) {
+    val features = config.features
     val authService by inject<AuthService>()
     val socialAuthService by inject<SocialAuthService>()
+    val inviteService by inject<InviteService>()
     val userService by inject<UserService>()
     val groupService by inject<GroupService>()
     val expenseService by inject<ExpenseService>()
@@ -60,6 +65,9 @@ fun Application.configureRouting(database: Database, features: AppConfig.Feature
 
         healthRoutes(database)
         authRoutes(authService, socialAuthService)
+        rateLimit(RateLimitScope.AUTH_GENERAL.scopeName) {
+            publicInviteRoutes(inviteService, config.links)
+        }
 
         authenticate(JwtService.AUTH_JWT) {
             rateLimit(RateLimitScope.API.scopeName) {
@@ -67,6 +75,7 @@ fun Application.configureRouting(database: Database, features: AppConfig.Feature
                 groupRoutes(groupService)
                 expenseRoutes(expenseService)
                 settlementRoutes(settlementService)
+                inviteRoutes(inviteService)
                 // Unregistered rather than guarded, so a disabled wallet is a plain 404.
                 if (features.wallet) {
                     walletRoutes(walletService)

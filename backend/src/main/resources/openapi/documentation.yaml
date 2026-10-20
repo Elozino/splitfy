@@ -36,6 +36,66 @@ tags:
   - name: System
 
 paths:
+  /api/v1/groups/{groupId}/invite:
+    get:
+      tags: [Groups]
+      summary: Get or create the group's shared invite link (members only)
+      parameters:
+        - { name: groupId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Invite link, valid for 30 days
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupInvite' }
+        "404": { description: Group not found or caller is not a member }
+        "409": { description: Group is archived }
+
+  /api/v1/groups/{groupId}/invite/reset:
+    post:
+      tags: [Groups]
+      summary: Revoke old links and create a new one (owner or admin only)
+      parameters:
+        - { name: groupId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Replacement invite link
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupInvite' }
+        "403": { description: Caller is not an owner or admin }
+        "409": { description: Group is archived }
+
+  /api/v1/invites/{token}:
+    get:
+      tags: [Groups]
+      summary: Preview a group invitation without signing in
+      security: []
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Group name, member count, inviter and currency
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvitePreview' }
+        "404": { description: Invalid, expired or revoked link, or archived group }
+
+  /api/v1/invites/{token}/accept:
+    post:
+      tags: [Groups]
+      summary: Join the group as a member; repeated acceptance is idempotent
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Joined group
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Group' }
+        "401": { description: Sign-in required }
+        "404": { description: Invalid, expired or revoked link, or archived group }
+
   /health:
     get:
       tags: [System]
@@ -1043,6 +1103,22 @@ components:
           schema: { $ref: "#/components/schemas/ApiErrorResponse" }
 
   schemas:
+    GroupInvite:
+      type: object
+      required: [token, url, expiresAt]
+      properties:
+        token: { type: string }
+        url: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+    InvitePreview:
+      type: object
+      required: [groupId, groupName, memberCount, invitedBy, currency]
+      properties:
+        groupId: { type: string, format: uuid }
+        groupName: { type: string }
+        memberCount: { type: integer }
+        invitedBy: { type: string }
+        currency: { type: string }
     MessageResponse:
       type: object
       required: [message]

@@ -23,6 +23,7 @@ data class AppConfig(
     val features: FeaturesConfig = FeaturesConfig(),
     val email: EmailConfig = EmailConfig(),
     val oauth: OAuthConfig = OAuthConfig(),
+    val links: LinksConfig = LinksConfig(),
 ) {
     enum class Environment {
         LOCAL, STAGING, PRODUCTION;
@@ -70,6 +71,16 @@ data class AppConfig(
         val googleClientIds: Set<String> = emptySet(),
         /** Apple audiences: the iOS bundle id, plus a Services ID if web sign-in is added. Empty disables Apple. */
         val appleClientIds: Set<String> = emptySet(),
+    )
+
+    data class LinksConfig(
+        /** Where invite links point. That host must route the invite and .well-known paths to this API. */
+        val publicBaseUrl: String = "https://splitfy.app",
+        val androidPackage: String = "com.elozino.splitfy",
+        /** SHA-256 fingerprints of the release signing certificate(s), as `AA:BB:...`. */
+        val androidCertSha256: Set<String> = emptySet(),
+        /** `TEAMID.bundle.id` entries allowed to open links on iOS. */
+        val appleAppIds: Set<String> = emptySet(),
     )
 
     data class FeaturesConfig(
@@ -142,6 +153,13 @@ data class AppConfig(
                 oauth = OAuthConfig(
                     googleClientIds = config.propertyOrNull("oauth.googleClientIds")?.getString().csv(),
                     appleClientIds = config.propertyOrNull("oauth.appleClientIds")?.getString().csv(),
+                ),
+                links = LinksConfig(
+                    publicBaseUrl = (config.propertyOrNull("links.publicBaseUrl")?.getString() ?: LinksConfig().publicBaseUrl)
+                        .trimEnd('/'),
+                    androidPackage = config.propertyOrNull("links.androidPackage")?.getString() ?: LinksConfig().androidPackage,
+                    androidCertSha256 = config.propertyOrNull("links.androidCertSha256")?.getString().csv(),
+                    appleAppIds = config.propertyOrNull("links.appleAppIds")?.getString().csv(),
                 ),
                 features = FeaturesConfig(
                     wallet = config.propertyOrNull("features.wallet")?.getString()?.toBooleanStrict() ?: false,
