@@ -43,6 +43,8 @@ class DatabaseFactory(private val config: AppConfig.DatabaseConfig) {
         transactionIsolation = "TRANSACTION_REPEATABLE_READ"
         // Fail fast rather than queueing requests behind an exhausted pool.
         connectionTimeout = CONNECTION_TIMEOUT_MS
+        // Applied per session by the server, so it also bounds statements Exposed issues.
+        addDataSourceProperty("options", "-c statement_timeout=${config.statementTimeout.inWholeMilliseconds}")
         validate()
     }
 

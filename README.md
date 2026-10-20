@@ -77,7 +77,7 @@ to produce the `shared` framework, so no separate step is needed.
 ```
 
 - `:core` — split maths, rounding, balance/settlement algebra
-- `:backend` — full HTTP integration tests against an in-memory database
+- `:backend` — full HTTP integration tests against an embedded PostgreSQL server, with the Flyway migrations applied (no Docker needed)
 - `:app:shared` — data-layer mapping and session handling over a mocked transport
 
 ## Configuration
