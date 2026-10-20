@@ -76,6 +76,7 @@ fun ApplicationTestBuilder.useTestConfig(
     walletEnabled: Boolean = true,
     overrides: List<Module> = emptyList(),
     environment: String = "LOCAL",
+    extraConfig: Map<String, String> = emptyMap(),
 ) {
     application { configureApp(overrides) }
     environment {
@@ -96,6 +97,7 @@ fun ApplicationTestBuilder.useTestConfig(
             "security.bcryptCost" to "4",
             "security.otpMinutes" to "10",
             "features.wallet" to walletEnabled.toString(),
+            *extraConfig.toList().toTypedArray(),
         )
     }
 }

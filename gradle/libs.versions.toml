@@ -41,6 +41,8 @@ embeddedPostgres = "2.1.0"
 logback = "1.5.21"
 bcrypt = "0.10.2"
 micrometer = "1.14.2"
+sentry = "8.58.0"
+sentryKmp = "0.27.0"
 # Pinned to the version ktor-server-config-yaml already resolves, so the two agree.
 kaml = "0.79.0"
 
@@ -108,6 +110,8 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
 kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+sentry = { module = "io.sentry:sentry", version.ref = "sentry" }
+sentry-kmp = { module = "io.sentry:sentry-kotlin-multiplatform", version.ref = "sentryKmp" }
 
 # --- Test -------------------------------------------------------------------
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

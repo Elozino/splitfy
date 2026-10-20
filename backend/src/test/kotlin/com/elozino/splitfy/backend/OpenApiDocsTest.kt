@@ -204,7 +204,8 @@ class OpenApiDocsTest {
         return paths.filterTo(mutableSetOf()) {
             it.startsWith("${ApiRoutes.API_PREFIX}/") ||
                 it == ApiRoutes.System.HEALTH ||
-                it == ApiRoutes.System.READY
+                it == ApiRoutes.System.READY ||
+                it == ApiRoutes.System.METRICS
         }
     }
 

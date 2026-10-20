@@ -113,6 +113,23 @@ paths:
         "200": { description: Ready to serve traffic }
         "503": { description: A dependency is unavailable }
 
+  /metrics:
+    get:
+      tags: [System]
+      summary: Prometheus metrics — off unless METRICS_TOKEN is set
+      description: |
+        Answers 404 while METRICS_TOKEN is unset. Once set, the scraper must send
+        `Authorization: Bearer <METRICS_TOKEN>`; this is not a user access token.
+      security: []
+      responses:
+        "200":
+          description: Prometheus text exposition format
+          content:
+            text/plain:
+              schema: { type: string }
+        "401": { description: Missing or wrong metrics token }
+        "404": { description: Metrics are disabled on this deployment }
+
   /api/v1/auth/register:
     post:
       tags: [Auth]

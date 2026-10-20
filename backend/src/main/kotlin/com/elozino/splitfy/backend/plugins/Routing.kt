@@ -35,6 +35,7 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.routing.routing
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import org.jetbrains.exposed.sql.Database
 import org.koin.ktor.ext.inject
 
@@ -45,7 +46,7 @@ import org.koin.ktor.ext.inject
  * new endpoint is protected by default — forgetting an `authenticate {}` block
  * cannot silently expose data.
  */
-fun Application.configureRouting(database: Database, config: AppConfig) {
+fun Application.configureRouting(database: Database, config: AppConfig, metrics: PrometheusMeterRegistry) {
     val features = config.features
     val authService by inject<AuthService>()
     val socialAuthService by inject<SocialAuthService>()
@@ -66,6 +67,7 @@ fun Application.configureRouting(database: Database, config: AppConfig) {
         openApiRoutes()
 
         healthRoutes(database)
+        metricsRoute(metrics, config.observability)
         authRoutes(authService, socialAuthService)
         rateLimit(RateLimitScope.AUTH_GENERAL.scopeName) {
             publicInviteRoutes(inviteService, config.links)
