@@ -41,11 +41,15 @@ class UserService(private val users: UserRepository) {
      * Requires a minimum query length so the endpoint cannot be walked to enumerate
      * the whole user table.
      */
+    /**
+     * Finds someone outside your groups by their full email address. Matching on
+     * anything less would let any signed-in user list strangers' addresses.
+     */
     suspend fun search(query: String, limit: Int): List<User> {
         if (query.trim().length < MIN_SEARCH_LENGTH) {
             throw AppException.BadRequest("Enter at least $MIN_SEARCH_LENGTH characters to search")
         }
-        return users.search(query, limit)
+        return listOfNotNull(users.findVerifiedByEmail(query)).take(limit)
     }
 
     private companion object {

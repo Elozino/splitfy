@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elozino.splitfy.api.dto.GroupSummary
 import com.elozino.splitfy.DataResult
+import com.elozino.splitfy.FeatureFlags
 import com.elozino.splitfy.domain.model.CurrencyCode
 import com.elozino.splitfy.domain.model.LedgerEntry
 import com.elozino.splitfy.domain.model.Money
@@ -44,8 +45,8 @@ class HomeViewModel(
             // renders in one round trip's time rather than five.
             val profile = async { userRepository.me() }
             val groups = async { groupRepository.list() }
-            val wallet = async { walletRepository.wallet() }
-            val ledger = async { walletRepository.ledger() }
+            val wallet = async { if (FeatureFlags.WALLET) walletRepository.wallet() else null }
+            val ledger = async { if (FeatureFlags.WALLET) walletRepository.ledger() else null }
             val notifications = async { notificationRepository.list() }
 
             val profileResult = profile.await()

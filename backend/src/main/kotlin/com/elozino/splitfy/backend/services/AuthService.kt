@@ -7,7 +7,9 @@ import com.elozino.splitfy.api.dto.LoginRequest
 import com.elozino.splitfy.api.dto.RegisterRequest
 import com.elozino.splitfy.api.dto.ResetPasswordRequest
 import com.elozino.splitfy.api.dto.TokenPair
+import com.elozino.splitfy.api.dto.VerifyEmailRequest
 import com.elozino.splitfy.api.dto.VerifyOtpRequest
+import com.elozino.splitfy.backend.repositories.EmailVerificationRepository
 import com.elozino.splitfy.backend.repositories.PasswordResetRepository
 import com.elozino.splitfy.backend.repositories.RefreshTokenRepository
 import com.elozino.splitfy.backend.repositories.UserRepository
@@ -19,6 +21,8 @@ import com.elozino.splitfy.domain.model.User
 import com.elozino.splitfy.validation.Validators
 import java.util.UUID
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import org.slf4j.LoggerFactory
 
 /**
@@ -33,6 +37,7 @@ class AuthService(
     private val users: UserRepository,
     private val refreshTokens: RefreshTokenRepository,
     private val passwordResets: PasswordResetRepository,
+    private val emailVerifications: EmailVerificationRepository,
     private val jwt: JwtService,
     private val hasher: PasswordHasher,
     private val config: AppConfig,
@@ -60,6 +65,7 @@ class AuthService(
             defaultCurrency = request.defaultCurrency,
         )
         notifications.welcome(UUID.fromString(user.id.value), user.displayName)
+        sendVerificationCode(user)
         return AuthResponse(user, issueTokens(user, deviceId = null))
     }
 
@@ -115,13 +121,23 @@ class AuthService(
         Validators.email(request.email)?.let { throw AppException.Validation(listOf(it)) }
 
         val record = users.findByEmail(request.email) ?: return
+        val userId = UUID.fromString(record.user.id.value)
+
+        // One email per address per cooldown, however many devices or IPs ask, so
+        // this endpoint cannot be used to flood someone's inbox.
+        val lastIssued = passwordResets.latestIssuedAt(userId)
+        if (lastIssued != null && Clock.System.now() - lastIssued < RESEND_COOLDOWN) return
+
         val code = TokenGenerator.numericOtp()
         passwordResets.create(
-            userId = UUID.fromString(record.user.id.value),
+            userId = userId,
             codeHash = TokenGenerator.sha256(code),
             expiresAt = Clock.System.now().plus(config.security.otpTtl),
         )
-        notifier.sendPasswordResetCode(record.user.email, code)
+        // A delivery failure is logged rather than returned: reporting it would tell
+        // an anonymous caller that the address has an account.
+        runCatching { notifier.sendPasswordResetCode(record.user.email, code) }
+            .onFailure { logger.error("Could not send password reset code", it) }
     }
 
     /** Exchanges a valid OTP for a single-use reset token. */
@@ -129,11 +145,15 @@ class AuthService(
         val record = users.findByEmail(request.email) ?: throw AppException.InvalidCredentials("Code is not valid")
         val userId = UUID.fromString(record.user.id.value)
 
+        val now = Clock.System.now()
         val resetId = passwordResets.findActive(
             userId = userId,
             codeHash = TokenGenerator.sha256(request.code),
-            now = Clock.System.now(),
-        ) ?: throw AppException.InvalidCredentials("Code is not valid or has expired")
+            now = now,
+        ) ?: run {
+            passwordResets.recordFailedAttempt(userId, now)
+            throw AppException.InvalidCredentials("Code is not valid or has expired")
+        }
 
         passwordResets.consume(resetId)
 
@@ -167,6 +187,48 @@ class AuthService(
         refreshTokens.revokeAllForUser(userId)
     }
 
+    /** Proves the caller owns their email address; returns the updated profile. */
+    suspend fun verifyEmail(userId: UUID, request: VerifyEmailRequest): User {
+        val user = users.findById(userId) ?: throw AppException.Unauthorized()
+        if (user.emailVerified) return user
+
+        val now = Clock.System.now()
+        val codeId = emailVerifications.findActive(userId, TokenGenerator.sha256(request.code.trim()), now)
+            ?: run {
+                emailVerifications.recordFailedAttempt(userId, now)
+                // 400, not 401: the caller is authenticated, and a 401 would make the
+                // client refresh its token and retry, counting each guess twice.
+                throw AppException.BadRequest("Code is not valid or has expired", ApiErrorCode.INVALID_CREDENTIALS)
+            }
+        emailVerifications.consume(codeId)
+        users.markEmailVerified(userId)
+        return users.findById(userId) ?: throw AppException.Unauthorized()
+    }
+
+    /** Sends a fresh code, at most once per cooldown; a no-op once verified. */
+    suspend fun resendVerification(userId: UUID) {
+        val user = users.findById(userId) ?: throw AppException.Unauthorized()
+        if (user.emailVerified) return
+        val lastIssued = emailVerifications.latestIssuedAt(userId)
+        if (lastIssued != null && Clock.System.now() - lastIssued < RESEND_COOLDOWN) return
+        sendVerificationCode(user)
+    }
+
+    private suspend fun sendVerificationCode(user: User) {
+        val code = TokenGenerator.numericOtp()
+        emailVerifications.create(
+            userId = UUID.fromString(user.id.value),
+            codeHash = TokenGenerator.sha256(code),
+            expiresAt = Clock.System.now().plus(EMAIL_CODE_TTL),
+        )
+        // Signing up must not fail because the email provider is down; the user can resend.
+        runCatching { notifier.sendEmailVerificationCode(user.email, code) }
+            .onFailure { logger.error("Could not send email verification code", it) }
+    }
+
+    /** A fresh session for an account another flow has already authenticated. */
+    suspend fun startSession(user: User): AuthResponse = AuthResponse(user, issueTokens(user, deviceId = null))
+
     private suspend fun issueTokens(user: User, deviceId: String?): TokenPair {
         val userId = UUID.fromString(user.id.value)
         val refreshToken = TokenGenerator.opaqueToken()
@@ -184,6 +246,12 @@ class AuthService(
     }
 
     private companion object {
+        /** Minimum gap between two reset emails to the same address. */
+        val RESEND_COOLDOWN = 60.seconds
+
+        /** Long enough to switch to a mail app on a slow connection. */
+        val EMAIL_CODE_TTL = 30.minutes
+
         /** A real BCrypt hash of a random value, used only to equalise timing. */
         const val DUMMY_HASH = "\$2a\$12\$C6UzMDM.H6dfI/f/IKcEe.0000000000000000000000000000000000"
     }
@@ -192,6 +260,7 @@ class AuthService(
 /** Seam for delivering one-time codes. Swap in email/SMS providers behind this. */
 interface OtpNotifier {
     suspend fun sendPasswordResetCode(email: String, code: String)
+    suspend fun sendEmailVerificationCode(email: String, code: String)
 }
 
 /**
@@ -210,5 +279,9 @@ class LoggingOtpNotifier(private val environment: AppConfig.Environment) : OtpNo
 
     override suspend fun sendPasswordResetCode(email: String, code: String) {
         logger.info("[dev] password reset code for {}: {}", email, code)
+    }
+
+    override suspend fun sendEmailVerificationCode(email: String, code: String) {
+        logger.info("[dev] email verification code for {}: {}", email, code)
     }
 }

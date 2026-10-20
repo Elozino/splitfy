@@ -5,6 +5,7 @@ import io.ktor.server.config.ApplicationConfig
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Typed configuration, read once at start-up.
@@ -19,6 +20,10 @@ data class AppConfig(
     val jwt: JwtConfig,
     val security: SecurityConfig,
     val cors: CorsConfig,
+    val features: FeaturesConfig = FeaturesConfig(),
+    val email: EmailConfig = EmailConfig(),
+    val oauth: OAuthConfig = OAuthConfig(),
+    val links: LinksConfig = LinksConfig(),
 ) {
     enum class Environment {
         LOCAL, STAGING, PRODUCTION;
@@ -33,6 +38,8 @@ data class AppConfig(
         val driver: String,
         val maxPoolSize: Int,
         val runMigrations: Boolean,
+        /** Upper bound on any single statement, so one bad query cannot hold a pooled connection. */
+        val statementTimeout: Duration,
     )
 
     data class JwtConfig(
@@ -53,6 +60,38 @@ data class AppConfig(
         val allowedHosts: List<String>,
     )
 
+    data class EmailConfig(
+        /** Resend API key. Blank means "log codes instead", which production refuses. */
+        val resendApiKey: String = "",
+        val from: String = "splitfy <no-reply@splitfy.app>",
+    )
+
+    data class OAuthConfig(
+        /** Every Google OAuth client id whose ID tokens we accept (Android, iOS, web). Empty disables Google. */
+        val googleClientIds: Set<String> = emptySet(),
+        /** Apple audiences: the iOS bundle id, plus a Services ID if web sign-in is added. Empty disables Apple. */
+        val appleClientIds: Set<String> = emptySet(),
+    )
+
+    data class LinksConfig(
+        /** Where invite links point. That host must route the invite and .well-known paths to this API. */
+        val publicBaseUrl: String = "https://splitfy.app",
+        val androidPackage: String = "com.elozino.splitfy",
+        /** SHA-256 fingerprints of the release signing certificate(s), as `AA:BB:...`. */
+        val androidCertSha256: Set<String> = emptySet(),
+        /** `TEAMID.bundle.id` entries allowed to open links on iOS. */
+        val appleAppIds: Set<String> = emptySet(),
+    )
+
+    data class FeaturesConfig(
+        /**
+         * The in-app wallet: balances, top-up, withdrawal, payment methods and
+         * peer transfers. Off until a payment provider backs it — today a top-up
+         * credits the balance without charging anyone, so it must not be reachable.
+         */
+        val wallet: Boolean = false,
+    )
+
     companion object {
 
         fun from(application: Application): AppConfig = from(application.environment.config)
@@ -70,17 +109,24 @@ data class AppConfig(
                 "Refusing to start production with the development JWT secret"
             }
 
+            val databasePassword = config.property("database.password").getString()
+            require(!(environment.isProduction && databasePassword == INSECURE_DEV_DATABASE_PASSWORD)) {
+                "Refusing to start production with the development database password"
+            }
+
             return AppConfig(
                 environment = environment,
                 database = DatabaseConfig(
                     jdbcUrl = config.property("database.jdbcUrl").getString(),
                     username = config.property("database.username").getString(),
-                    password = config.property("database.password").getString(),
+                    password = databasePassword,
                     driver = config.propertyOrNull("database.driver")?.getString()
                         ?: "org.postgresql.Driver",
                     maxPoolSize = config.propertyOrNull("database.maxPoolSize")?.getString()?.toInt() ?: 10,
                     runMigrations = config.propertyOrNull("database.runMigrations")?.getString()
                         ?.toBooleanStrict() ?: true,
+                    statementTimeout = config.propertyOrNull("database.statementTimeoutSeconds")?.getString()
+                        ?.toLong()?.seconds ?: 30.seconds,
                 ),
                 jwt = JwtConfig(
                     secret = jwtSecret,
@@ -100,10 +146,32 @@ data class AppConfig(
                 cors = CorsConfig(
                     allowedHosts = config.propertyOrNull("cors.allowedHosts")?.getList().orEmpty(),
                 ),
+                email = EmailConfig(
+                    resendApiKey = config.propertyOrNull("email.resendApiKey")?.getString().orEmpty(),
+                    from = config.propertyOrNull("email.from")?.getString() ?: EmailConfig().from,
+                ),
+                oauth = OAuthConfig(
+                    googleClientIds = config.propertyOrNull("oauth.googleClientIds")?.getString().csv(),
+                    appleClientIds = config.propertyOrNull("oauth.appleClientIds")?.getString().csv(),
+                ),
+                links = LinksConfig(
+                    publicBaseUrl = (config.propertyOrNull("links.publicBaseUrl")?.getString() ?: LinksConfig().publicBaseUrl)
+                        .trimEnd('/'),
+                    androidPackage = config.propertyOrNull("links.androidPackage")?.getString() ?: LinksConfig().androidPackage,
+                    androidCertSha256 = config.propertyOrNull("links.androidCertSha256")?.getString().csv(),
+                    appleAppIds = config.propertyOrNull("links.appleAppIds")?.getString().csv(),
+                ),
+                features = FeaturesConfig(
+                    wallet = config.propertyOrNull("features.wallet")?.getString()?.toBooleanStrict() ?: false,
+                ),
             )
         }
 
+        private fun String?.csv(): Set<String> =
+            orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+
         const val INSECURE_DEV_SECRET = "local-development-secret-do-not-use-in-production"
+        const val INSECURE_DEV_DATABASE_PASSWORD = "splitfy"
         private const val MIN_JWT_SECRET_LENGTH = 32
     }
 }

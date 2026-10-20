@@ -2,6 +2,9 @@ package com.elozino.splitfy.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.elozino.splitfy.FeatureFlags
 import com.elozino.splitfy.SessionManager
 import com.elozino.splitfy.SessionState
 import com.elozino.splitfy.screens.account.add_payment_method.AddPaymentMethodScreen
@@ -39,6 +43,7 @@ import com.elozino.splitfy.screens.auth.landing.AuthScreen
 import com.elozino.splitfy.screens.auth.login.LoginScreen
 import com.elozino.splitfy.screens.auth.new_password.NewPasswordScreen
 import com.elozino.splitfy.screens.auth.otp.OtpScreen
+import com.elozino.splitfy.screens.auth.otp.VerifyEmailScreen
 import com.elozino.splitfy.screens.auth.shared.AuthViewModel
 import com.elozino.splitfy.screens.auth.signup.SignUpScreen
 import com.elozino.splitfy.screens.contacts.main.ContactScreen
@@ -50,6 +55,7 @@ import com.elozino.splitfy.screens.groups.detail.expense.ExpenseDetailScreen
 import com.elozino.splitfy.screens.groups.detail.main.GroupDetailScreen
 import com.elozino.splitfy.screens.groups.list.GroupsScreen
 import com.elozino.splitfy.screens.groups.settings.GroupSettingsScreen
+import com.elozino.splitfy.screens.settlements.SettleUpScreen
 import com.elozino.splitfy.screens.home.main.HomeScreen
 import com.elozino.splitfy.screens.notifications.list.NotificationScreen
 import com.elozino.splitfy.screens.onboarding.main.OnboardingScreen
@@ -86,6 +92,11 @@ fun NavSetup() {
     val sessionState by sessionManager.state.collectAsStateWithLifecycle()
     val isAuthenticated = sessionState is SessionState.SignedIn
 
+    // Chosen once. Recomputing it from the live session rebuilt the graph the moment
+    // sign-up or login succeeded, resetting the back stack to Home and discarding
+    // whatever screen the flow had just navigated to (such as email verification).
+    val startDestination = remember { if (isAuthenticated) Route.Home else Route.Onboarding }
+
     // A 401 anywhere in the app (or an explicit sign-out) unwinds the whole back
     // stack exactly once, so no authenticated screen is left behind it.
     var wasSignedIn by remember { mutableStateOf(isAuthenticated) }
@@ -97,6 +108,23 @@ fun NavSetup() {
             }
         }
         wasSignedIn = signedIn
+    }
+
+    val inviteToken by com.elozino.splitfy.invites.InviteLinks.token.collectAsStateWithLifecycle()
+    var inviteWaitingForAuth by androidx.compose.runtime.saveable.rememberSaveable(inviteToken) { mutableStateOf(false) }
+    LaunchedEffect(inviteToken) { if (inviteToken == null) inviteWaitingForAuth = false }
+    // Wait until the existing authentication flow reaches Home; sign-up must finish verification first.
+    val inviteAuthFinished = isAuthenticated && currentDestination?.hasRoute(Route.Home::class) == true
+    if (inviteToken != null && (!inviteWaitingForAuth || inviteAuthFinished)) {
+        com.elozino.splitfy.invites.InvitePreviewDialog(
+            token = inviteToken!!,
+            signedIn = isAuthenticated,
+            onSignIn = { inviteWaitingForAuth = true; navController.navigate(Route.Auth) },
+            onJoined = { id ->
+                inviteWaitingForAuth = false
+                navController.navigate(Route.GroupDetail(id))
+            },
+        )
     }
 
     val showBottomBar =
@@ -129,14 +157,15 @@ fun NavSetup() {
                         launchSingleTop = true
                         restoreState = true
                     }
-                }, onScanClick = {
-                    navController.navigate(Route.Scan)
-                })
+                }, onCenterClick = {
+                    navController.navigate(if (FeatureFlags.WALLET) Route.Scan else Route.NewGroup)
+                }, centerIcon = if (FeatureFlags.WALLET) Icons.Default.QrCodeScanner else Icons.Default.Add,
+                    centerContentDescription = if (FeatureFlags.WALLET) "Scan" else "New group")
             }
         }) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = if (isAuthenticated) Route.Home else Route.Onboarding,
+            startDestination = startDestination,
             modifier = Modifier.fillMaxSize()
                 // Reserve the bar's height so the last row of a tab screen — the final
                 // favourite, the last group — is not hidden underneath it. Only while the
@@ -152,16 +181,37 @@ fun NavSetup() {
             }
             composable<Route.Auth> {
                 AuthScreen(
+                    viewModel = authViewModel,
                     onNavigateToRegister = { navController.navigate(Route.Signup) },
                     onNavigateToLogin = { navController.navigate(Route.Login) },
-                    onNavigateToSocialAuth = { /* Handle social auth */ })
+                    onSignedIn = {
+                        navController.navigate(Route.Home) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    })
             }
             composable<Route.Signup> {
                 SignUpScreen(
                     viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToLogin = { navController.navigate(Route.Login) },
-                    onSignUpSuccess = { navController.navigate(Route.Home) })
+                    onSignUpSuccess = {
+                        authViewModel.resetOtpTimer()
+                        navController.navigate(Route.VerifyEmail) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    })
+            }
+            composable<Route.VerifyEmail> {
+                val signedInEmail = (sessionState as? SessionState.SignedIn)?.user?.email
+                VerifyEmailScreen(
+                    viewModel = authViewModel,
+                    email = signedInEmail ?: authViewModel.state.value.email,
+                    onDone = {
+                        navController.navigate(Route.Home) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    })
             }
             composable<Route.Login> {
                 LoginScreen(
@@ -197,7 +247,21 @@ fun NavSetup() {
                     onNavigateToRequest = { navController.navigate(Route.Request) },
                     onNavigateToTopUp = { navController.navigate(Route.TopUp) },
                     onNavigateToWithdraw = { navController.navigate(Route.Withdraw) },
-                    onNavigateToTransactionHistory = { navController.navigate(Route.TransactionHistory) })
+                    onNavigateToTransactionHistory = { navController.navigate(Route.TransactionHistory) },
+                    onNavigateToNewGroup = { navController.navigate(Route.NewGroup) },
+                    onNavigateToGroups = {
+                        navController.navigate(Route.Groups) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onNavigateToGroupDetail = { groupId -> navController.navigate(Route.GroupDetail(groupId)) },
+                    onNavigateToVerifyEmail = {
+                        authViewModel.resetOtpTimer()
+                        authViewModel.resendVerification()
+                        navController.navigate(Route.VerifyEmail)
+                    })
             }
             composable<Route.Pay> {
                 PayScreenWrapper(
@@ -226,8 +290,9 @@ fun NavSetup() {
             composable<Route.Activity> {
                 ActivityScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToPay = { navController.navigate(Route.Pay) },
-                    onNavigateToRequest = { navController.navigate(Route.Request) })
+                    onNavigateToPay = { navController.navigate(Route.Pay) }.takeIf { FeatureFlags.WALLET },
+                    onNavigateToRequest = { navController.navigate(Route.Request) }.takeIf { FeatureFlags.WALLET },
+                    onNavigateToSettleUp = { groupId -> navController.navigate(Route.SettleUp(groupId)) })
             }
             composable<Route.Groups> {
                 GroupsScreen(
@@ -260,13 +325,24 @@ fun NavSetup() {
                     onNavigateToAddExpense = {
                         navController.navigate(Route.AddExpense(route.groupId))
                     },
+                    onNavigateToSettleUp = {
+                        navController.navigate(Route.SettleUp(route.groupId))
+                    },
+                    onNavigateToInvite = { navController.navigate(Route.ShareInvite(route.groupId)) },
                     onNavigateToSettings = {
-                        // Using SplitDetail route for settings as mock
-                        navController.navigate(Route.SplitDetail(route.groupId))
+                        navController.navigate(Route.GroupSettings(route.groupId))
                     },
                     onNavigateToExpenseDetail = { expenseId ->
                         navController.navigate(Route.ExpenseDetail(route.groupId, expenseId))
                     })
+            }
+            composable<Route.ShareInvite> { backStackEntry ->
+                val route: Route.ShareInvite = backStackEntry.toRoute()
+                com.elozino.splitfy.invites.ShareInviteScreen(route.groupId) { navController.popBackStack() }
+            }
+            composable<Route.SettleUp> { backStackEntry ->
+                val route: Route.SettleUp = backStackEntry.toRoute()
+                SettleUpScreen(groupId = route.groupId, onNavigateBack = { navController.popBackStack() })
             }
             composable<Route.AddExpense> { backStackEntry ->
                 val route: Route.AddExpense = backStackEntry.toRoute()
@@ -281,19 +357,22 @@ fun NavSetup() {
                     onNavigateBack = { navController.popBackStack() },
                     onViewReceipt = { /* Open full receipt */ })
             }
-            composable<Route.SplitDetail> { backStackEntry ->
-                val route: Route.SplitDetail = backStackEntry.toRoute()
+            composable<Route.GroupSettings> { backStackEntry ->
+                val route: Route.GroupSettings = backStackEntry.toRoute()
                 GroupSettingsScreen(
                     groupId = route.groupId, onNavigateBack = { navController.popBackStack() })
             }
             composable<Route.Account> {
                 AccountScreen(
-                    onNavigateToUpgrade = { navController.navigate(Route.UpgradePlan) },
+                    // Paid plans and payment methods depend on the wallet's payment provider.
+                    onNavigateToUpgrade = { navController.navigate(Route.UpgradePlan) }.takeIf { FeatureFlags.WALLET },
                     onNavigateToPersonalInfo = { navController.navigate(Route.PersonalInfo) },
                     onNavigateToNotification = { navController.navigate(Route.NotificationSettings) },
                     onNavigateToSecurity = { navController.navigate(Route.SecuritySettings) },
-                    onNavigateToPaymentMethods = { navController.navigate(Route.PaymentMethods) },
-                    onNavigateToBilling = { navController.navigate(Route.BillingSubscriptions) },
+                    onNavigateToPaymentMethods = { navController.navigate(Route.PaymentMethods) }
+                        .takeIf { FeatureFlags.WALLET },
+                    onNavigateToBilling = { navController.navigate(Route.BillingSubscriptions) }
+                        .takeIf { FeatureFlags.WALLET },
                     onNavigateToLinkedAccounts = { navController.navigate(Route.LinkedAccounts) },
                     onNavigateToAppearance = { navController.navigate(Route.AppAppearance) },
                     onNavigateToDataAnalytics = { navController.navigate(Route.DataAnalytics) },

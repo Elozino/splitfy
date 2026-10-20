@@ -14,10 +14,12 @@ app:
 database:
   jdbcUrl: "$DATABASE_URL:jdbc:postgresql://localhost:5432/splitfy"
   username: "$DATABASE_USER:splitfy"
+  # The app refuses to boot in PRODUCTION while this default is still in place.
   password: "$DATABASE_PASSWORD:splitfy"
   driver: "$DATABASE_DRIVER:org.postgresql.Driver"
   maxPoolSize: "$DATABASE_POOL_SIZE:10"
   runMigrations: "$DATABASE_RUN_MIGRATIONS:true"
+  statementTimeoutSeconds: "$DATABASE_STATEMENT_TIMEOUT_SECONDS:30"
 
 jwt:
   # Override in every deployed environment. The app refuses to boot in PRODUCTION
@@ -36,3 +38,29 @@ security:
 cors:
   # Empty outside production means "any host", which suits local web tooling.
   allowedHosts: []
+
+email:
+  # Password-reset codes go through Resend when a key is set. Without one they are
+  # only logged, and the server refuses to start in PRODUCTION.
+  resendApiKey: "$RESEND_API_KEY:"
+  # Must be on a domain verified in Resend.
+  from: "$EMAIL_FROM:splitfy <no-reply@splitfy.app>"
+
+oauth:
+  # Comma-separated OAuth client ids. Leaving one empty turns that provider off.
+  googleClientIds: "$GOOGLE_CLIENT_IDS:"
+  appleClientIds: "$APPLE_CLIENT_IDS:"
+
+links:
+  # Invite links are $PUBLIC_BASE_URL/i/<token>; that host must route to this API.
+  publicBaseUrl: "$PUBLIC_BASE_URL:https://splitfy.app"
+  androidPackage: "$ANDROID_PACKAGE:com.elozino.splitfy"
+  # Comma-separated. Release signing certificate SHA-256 (keytool -list -v).
+  androidCertSha256: "$ANDROID_CERT_SHA256:"
+  # Comma-separated TEAMID.bundle ids, e.g. ABCDE12345.com.elozino.splitfy
+  appleAppIds: "$APPLE_APP_IDS:"
+
+features:
+  # Wallet, top-up, withdrawal, payment methods and peer transfers. Leave off until a
+  # payment provider is integrated: a top-up currently credits without charging.
+  wallet: "$FEATURE_WALLET:false"

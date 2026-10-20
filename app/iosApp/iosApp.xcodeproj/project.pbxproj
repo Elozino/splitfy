@@ -15,6 +15,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				iosApp.entitlements,
 			);
 			target = 0E4CA6C688F7177AC5C7A2EC /* iosApp */;
 		};

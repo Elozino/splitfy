@@ -1,5 +1,9 @@
 package com.elozino.splitfy.screens.auth.shared
 
+import com.elozino.splitfy.SessionState
+import com.elozino.splitfy.api.dto.OAuthProvider
+import com.elozino.splitfy.api.dto.OAuthSignInRequest
+import com.elozino.splitfy.social.SocialSignInResult
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elozino.splitfy.api.dto.LoginRequest
@@ -22,6 +26,17 @@ class AuthViewModel(
 
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
+
+    init {
+        // This view model outlives a session: one instance serves every auth screen.
+        // Start clean after a sign-out, or the auth screens would still see
+        // `isAuthenticated` from the previous session and jump straight to Home.
+        viewModelScope.launch {
+            sessionManager.state.collect { session ->
+                if (session is SessionState.SignedOut) _state.value = AuthState()
+            }
+        }
+    }
 
     fun onEmailChange(value: String) = _state.update {
         it.copy(email = value, fieldErrors = it.fieldErrors - "email", errorMessage = null)
@@ -126,7 +141,10 @@ class AuthViewModel(
             when (val result = authRepository.verifyOtp(current.email.trim(), current.otpCode)) {
                 is DataResult.Success ->
                     _state.update { it.copy(isSubmitting = false, resetToken = result.data) }
-                is DataResult.Failure -> handleFailure(result.error)
+                is DataResult.Failure -> {
+                    handleFailure(result.error)
+                    _state.update { it.copy(otpCode = "") }
+                }
             }
         }
     }
@@ -144,6 +162,46 @@ class AuthViewModel(
                 is DataResult.Success ->
                     _state.update { it.copy(isSubmitting = false, passwordReset = true) }
                 is DataResult.Failure -> handleFailure(result.error)
+            }
+        }
+    }
+
+    /** Submits the sign-up code; a wrong one is cleared so the user can type again. */
+    fun verifyEmail() {
+        val code = _state.value.otpCode
+        if (_state.value.isSubmitting) return
+        viewModelScope.launch {
+            _state.update { it.copy(isSubmitting = true, errorMessage = null) }
+            when (val result = authRepository.verifyEmail(code)) {
+                is DataResult.Success ->
+                    _state.update { it.copy(isSubmitting = false, emailVerified = true, otpCode = "") }
+                is DataResult.Failure -> {
+                    handleFailure(result.error)
+                    _state.update { it.copy(otpCode = "") }
+                }
+            }
+        }
+    }
+
+    fun resendVerification() {
+        viewModelScope.launch {
+            when (val result = authRepository.resendVerification()) {
+                is DataResult.Success -> _state.update { it.copy(errorMessage = null) }
+                is DataResult.Failure -> handleFailure(result.error)
+            }
+        }
+    }
+
+    /** Hands a provider's ID token to the server; a cancelled sheet is not an error. */
+    fun onSocialSignIn(provider: OAuthProvider, result: SocialSignInResult) {
+        when (result) {
+            SocialSignInResult.Cancelled -> Unit
+            is SocialSignInResult.Failure -> _state.update { it.copy(errorMessage = result.message) }
+            is SocialSignInResult.Success -> submit {
+                authRepository.signInWithProvider(
+                    provider,
+                    OAuthSignInRequest(result.idToken, result.nonce, result.displayName),
+                )
             }
         }
     }

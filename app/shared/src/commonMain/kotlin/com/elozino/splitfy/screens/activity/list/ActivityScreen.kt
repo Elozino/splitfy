@@ -28,6 +28,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
@@ -36,7 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.ActivityFilter
+import com.elozino.splitfy.FeatureFlags
 import com.elozino.splitfy.api.dto.DebtEntry
+import com.elozino.splitfy.ui.components.SearchField
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,8 +49,10 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ActivityScreen(
     viewModel: ActivityViewModel = koinViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToPay: () -> Unit = {},
-    onNavigateToRequest: () -> Unit = {}
+    /** Null when the wallet is off; rows then open Settle Up for their group instead. */
+    onNavigateToPay: (() -> Unit)? = null,
+    onNavigateToRequest: (() -> Unit)? = null,
+    onNavigateToSettleUp: (groupId: String) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tabs = listOf(
@@ -54,19 +61,34 @@ fun ActivityScreen(
         ActivityFilter.OWED_TO_YOU to "Owe to you",
     )
     val selectedTabIndex = tabs.indexOfFirst { it.first == state.filter }.coerceAtLeast(0)
+    var isSearching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Activity", fontWeight = FontWeight.Bold) },
+                title = {
+                    if (isSearching) {
+                        SearchField(
+                            query = query,
+                            onQueryChange = { query = it },
+                            placeholder = "Search people or groups",
+                            onClose = { isSearching = false },
+                        )
+                    } else {
+                        Text("Activity", fontWeight = FontWeight.Bold)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    if (!isSearching) {
+                        IconButton(onClick = { isSearching = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
                     }
                 }
             )
@@ -107,7 +129,12 @@ fun ActivityScreen(
             }
 
             // Grouped by day, newest first; every line comes from the ledger.
+            val needle = query.trim()
             val activities = state.entries
+                .filter { entry ->
+                    needle.isEmpty() || listOf(entry.fromName, entry.toName, entry.groupName)
+                        .any { it.contains(needle, ignoreCase = true) }
+                }
                 .groupBy { it.lastActivityAt.toString().take(10) }
                 .map { (day, entries) -> ActivitySection(day, entries.map { it.toItem(state.currentUserId) }) }
 
@@ -121,6 +148,13 @@ fun ActivityScreen(
             if (state.isEmpty) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Nothing outstanding 🎉", color = Color.Gray, fontSize = 16.sp)
+                }
+                return@Column
+            }
+
+            if (activities.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Nothing matches \"$needle\"", color = Color.Gray, fontSize = 16.sp)
                 }
                 return@Column
             }
@@ -140,8 +174,14 @@ fun ActivityScreen(
                         ActivityItem(
                             data = item,
                             onActionClick = {
-                                if (item.actionLabel == "Pay") onNavigateToPay()
-                                else if (item.actionLabel == "Request") onNavigateToRequest()
+                                when {
+                                    item.isCompleted -> Unit
+                                    // Without a wallet, both directions settle by recording a payment.
+                                    onNavigateToPay == null || onNavigateToRequest == null ->
+                                        onNavigateToSettleUp(item.groupId)
+                                    item.actionLabel == "Pay" -> onNavigateToPay()
+                                    else -> onNavigateToRequest()
+                                }
                             }
                         )
                         HorizontalDivider(
@@ -168,11 +208,13 @@ private fun DebtEntry.toItem(currentUserId: String?): ActivityItemData {
         amount = amount.toPlainString() + " " + amount.currency.code,
         actionLabel = when {
             isSettled -> "Paid"
+            !FeatureFlags.WALLET -> "Settle"
             youArePayer -> "Pay"
             else -> "Request"
         },
         isOwed = youArePayee,
         isCompleted = isSettled,
+        groupId = groupId.value,
     )
 }
 

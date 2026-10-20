@@ -1,5 +1,7 @@
 package com.elozino.splitfy.di
 
+import com.elozino.splitfy.social.SocialSignInConfig
+import com.elozino.splitfy.social.platformGoogleClientId
 import com.elozino.splitfy.CardTokenizer
 import com.elozino.splitfy.DevCardTokenizer
 import com.elozino.splitfy.network.ApiCaller
@@ -33,6 +35,7 @@ import com.elozino.splitfy.screens.contacts.main.ContactsViewModel
 import com.elozino.splitfy.screens.expenses.add.AddExpenseViewModel
 import com.elozino.splitfy.screens.groups.create.shared.NewGroupViewModel
 import com.elozino.splitfy.screens.groups.detail.shared.GroupDetailViewModel
+import com.elozino.splitfy.screens.settlements.SettleUpViewModel
 import com.elozino.splitfy.screens.groups.list.GroupsViewModel
 import com.elozino.splitfy.screens.groups.settings.GroupSettingsViewModel
 import com.elozino.splitfy.screens.home.main.HomeViewModel
@@ -57,7 +60,9 @@ expect fun platformModule(): Module
  * Repositories are bound to their interfaces so a ViewModel test can swap in a fake
  * without touching this file.
  */
-fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null): Module = module {
+fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: String? = null): Module = module {
+
+    single { SocialSignInConfig(googleClientId?.takeIf { it.isNotBlank() } ?: platformGoogleClientId()) }
 
     single { ApiConfig.forBuild(isDebug, apiBaseUrl) }
     single { SessionStorage(get()) }
@@ -74,6 +79,7 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null): Module = module {
 
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
+    single { com.elozino.splitfy.invites.InviteRepository(get(), get()) }
     single<GroupRepository> { GroupRepositoryImpl(get(), get()) }
     single<ExpenseRepository> { ExpenseRepositoryImpl(get(), get()) }
     single<SettlementRepository> { SettlementRepositoryImpl(get(), get()) }
@@ -100,6 +106,7 @@ val viewModelModule: Module = module {
     factory { (groupId: String) -> GroupDetailViewModel(groupId, get(), get(), get()) }
     factory { (groupId: String) -> AddExpenseViewModel(groupId, get(), get(), get()) }
     factory { (groupId: String) -> GroupSettingsViewModel(groupId, get(), get()) }
+    factory { (groupId: String) -> SettleUpViewModel(groupId, get(), get(), get()) }
     factory { WalletViewModel(get()) }
     factory { TransactionViewModel(get(), get(), get()) }
     factory { ActivityViewModel(get(), get()) }
@@ -118,11 +125,12 @@ val viewModelModule: Module = module {
 fun initKoin(
     isDebug: Boolean,
     apiBaseUrl: String? = null,
+    googleClientId: String? = null,
     platformConfig: (KoinApplication.() -> Unit)? = null,
 ): KoinApplication = startKoin {
     platformConfig?.invoke(this)
-    modules(platformModule(), dataModule(isDebug, apiBaseUrl), viewModelModule)
-}
+    modules(platformModule(), dataModule(isDebug, apiBaseUrl, googleClientId), viewModelModule)
+}.also { com.elozino.splitfy.invites.InviteLinks.bind(it.koin.get()) }
 
 /** Convenience for `koinViewModel { parametersOf(groupId) }` call sites. */
 fun groupParams(groupId: String) = parametersOf(groupId)

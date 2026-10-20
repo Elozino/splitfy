@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.contacts.main
 
+import com.elozino.splitfy.FeatureFlags
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -451,7 +452,8 @@ private fun ContactDetailScreen(
         },
         containerColor = Color.White,
         bottomBar = {
-            Row(
+            // Pay and Request move wallet money, so they only exist with the wallet on.
+            if (FeatureFlags.WALLET) Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()

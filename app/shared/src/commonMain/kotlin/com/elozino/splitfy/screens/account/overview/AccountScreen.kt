@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.overview
 
+import com.elozino.splitfy.FeatureFlags
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
 
 import androidx.compose.foundation.background
@@ -110,12 +111,13 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountScreen(
-    onNavigateToUpgrade: () -> Unit,
+    /** Null hides the entry: these depend on features that may be switched off. */
+    onNavigateToUpgrade: (() -> Unit)?,
     onNavigateToPersonalInfo: () -> Unit,
     onNavigateToNotification: () -> Unit,
     onNavigateToSecurity: () -> Unit,
-    onNavigateToPaymentMethods: () -> Unit,
-    onNavigateToBilling: () -> Unit,
+    onNavigateToPaymentMethods: (() -> Unit)?,
+    onNavigateToBilling: (() -> Unit)?,
     onNavigateToLinkedAccounts: () -> Unit,
     onNavigateToAppearance: () -> Unit,
     onNavigateToDataAnalytics: () -> Unit,
@@ -137,7 +139,8 @@ fun AccountScreen(
                         tint = Color.Black
                     )
                 }, actions = {
-                    IconButton(onClick = { viewModel.setQrDialogVisible(true) }) {
+                    // The QR code exists to be scanned for a payment.
+                    if (FeatureFlags.WALLET) IconButton(onClick = { viewModel.setQrDialogVisible(true) }) {
                         Icon(Icons.Default.QrCode, contentDescription = "My QR Code")
                     }
                 }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -188,7 +191,7 @@ fun AccountScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Surface(
+                if (onNavigateToUpgrade != null) Surface(
                     modifier = Modifier.fillMaxWidth().clickable { onNavigateToUpgrade() },
                     shape = RoundedCornerShape(24.dp),
                     color = primaryLight
@@ -219,23 +222,21 @@ fun AccountScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                if (onNavigateToUpgrade != null) Spacer(modifier = Modifier.height(24.dp))
             }
 
-            val menuItems = listOf(
-                AccountMenuItem("Personal Info", Icons.Default.Person, onNavigateToPersonalInfo), AccountMenuItem(
-                    "Notification", Icons.Default.Notifications, onNavigateToNotification
-                ), AccountMenuItem("Account & Security", Icons.Default.Security, onNavigateToSecurity), AccountMenuItem(
-                    "Payment Methods", Icons.Default.Payment, onNavigateToPaymentMethods
-                ), AccountMenuItem(
-                    "Billing & Subscriptions", Icons.AutoMirrored.Filled.ReceiptLong, onNavigateToBilling
-                ), AccountMenuItem("Linked Accounts", Icons.Default.Link, onNavigateToLinkedAccounts), AccountMenuItem(
-                    "App Appearance", Icons.Default.RemoveRedEye, onNavigateToAppearance
-                ), AccountMenuItem(
-                    "Data & Analytics", Icons.Default.BarChart, onNavigateToDataAnalytics
-                ), AccountMenuItem(
-                    "Help & Support", Icons.AutoMirrored.Filled.HelpOutline, onNavigateToHelpSupport
-                )
+            val menuItems = listOfNotNull(
+                AccountMenuItem("Personal Info", Icons.Default.Person, onNavigateToPersonalInfo),
+                AccountMenuItem("Notification", Icons.Default.Notifications, onNavigateToNotification),
+                AccountMenuItem("Account & Security", Icons.Default.Security, onNavigateToSecurity),
+                onNavigateToPaymentMethods?.let { AccountMenuItem("Payment Methods", Icons.Default.Payment, it) },
+                onNavigateToBilling?.let {
+                    AccountMenuItem("Billing & Subscriptions", Icons.AutoMirrored.Filled.ReceiptLong, it)
+                },
+                AccountMenuItem("Linked Accounts", Icons.Default.Link, onNavigateToLinkedAccounts),
+                AccountMenuItem("App Appearance", Icons.Default.RemoveRedEye, onNavigateToAppearance),
+                AccountMenuItem("Data & Analytics", Icons.Default.BarChart, onNavigateToDataAnalytics),
+                AccountMenuItem("Help & Support", Icons.AutoMirrored.Filled.HelpOutline, onNavigateToHelpSupport),
             )
 
             items(menuItems) { item ->

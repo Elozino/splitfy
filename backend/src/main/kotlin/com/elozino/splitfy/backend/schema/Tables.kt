@@ -24,6 +24,7 @@ object UsersTable : Table("users") {
     val phoneNumber = varchar("phone_number", 20).nullable()
     val avatarUrl = text("avatar_url").nullable()
     val defaultCurrency = char("default_currency", 3)
+    val emailVerifiedAt = timestamp("email_verified_at").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 
@@ -53,7 +54,8 @@ object RefreshTokensTable : Table("refresh_tokens") {
     }
 }
 
-object PasswordResetsTable : Table("password_resets") {
+/** A hashed one-time code sent to a user's email, with expiry and a count of wrong guesses. */
+abstract class OneTimeCodesTable(name: String) : Table(name) {
     val id = uuid("id")
     val userId = uuid("user_id").references(UsersTable.id, onDelete = ReferenceOption.CASCADE)
     val codeHash = varchar("code_hash", 64)
@@ -65,9 +67,45 @@ object PasswordResetsTable : Table("password_resets") {
     override val primaryKey = PrimaryKey(id)
 
     init {
-        index("ix_password_resets_user", false, userId)
+        index("ix_${name}_user", false, userId)
     }
 }
+
+object PasswordResetsTable : OneTimeCodesTable("password_resets")
+
+object GroupInvitesTable : Table("group_invites") {
+    val id = uuid("id")
+    val groupId = uuid("group_id").references(GroupsTable.id, onDelete = ReferenceOption.CASCADE)
+    val token = varchar("token", 64)
+    val createdBy = uuid("created_by").references(UsersTable.id)
+    val createdAt = timestamp("created_at")
+    val expiresAt = timestamp("expires_at")
+    val revokedAt = timestamp("revoked_at").nullable()
+    val useCount = integer("use_count").default(0)
+
+    override val primaryKey = PrimaryKey(id)
+
+    init {
+        uniqueIndex("uq_group_invites_token", token)
+        index("ix_group_invites_group", false, groupId)
+    }
+}
+
+object UserIdentitiesTable : Table("user_identities") {
+    val provider = varchar("provider", 20)
+    val subject = varchar("subject", 255)
+    val userId = uuid("user_id").references(UsersTable.id, onDelete = ReferenceOption.CASCADE)
+    val email = varchar("email", 254).nullable()
+    val createdAt = timestamp("created_at")
+
+    override val primaryKey = PrimaryKey(provider, subject)
+
+    init {
+        index("ix_user_identities_user", false, userId)
+    }
+}
+
+object EmailVerificationsTable : OneTimeCodesTable("email_verifications")
 
 object GroupsTable : Table("groups") {
     val id = uuid("id")

@@ -124,4 +124,7 @@ class SettlementRepositoryImpl(
 
     override suspend fun confirm(groupId: String, settlementId: String): DataResult<Settlement> =
         caller.execute { client.post(ApiRoutes.Settlements.confirm(groupId, settlementId)) }
+
+    override suspend fun cancel(groupId: String, settlementId: String): DataResult<Settlement> =
+        caller.execute { client.delete(ApiRoutes.Settlements.byId(groupId, settlementId)) }
 }

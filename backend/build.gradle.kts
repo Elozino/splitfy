@@ -47,6 +47,11 @@ dependencies {
     // ktor-server-config-yaml, but is declared here because this module uses it directly.
     implementation(libs.kaml)
 
+    // Outbound HTTP to third-party APIs (email delivery)
+    implementation(ktorLibs.client.core)
+    implementation(ktorLibs.client.cio)
+    implementation(ktorLibs.client.contentNegotiation)
+
     // Dependency injection
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.ktor)
@@ -73,9 +78,11 @@ dependencies {
     // JSON, so it cannot read the YAML directly — see OpenApiRoutes.
     testImplementation(ktorLibs.openapiSchema)
     testImplementation(ktorLibs.server.testHost)
-    testImplementation(ktorLibs.client.contentNegotiation)
+    testImplementation(ktorLibs.client.mock)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.h2database)
+    // Real PostgreSQL binaries started inside the test JVM: the migrations run
+    // exactly as they do in production, without needing Docker.
+    testImplementation(libs.embedded.postgres)
 }
 
 tasks.withType<Test>().configureEach {

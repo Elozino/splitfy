@@ -1,94 +1,92 @@
 package com.elozino.splitfy.backend
 
-import com.elozino.splitfy.backend.schema.ActivityLogTable
-import com.elozino.splitfy.backend.schema.ContactFavoritesTable
-import com.elozino.splitfy.backend.schema.ExpenseSharesTable
-import com.elozino.splitfy.backend.schema.ExpensesTable
-import com.elozino.splitfy.backend.schema.GroupMembersTable
-import com.elozino.splitfy.backend.schema.GroupsTable
-import com.elozino.splitfy.backend.schema.LedgerEntriesTable
-import com.elozino.splitfy.backend.schema.NotificationsTable
-import com.elozino.splitfy.backend.schema.PasswordResetsTable
-import com.elozino.splitfy.backend.schema.PaymentMethodsTable
-import com.elozino.splitfy.backend.schema.RefreshTokensTable
-import com.elozino.splitfy.backend.schema.SettlementsTable
-import com.elozino.splitfy.backend.schema.TransfersTable
-import com.elozino.splitfy.backend.schema.UsersTable
-import com.elozino.splitfy.backend.schema.WalletsTable
+import org.koin.core.module.Module
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.ApplicationTestBuilder
+import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
+import java.sql.DriverManager
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
- * Boots the real application against an in-memory H2 database.
+ * One PostgreSQL server for the whole test JVM, started on first use.
  *
- * The schema is created from the Exposed table definitions rather than by running
- * Flyway, because the migrations are written for PostgreSQL. That means these tests
- * verify behaviour, not the migration scripts — those are exercised by running the
- * stack against the Postgres container in `docker-compose.yml`.
+ * These are real Postgres binaries, not an emulation, so the Flyway migrations run
+ * exactly as they do in production — a broken migration fails the build here rather
+ * than at deploy time.
  */
-class TestDatabase(name: String) {
-
-    /**
-     * One in-memory database per test class.
-     *
-     * Sharing a single H2 instance let one class drop tables while another class's
-     * connection pool was still closing, which showed up as a rare, confusing
-     * failure in an unrelated test.
-     */
-    val jdbcUrl = "jdbc:h2:mem:$name;DB_CLOSE_DELAY=-1;MODE=PostgreSQL"
-
-    private val tables = arrayOf(
-        UsersTable,
-        RefreshTokensTable,
-        PasswordResetsTable,
-        GroupsTable,
-        GroupMembersTable,
-        ExpensesTable,
-        ExpenseSharesTable,
-        SettlementsTable,
-        ActivityLogTable,
-        WalletsTable,
-        PaymentMethodsTable,
-        TransfersTable,
-        LedgerEntriesTable,
-        NotificationsTable,
-        ContactFavoritesTable,
-    )
-
-    /** Resets to an empty schema so each test starts from a known state. */
-    fun reset() {
-        Database.connect(jdbcUrl, driver = "org.h2.Driver", user = "sa", password = "")
-        transaction {
-            SchemaUtils.drop(*tables.reversedArray())
-            SchemaUtils.create(*tables)
+private object TestPostgres {
+    val server: EmbeddedPostgres by lazy {
+        EmbeddedPostgres.start().also { pg ->
+            Runtime.getRuntime().addShutdownHook(Thread { pg.close() })
         }
     }
+
+    const val USER = "postgres"
+    const val PASSWORD = "postgres"
+
+    fun jdbcUrl(database: String) = server.getJdbcUrl(USER, database)
 }
 
 /**
- * Test configuration: H2, migrations off, and a throwaway signing secret.
+ * One database per test class on the shared server.
+ *
+ * Separate databases keep classes from interfering with one another; [reset] drops
+ * the schema so the application's own Flyway run rebuilds it before every test.
+ */
+class TestDatabase(private val name: String) {
+
+    val jdbcUrl: String get() = TestPostgres.jdbcUrl(name)
+
+    /** Recreates an empty database so each test starts from a known state. */
+    fun reset() {
+        DriverManager.getConnection(TestPostgres.jdbcUrl("postgres"), TestPostgres.USER, TestPostgres.PASSWORD)
+            .use { connection ->
+                connection.createStatement().use { statement ->
+                    statement.execute("DROP DATABASE IF EXISTS $name WITH (FORCE)")
+                    statement.execute("CREATE DATABASE $name")
+                }
+            }
+    }
+
+    /** Marks an account's email as verified without going through the code flow. */
+    fun markVerified(email: String) {
+        DriverManager.getConnection(jdbcUrl, username, password).use { connection ->
+            connection.prepareStatement("UPDATE users SET email_verified_at = now() WHERE email = ?").use {
+                it.setString(1, email)
+                it.executeUpdate()
+            }
+        }
+    }
+
+    val username: String get() = TestPostgres.USER
+    val password: String get() = TestPostgres.PASSWORD
+}
+
+/**
+ * Test configuration: embedded Postgres, migrations on, and a throwaway signing secret.
  *
  * The module is installed explicitly because replacing the config also drops the
  * `ktor.application.modules` entry that `application.yaml` normally provides.
  */
-fun ApplicationTestBuilder.useTestConfig(database: TestDatabase) {
-    application { module() }
+fun ApplicationTestBuilder.useTestConfig(
+    database: TestDatabase,
+    walletEnabled: Boolean = true,
+    overrides: List<Module> = emptyList(),
+    environment: String = "LOCAL",
+) {
+    application { configureApp(overrides) }
     environment {
         config = MapApplicationConfig(
-            "app.environment" to "LOCAL",
+            "app.environment" to environment,
             "database.jdbcUrl" to database.jdbcUrl,
-            "database.username" to "sa",
-            "database.password" to "",
-            "database.driver" to "org.h2.Driver",
+            "database.username" to database.username,
+            "database.password" to database.password,
+            "database.driver" to "org.postgresql.Driver",
             "database.maxPoolSize" to "2",
-            "database.runMigrations" to "false",
+            "database.runMigrations" to "true",
             "jwt.secret" to "test-secret-that-is-long-enough-to-pass",
             "jwt.issuer" to "https://test.splitfy.app",
             "jwt.audience" to "splitfy-test",
@@ -97,6 +95,7 @@ fun ApplicationTestBuilder.useTestConfig(database: TestDatabase) {
             "jwt.refreshTokenDays" to "30",
             "security.bcryptCost" to "4",
             "security.otpMinutes" to "10",
+            "features.wallet" to walletEnabled.toString(),
         )
     }
 }

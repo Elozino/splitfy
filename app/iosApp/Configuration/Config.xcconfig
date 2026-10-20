@@ -11,6 +11,11 @@ PRODUCT_BUNDLE_IDENTIFIER = com.elozino.splitfy
 CURRENT_PROJECT_VERSION = 1
 MARKETING_VERSION = 1.0.0
 
+// Google sign-in: the iOS OAuth client id from Google Cloud Console
+// (looks like 1234-abc.apps.googleusercontent.com). Empty hides the Google button;
+// Sign in with Apple is always offered.
+GOOGLE_IOS_CLIENT_ID =
+
 // Set TEAM_ID in Local.xcconfig. Left blank, Xcode falls back to whatever personal
 // team the signed-in Apple ID has, which is what you want for a simulator build.
 DEVELOPMENT_TEAM = $(TEAM_ID)

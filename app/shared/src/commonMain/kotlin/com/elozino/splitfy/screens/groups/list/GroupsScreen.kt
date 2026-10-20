@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.GroupSummary
+import com.elozino.splitfy.ui.components.SearchField
 import com.elozino.splitfy.ui.theme.primaryLight
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -52,7 +53,8 @@ private fun GroupSummary.toItem() = GroupItemData(
     name = group.name,
     members = "${group.members.size} member" + if (group.members.size == 1) "" else "s",
     balance = yourBalance.abs().toPlainString() + " " + yourBalance.currency.code,
-    isOwed = yourBalance.isPositive
+    isOwed = yourBalance.isPositive,
+    isSettled = yourBalance.isZero,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,13 +66,30 @@ private fun GroupsListScreen(
     onCreateGroupClick: () -> Unit,
     onGroupClick: (GroupItemData) -> Unit
 ) {
+    var isSearching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    val shown = if (query.isBlank()) groups else groups.filter { it.name.contains(query.trim(), ignoreCase = true) }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Groups", fontWeight = FontWeight.Bold) },
+                title = {
+                    if (isSearching) {
+                        SearchField(
+                            query = query,
+                            onQueryChange = { query = it },
+                            placeholder = "Search groups",
+                            onClose = { isSearching = false },
+                        )
+                    } else {
+                        Text("Groups", fontWeight = FontWeight.Bold)
+                    }
+                },
                 actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    if (!isSearching && groups.isNotEmpty()) {
+                        IconButton(onClick = { isSearching = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -123,7 +142,17 @@ private fun GroupsListScreen(
                         )
                     }
                 }
-                items(groups, key = { it.id }) { group ->
+                if (shown.isEmpty()) {
+                    item {
+                        Text(
+                            text = "No groups match \"${query.trim()}\"",
+                            color = Color.Gray,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+                items(shown, key = { it.id }) { group ->
                     GroupItem(group, onClick = { onGroupClick(group) })
                 }
             }
@@ -242,21 +271,21 @@ fun GroupItem(data: GroupItemData, onClick: () -> Unit) {
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = data.balance,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = if (data.isOwed) Color(0xFF4CAF50) else Color(0xFFE57373)
-                )
-                Text(
-                    text = if (data.isOwed) "You are owed" else "You owe",
-                    fontSize = 10.sp,
-                    color = Color.Gray
-                )
-            }
-            
-            IconButton(onClick = { /* TODO */ }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.Gray)
+                if (data.isSettled) {
+                    Text(text = "Settled up", fontSize = 12.sp, color = Color.Gray)
+                } else {
+                    Text(
+                        text = data.balance,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = if (data.isOwed) Color(0xFF4CAF50) else Color(0xFFE57373)
+                    )
+                    Text(
+                        text = if (data.isOwed) "You are owed" else "You owe",
+                        fontSize = 10.sp,
+                        color = Color.Gray
+                    )
+                }
             }
         }
     }

@@ -65,6 +65,30 @@ data class AuthResponse(
 )
 
 /** Single-use token handed out once an OTP has been verified. */
+/** Path segment of `/auth/oauth/{provider}`. */
+@Serializable
+enum class OAuthProvider(val path: String) { GOOGLE("google"), APPLE("apple") }
+
+/**
+ * Sign in with an ID token from Google or Apple.
+ *
+ * [nonce] is the value the client asked the provider to embed (for Apple, the
+ * SHA-256 of the raw nonce); when present it must match the token. Apple only shares
+ * the user's name with the app on the very first sign-in, so it arrives here in
+ * [displayName] rather than in the token.
+ */
+@Serializable
+data class OAuthSignInRequest(
+    val idToken: String,
+    val nonce: String? = null,
+    val displayName: String? = null,
+)
+
+@Serializable
+data class VerifyEmailRequest(
+    val code: String,
+)
+
 @Serializable
 data class VerifyOtpResponse(
     val resetToken: String,

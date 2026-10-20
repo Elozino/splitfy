@@ -36,6 +36,66 @@ tags:
   - name: System
 
 paths:
+  /api/v1/groups/{groupId}/invite:
+    get:
+      tags: [Groups]
+      summary: Get or create the group's shared invite link (members only)
+      parameters:
+        - { name: groupId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Invite link, valid for 30 days
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupInvite' }
+        "404": { description: Group not found or caller is not a member }
+        "409": { description: Group is archived }
+
+  /api/v1/groups/{groupId}/invite/reset:
+    post:
+      tags: [Groups]
+      summary: Revoke old links and create a new one (owner or admin only)
+      parameters:
+        - { name: groupId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Replacement invite link
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupInvite' }
+        "403": { description: Caller is not an owner or admin }
+        "409": { description: Group is archived }
+
+  /api/v1/invites/{token}:
+    get:
+      tags: [Groups]
+      summary: Preview a group invitation without signing in
+      security: []
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Group name, member count, inviter and currency
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvitePreview' }
+        "404": { description: Invalid, expired or revoked link, or archived group }
+
+  /api/v1/invites/{token}/accept:
+    post:
+      tags: [Groups]
+      summary: Join the group as a member; repeated acceptance is idempotent
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Joined group
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Group' }
+        "401": { description: Sign-in required }
+        "404": { description: Invalid, expired or revoked link, or archived group }
+
   /health:
     get:
       tags: [System]
@@ -138,6 +198,49 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResponse" }
 
+  /api/v1/auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Confirm the signed-in user's email with the code sent at sign-up
+      description: |
+        A code is emailed on registration. After five wrong guesses the code stops
+        working and a new one must be requested. Verifying an already-verified
+        account is a no-op.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        "200":
+          description: Verified; the updated profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400":
+          description: The code is wrong, expired, or has been guessed at too often (code INVALID_CREDENTIALS)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/auth/verify-email/resend:
+    post:
+      tags: [Auth]
+      summary: Email a new verification code
+      description: At most one email per minute; extra requests are accepted silently.
+      responses:
+        "202":
+          description: A code is on its way (or the account is already verified)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /api/v1/auth/logout/all:
     post:
       tags: [Auth]
@@ -175,6 +278,51 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/MessageResponse" }
+
+  /api/v1/auth/oauth/{provider}:
+    post:
+      tags: [Auth]
+      summary: Sign in with a Google or Apple ID token
+      description: |
+        Verifies the provider's ID token (signature, issuer, audience, expiry, and
+        nonce when sent), then signs into the linked account, links an existing
+        account with the same verified email, or creates one. An unverified password
+        account holding the same email is taken over by the provider-verified owner,
+        and its password and sessions are revoked.
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string, enum: [google, apple] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken: { type: string }
+                nonce: { type: string, nullable: true, description: "For Apple, the SHA-256 of the raw nonce" }
+                displayName: { type: string, nullable: true, description: "Apple shares the name only on first sign-in" }
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "400":
+          description: The provider did not share a verified email
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404":
+          description: Unknown provider, or the provider is not configured on this server
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
 
   /api/v1/auth/verify-otp:
     post:
@@ -955,6 +1103,22 @@ components:
           schema: { $ref: "#/components/schemas/ApiErrorResponse" }
 
   schemas:
+    GroupInvite:
+      type: object
+      required: [token, url, expiresAt]
+      properties:
+        token: { type: string }
+        url: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+    InvitePreview:
+      type: object
+      required: [groupId, groupName, memberCount, invitedBy, currency]
+      properties:
+        groupId: { type: string, format: uuid }
+        groupName: { type: string }
+        memberCount: { type: integer }
+        invitedBy: { type: string }
+        currency: { type: string }
     MessageResponse:
       type: object
       required: [message]
@@ -1149,6 +1313,9 @@ components:
         avatarUrl: { type: string, nullable: true }
         defaultCurrency: { type: string }
         createdAt: { type: string, format: date-time }
+        emailVerified:
+          type: boolean
+          description: Whether the user has confirmed their email. Only verified accounts can be found or added by email.
 
     TokenPair:
       type: object

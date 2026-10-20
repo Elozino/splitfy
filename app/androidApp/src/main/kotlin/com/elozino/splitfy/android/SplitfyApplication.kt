@@ -15,7 +15,11 @@ class SplitfyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        initKoin(isDebug = BuildConfig.DEBUG, apiBaseUrl = BuildConfig.API_BASE_URL) {
+        initKoin(
+            isDebug = BuildConfig.DEBUG,
+            apiBaseUrl = BuildConfig.API_BASE_URL,
+            googleClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
+        ) {
             androidLogger(if (BuildConfig.DEBUG) Level.ERROR else Level.NONE)
             androidContext(this@SplitfyApplication)
         }

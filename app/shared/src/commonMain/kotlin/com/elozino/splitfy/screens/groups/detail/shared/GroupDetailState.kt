@@ -4,6 +4,8 @@ import com.elozino.splitfy.domain.model.Balance
 import com.elozino.splitfy.domain.model.CurrencyCode
 import com.elozino.splitfy.domain.model.Expense
 import com.elozino.splitfy.domain.model.Group
+import com.elozino.splitfy.domain.model.GroupMember
+import com.elozino.splitfy.domain.model.GroupRole
 import com.elozino.splitfy.domain.model.Money
 import com.elozino.splitfy.domain.model.SuggestedTransfer
 import com.elozino.splitfy.screens.groups.detail.main.emoji
@@ -29,7 +31,20 @@ data class GroupDetailState(
     val currentUserId: String? = null,
     val selectedTab: Int = 0,
     val isOverflowMenuVisible: Boolean = false,
+    val isAddMemberDialogVisible: Boolean = false,
+    val memberEmail: String = "",
+    val memberError: String? = null,
+    val isUpdatingMembers: Boolean = false,
 ) {
+    /** Owners and admins may add and remove members; the server enforces the same rule. */
+    val canManageMembers: Boolean
+        get() = group?.members?.firstOrNull { it.userId.value == currentUserId }?.role
+            ?.let { it == GroupRole.OWNER || it == GroupRole.ADMIN } == true
+
+    /** Whether [member] can be removed by the viewer: never the owner, never yourself (leave instead). */
+    fun canRemove(member: GroupMember): Boolean =
+        canManageMembers && member.role != GroupRole.OWNER && member.userId.value != currentUserId
+
     val hasMore: Boolean get() = nextCursor != null
     fun yourBalance(userId: String?): Money? =
         balances.firstOrNull { it.userId.value == userId }?.net

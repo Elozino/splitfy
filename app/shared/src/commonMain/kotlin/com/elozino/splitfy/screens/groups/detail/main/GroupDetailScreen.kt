@@ -29,7 +29,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.domain.model.Expense
 import com.elozino.splitfy.domain.model.ExpenseCategory
 import com.elozino.splitfy.domain.model.Money
+import com.elozino.splitfy.ui.components.SearchField
 import com.elozino.splitfy.ui.theme.primaryLight
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.elozino.splitfy.screens.expenses.add.label
@@ -43,7 +46,9 @@ fun GroupDetailScreen(
     groupId: String,
     onNavigateBack: () -> Unit,
     onNavigateToAddExpense: () -> Unit,
+    onNavigateToSettleUp: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToInvite: () -> Unit,
     onNavigateToExpenseDetail: (String) -> Unit,
     viewModel: GroupDetailViewModel = koinViewModel { parametersOf(groupId) },
 ) {
@@ -53,15 +58,34 @@ fun GroupDetailScreen(
     LaunchedEffect(groupId) { viewModel.load() }
 
     val tabs = listOf("Expenses", "Balances", "Totals", "Group info")
+    var isSearching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    val snackbar = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let {
+            snackbar.showSnackbar(it)
+            viewModel.consumeError()
+        }
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        text = state.group?.name ?: "Group",
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isSearching) {
+                        SearchField(
+                            query = query,
+                            onQueryChange = { query = it },
+                            placeholder = "Search expenses",
+                            onClose = { isSearching = false },
+                        )
+                    } else {
+                        Text(
+                            text = state.group?.name ?: "Group",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -69,8 +93,13 @@ fun GroupDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Search */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    if (!isSearching) {
+                        IconButton(onClick = {
+                            isSearching = true
+                            viewModel.onTabSelected(0)
+                        }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
                     }
                     Box {
                         IconButton(onClick = { viewModel.setOverflowMenuVisible(true) }) {
@@ -81,23 +110,22 @@ fun GroupDetailScreen(
                             onDismissRequest = { viewModel.setOverflowMenuVisible(false) },
                             modifier = Modifier.background(Color.White)
                         ) {
-                            DropdownMenuItem(
-                                text = { Text("Edit Group") },
-                                onClick = { 
+                            if (state.group?.isArchived == false) DropdownMenuItem(
+                                text = { Text("Invite by link") },
+                                onClick = {
                                     viewModel.setOverflowMenuVisible(false)
-                                    onNavigateToSettings() 
+                                    onNavigateToInvite()
                                 },
-                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                                leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
                             )
+                            // Editing, leaving and archiving all live in settings, behind confirmations.
                             DropdownMenuItem(
-                                text = { Text("Leave Group") },
-                                onClick = { viewModel.setOverflowMenuVisible(false) },
-                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete Group", color = Color.Red) },
-                                onClick = { viewModel.setOverflowMenuVisible(false) },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red) }
+                                text = { Text("Group settings") },
+                                onClick = {
+                                    viewModel.setOverflowMenuVisible(false)
+                                    onNavigateToSettings()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
                             )
                         }
                     }
@@ -106,6 +134,7 @@ fun GroupDetailScreen(
             )
         },
         containerColor = Color.White,
+        snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             Surface(
                 color = Color.White,
@@ -120,7 +149,7 @@ fun GroupDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { /* TODO: Settle Up */ },
+                        onClick = onNavigateToSettleUp,
                         modifier = Modifier.weight(1f).height(56.dp),
                         shape = RoundedCornerShape(100.dp),
                         border = BorderStroke(1.dp, primaryLight)
@@ -155,17 +184,6 @@ fun GroupDetailScreen(
                         .fillMaxSize()
                         .background(Color.LightGray)
                 )
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                        .size(36.dp)
-                        .background(primaryLight, CircleShape)
-                        .clickable { /* Edit Cover */ },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.Black)
-                }
             }
 
             // Tabs
@@ -201,21 +219,91 @@ fun GroupDetailScreen(
             when (state.selectedTab) {
                 0 -> ExpensesList(
                     state = state,
-                    onExpenseClick = { expenseId -> onNavigateToExpenseDetail(expenseId) }
+                    query = query,
+                    onExpenseClick = { expenseId -> onNavigateToExpenseDetail(expenseId) },
+                    onLoadMore = viewModel::loadMore,
                 )
-                1 -> BalancesList(state)
+                1 -> BalancesList(state, onSettleUp = onNavigateToSettleUp)
                 2 -> TotalsList(state)
-                3 -> GroupInfoList(state)
+                3 -> GroupInfoList(
+                    state = state,
+                    onAddMember = { viewModel.setAddMemberDialogVisible(true) },
+                    onRemoveMember = viewModel::removeMember,
+                )
             }
         }
+    }
+
+    if (state.isAddMemberDialogVisible) {
+        AddMemberDialog(
+            state = state,
+            onEmailChange = viewModel::onMemberEmailChange,
+            onConfirm = viewModel::addMember,
+            onDismiss = { viewModel.setAddMemberDialogVisible(false) },
+        )
     }
 }
 
 @Composable
-private fun ExpensesList(state: GroupDetailState, onExpenseClick: (String) -> Unit) {
+private fun AddMemberDialog(
+    state: GroupDetailState,
+    onEmailChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = { Text("Add a member", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                Text("They need a splitfy account with this email.", color = Color.Gray, fontSize = 13.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = state.memberEmail,
+                    onValueChange = onEmailChange,
+                    label = { Text("Email") },
+                    singleLine = true,
+                    isError = state.memberError != null,
+                    supportingText = state.memberError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm, enabled = !state.isUpdatingMembers) {
+                Text("Add", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = Color.Gray) }
+        },
+    )
+}
+
+@Composable
+private fun ExpensesList(
+    state: GroupDetailState,
+    query: String,
+    onExpenseClick: (String) -> Unit,
+    onLoadMore: () -> Unit,
+) {
     if (state.isLoading && state.expenses.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = primaryLight)
+        }
+        return
+    }
+
+    val needle = query.trim()
+    val expenses = if (needle.isEmpty()) state.expenses else state.expenses.filter {
+        it.description.contains(needle, ignoreCase = true) || it.notes?.contains(needle, ignoreCase = true) == true
+    }
+
+    if (needle.isNotEmpty() && expenses.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            Text("No expenses match \"$needle\"", color = Color.Gray, fontSize = 14.sp)
         }
         return
     }
@@ -242,17 +330,22 @@ private fun ExpensesList(state: GroupDetailState, onExpenseClick: (String) -> Un
         contentPadding = PaddingValues(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(state.expenses, key = { it.id.value }) { expense ->
+        items(expenses, key = { it.id.value }) { expense ->
             ExpenseItem(
                 data = expense.toItem(state),
                 onClick = { onExpenseClick(expense.id.value) }
             )
         }
 
+        // Search only covers loaded pages, so keep offering more while filtering.
         if (state.hasMore) {
             item {
-                TextButton(onClick = { /* paging is driven by the caller below */ }) {
-                    Text("Load more", color = primaryLight, fontWeight = FontWeight.Bold)
+                if (state.isLoadingMore) {
+                    CircularProgressIndicator(color = primaryLight, modifier = Modifier.size(24.dp))
+                } else {
+                    TextButton(onClick = onLoadMore) {
+                        Text("Load more", color = primaryLight, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -316,7 +409,7 @@ private fun ExpenseItem(data: ExpenseItemData, onClick: () -> Unit) {
 }
 
 @Composable
-private fun BalancesList(state: GroupDetailState) {
+private fun BalancesList(state: GroupDetailState, onSettleUp: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -347,18 +440,23 @@ private fun BalancesList(state: GroupDetailState) {
             Text("Everyone is settled up 🎉", color = Color.Gray, fontSize = 14.sp)
         }
         state.suggestedTransfers.forEach { transfer ->
-            val names = state.group?.members.orEmpty().associate { it.userId to it.displayName }
             val youArePayer = transfer.from.value == state.currentUserId
-            val counterparty = if (youArePayer) transfer.to else transfer.from
+            val youArePayee = transfer.to.value == state.currentUserId
+            val amount = transfer.amount.toPlainString()
             BalanceItem(
-                name = names[counterparty] ?: "Someone",
-                details = if (youArePayer) {
-                    "you owe ${transfer.amount.toPlainString()}"
-                } else {
-                    "owes you ${transfer.amount.toPlainString()}"
+                name = when {
+                    youArePayer -> names[transfer.to] ?: "Someone"
+                    youArePayee -> names[transfer.from] ?: "Someone"
+                    else -> names[transfer.from] ?: "Someone"
+                },
+                details = when {
+                    youArePayer -> "you owe $amount"
+                    youArePayee -> "owes you $amount"
+                    else -> "owes ${names[transfer.to] ?: "someone"} $amount"
                 },
                 isOwed = !youArePayer,
-                showRequest = !youArePayer
+                showSettle = youArePayer || youArePayee,
+                onSettle = onSettleUp,
             )
         }
     }
@@ -385,7 +483,13 @@ private fun BalanceBar(name: String, progress: Float, color: Color, amount: Stri
 }
 
 @Composable
-private fun BalanceItem(name: String, details: String, isOwed: Boolean, showRequest: Boolean = false) {
+private fun BalanceItem(
+    name: String,
+    details: String,
+    isOwed: Boolean,
+    showSettle: Boolean = false,
+    onSettle: () -> Unit = {},
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -396,15 +500,15 @@ private fun BalanceItem(name: String, details: String, isOwed: Boolean, showRequ
             Text(name, fontWeight = FontWeight.Bold)
             Text(details, color = if (isOwed) Color(0xFF4CAF50) else Color.Red, fontSize = 12.sp)
         }
-        if (showRequest) {
+        if (showSettle) {
             TextButton(
-                onClick = { /* TODO */ },
+                onClick = onSettle,
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 modifier = Modifier.height(32.dp).border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
             ) {
                 Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.Black)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Request", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Settle", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -413,7 +517,7 @@ private fun BalanceItem(name: String, details: String, isOwed: Boolean, showRequ
 @Composable
 private fun TotalsList(state: GroupDetailState) {
     Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        Text("Dec 2023", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text("All time", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(16.dp))
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -466,7 +570,11 @@ private fun SummaryCard(label: String, value: String, modifier: Modifier = Modif
 }
 
 @Composable
-private fun GroupInfoList(state: GroupDetailState) {
+private fun GroupInfoList(
+    state: GroupDetailState,
+    onAddMember: () -> Unit,
+    onRemoveMember: (String) -> Unit,
+) {
     Column(modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
         Text(state.group?.name ?: "Group", fontWeight = FontWeight.Bold, fontSize = 20.sp)
         state.group?.description?.let { description ->
@@ -480,9 +588,11 @@ private fun GroupInfoList(state: GroupDetailState) {
         Spacer(modifier = Modifier.height(32.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("Group Members", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            TextButton(onClick = { /* TODO */ }) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = primaryLight)
-                Text("Add", color = primaryLight, fontWeight = FontWeight.Bold)
+            if (state.canManageMembers) {
+                TextButton(onClick = onAddMember) {
+                    Icon(Icons.Default.Add, contentDescription = null, tint = primaryLight)
+                    Text("Add", color = primaryLight, fontWeight = FontWeight.Bold)
+                }
             }
         }
         
@@ -504,7 +614,30 @@ private fun GroupInfoList(state: GroupDetailState) {
                         fontSize = 12.sp
                     )
                 }
-                Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.Gray)
+                if (state.canRemove(member)) {
+                    var isMenuVisible by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { isMenuVisible = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Member options", tint = Color.Gray)
+                        }
+                        DropdownMenu(
+                            expanded = isMenuVisible,
+                            onDismissRequest = { isMenuVisible = false },
+                            modifier = Modifier.background(Color.White)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Remove from group", color = Color.Red) },
+                                onClick = {
+                                    isMenuVisible = false
+                                    onRemoveMember(member.userId.value)
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.PersonRemove, contentDescription = null, tint = Color.Red)
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }

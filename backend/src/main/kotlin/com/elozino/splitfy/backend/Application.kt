@@ -1,5 +1,6 @@
 package com.elozino.splitfy.backend
 
+import org.koin.core.module.Module
 import com.elozino.splitfy.backend.di.serverModule
 import com.elozino.splitfy.backend.plugins.configureHttp
 import com.elozino.splitfy.backend.plugins.configureObservability
@@ -25,13 +26,19 @@ fun main(args: Array<String>) = io.ktor.server.netty.EngineMain.main(args)
  * routes — a route registered before its authentication provider exists would fail
  * at start-up rather than at request time.
  */
-fun Application.module() {
+fun Application.module() = configureApp(overrides = emptyList())
+
+/**
+ * The real start-up sequence. [overrides] are Koin modules loaded after the server's
+ * own, so a test can replace one binding (an email sender, say) and keep the rest.
+ */
+fun Application.configureApp(overrides: List<Module>) {
     val config = AppConfig.from(this)
     log.info("Starting splitfy API in {} mode", config.environment)
 
     install(Koin) {
         slf4jLogger()
-        modules(serverModule(config))
+        modules(listOf(serverModule(config)) + overrides)
     }
 
     val database = DatabaseFactory(config.database)
@@ -46,5 +53,5 @@ fun Application.module() {
     configureSecurity()
     configureRateLimiting()
     configureStatusPages()
-    configureRouting(connection)
+    configureRouting(connection, config)
 }

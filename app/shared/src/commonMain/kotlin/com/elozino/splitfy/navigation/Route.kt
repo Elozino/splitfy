@@ -27,6 +27,9 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     object Otp : Route("otp", false)
 
     @Serializable
+    object VerifyEmail : Route("verify_email", true)
+
+    @Serializable
     object Home : Route("home", true)
 
     @Serializable
@@ -75,7 +78,13 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     data class ExpenseDetail(val groupId: String, val expenseId: String) : Route("expense_detail", true)
 
     @Serializable
-    data class SplitDetail(val groupId: String) : Route("split_detail", true)
+    data class SettleUp(val groupId: String) : Route("settle_up", true)
+
+    @Serializable
+    data class GroupSettings(val groupId: String) : Route("group_settings", true)
+
+    @Serializable
+    data class ShareInvite(val groupId: String) : Route("share_invite", true)
 
     @Serializable
     object UpgradePlan : Route("upgrade_plan", true)

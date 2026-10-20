@@ -37,14 +37,36 @@ import com.elozino.splitfy.ui.generated.resources.UiRes
 import com.elozino.splitfy.screens.auth.shared.AuthOption
 import com.elozino.splitfy.screens.auth.shared.AuthType
 import com.elozino.splitfy.screens.auth.shared.authOptions
+import com.elozino.splitfy.screens.auth.shared.authOption
+import com.elozino.splitfy.screens.auth.shared.AuthViewModel
+import com.elozino.splitfy.social.SocialSignInConfig
+import com.elozino.splitfy.social.rememberSocialSignIn
+import com.elozino.splitfy.ui.components.AuthFieldError
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
-@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun AuthScreen(
+    viewModel: AuthViewModel,
     onNavigateToRegister: () -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
-    onNavigateToSocialAuth: (AuthType) -> Unit = {}
+    onSignedIn: () -> Unit = {},
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val socialSignIn = rememberSocialSignIn(koinInject<SocialSignInConfig>())
+    val scope = rememberCoroutineScope()
+
+    // Driven by the server accepting the token, not by the tap.
+    LaunchedEffect(state.isAuthenticated) {
+        if (state.isAuthenticated) onSignedIn()
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -107,7 +129,7 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Social Auth Options
+            // Only the providers this platform build can actually offer.
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
@@ -115,11 +137,23 @@ fun AuthScreen(
                     .weight(1f),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                items(authOptions.filter { it.type != AuthType.Email }) { option ->
+                items(socialSignIn.providers) { provider ->
                     AuthButton(
-                        option = option,
-                        onClick = { onNavigateToSocialAuth(option.type) }
+                        option = provider.authOption(),
+                        enabled = !state.isSubmitting,
+                        onClick = {
+                            viewModel.consumeError()
+                            scope.launch { viewModel.onSocialSignIn(provider, socialSignIn.signIn(provider)) }
+                        }
                     )
+                }
+                item {
+                    if (state.isSubmitting) {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Color(0xFFFEBB1B))
+                        }
+                    }
+                    AuthFieldError(state.errorMessage)
                 }
             }
         }
@@ -130,7 +164,8 @@ fun AuthScreen(
 fun AuthButton(
     option: AuthOption,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     val isTransparent = option.backgroundColor == Color.Transparent
     val isWhite = option.backgroundColor == Color.White
@@ -138,6 +173,7 @@ fun AuthButton(
 
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp),

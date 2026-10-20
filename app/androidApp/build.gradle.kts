@@ -52,6 +52,9 @@ extensions.configure<ApplicationExtension> {
         // Generated rather than kept in res/values/strings.xml, so the launcher
         // label comes from the same file as the rest of the app's identity.
         resValue("string", "app_name", config("app.name"))
+
+        // Optional: an empty value hides the Google button rather than failing the build.
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${appConfig.getProperty("google.webClientId").orEmpty()}\"")
     }
 
     buildFeatures {

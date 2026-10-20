@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.expenses.add
 
+import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -45,7 +46,7 @@ fun AddExpenseScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Stable per screen entry: a retry after a timeout must not create a duplicate.
-    val clientRequestId = remember { "expense-$groupId-${'$'}{state.hashCode()}" }
+    val clientRequestId = remember { newClientRequestId() }
 
     LaunchedEffect(state.saved) {
         if (state.saved) onNavigateBack()
@@ -281,43 +282,8 @@ private fun ExpenseDetailsScreen(
                 )
             }
 
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF5F5F5))
-                        .border(1.dp, Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                        .clickable { onAddImage() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Upload, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(24.dp))
-                        Text("Add an Image", color = Color.Gray, fontSize = 12.sp)
-                    }
-                }
-            }
-
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF5F5F5)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Image, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text("IMG-12202023.jpg", modifier = Modifier.weight(1f), fontSize = 14.sp)
-                        IconButton(onClick = { /* Remove */ }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp))
-                        }
-                    }
-                }
-            }
+            // Receipt attachments arrive with uploads (Phase 5); the old mock always
+            // showed a fake file and its camera saved nothing.
         }
     }
 }

@@ -11,6 +11,8 @@ import com.elozino.splitfy.api.dto.CreateTransferRequest
 import com.elozino.splitfy.api.dto.GroupBalancesResponse
 import com.elozino.splitfy.api.dto.GroupSummary
 import com.elozino.splitfy.api.dto.NotificationsResponse
+import com.elozino.splitfy.api.dto.OAuthProvider
+import com.elozino.splitfy.api.dto.OAuthSignInRequest
 import com.elozino.splitfy.api.dto.Page
 import com.elozino.splitfy.api.dto.TopUpRequest
 import com.elozino.splitfy.api.dto.UpdateGroupRequest
@@ -49,6 +51,13 @@ interface AuthRepository {
 
     suspend fun resetPassword(email: String, resetToken: String, newPassword: String): DataResult<Unit>
 
+    /** Confirms the signed-in user's email with the code sent at sign-up. */
+    suspend fun verifyEmail(code: String): DataResult<User>
+
+    suspend fun resendVerification(): DataResult<Unit>
+
+    suspend fun signInWithProvider(provider: OAuthProvider, request: OAuthSignInRequest): DataResult<User>
+
     suspend fun logout(): DataResult<Unit>
 }
 
@@ -80,6 +89,7 @@ interface SettlementRepository {
     suspend fun list(groupId: String): DataResult<List<Settlement>>
     suspend fun create(groupId: String, request: CreateSettlementRequest): DataResult<Settlement>
     suspend fun confirm(groupId: String, settlementId: String): DataResult<Settlement>
+    suspend fun cancel(groupId: String, settlementId: String): DataResult<Settlement>
 }
 
 interface WalletRepository {

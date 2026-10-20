@@ -77,6 +77,10 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(ktorLibs.client.okhttp)
             implementation(libs.koin.android)
+            // Google sign-in through the system Credential Manager sheet.
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.play.services)
+            implementation(libs.googleid)
         }
 
         iosMain.dependencies {
