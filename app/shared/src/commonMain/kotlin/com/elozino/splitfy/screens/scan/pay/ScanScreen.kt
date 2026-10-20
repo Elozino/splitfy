@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.scan.pay
 
+import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -47,7 +48,11 @@ fun ScanScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val parsed = Money.parse(state.scanAmount, state.balance.currency)
-    val clientRequestId = remember(state.scanRecipient) { "scan-pay-${'$'}{state.scanRecipient?.userId?.value.orEmpty()}" }
+    // One key per payment attempt: kept across retries, renewed for a new recipient,
+    // a new amount, or once a payment has gone through.
+    val clientRequestId = remember(state.scanRecipient, state.scanAmount, state.lastTransfer) {
+        newClientRequestId()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.onCameraPermissionChange(checkPermission(PermissionType.CAMERA))
