@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="All — Backend + Apps" type="CompoundRunConfigurationType">
+    <toRun name="Backend" type="GradleRunConfiguration" />
+    <toRun name="Android" type="AndroidRunConfigurationType" />
+    <toRun name="iOS" type="AppleRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>

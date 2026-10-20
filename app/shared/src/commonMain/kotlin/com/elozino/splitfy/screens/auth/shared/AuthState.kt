@@ -1,0 +1,31 @@
+package com.elozino.splitfy.screens.auth.shared
+
+/** Shared state for sign-in, sign-up, and password recovery. */
+data class AuthState(
+    val email: String = "",
+    val password: String = "",
+    val displayName: String = "",
+    val otpCode: String = "",
+    val newPassword: String = "",
+    val isSubmitting: Boolean = false,
+    val fieldErrors: Map<String, String> = emptyMap(),
+    val errorMessage: String? = null,
+    val isAuthenticated: Boolean = false,
+    val resetCodeSent: Boolean = false,
+    val resetToken: String? = null,
+    val passwordReset: Boolean = false,
+    val isLoginPasswordVisible: Boolean = false,
+    val rememberLogin: Boolean = false,
+    val isSignUpPasswordVisible: Boolean = false,
+    val confirmPassword: String = "",
+    val isNewPasswordVisible: Boolean = false,
+    val isConfirmPasswordVisible: Boolean = false,
+    val otpSecondsRemaining: Int = 55,
+) {
+    val canSubmitLogin: Boolean
+        get() = !isSubmitting && email.isNotBlank() && password.isNotBlank()
+
+    val canSubmitSignUp: Boolean
+        get() = canSubmitLogin && displayName.isNotBlank()
+}
+
