@@ -218,6 +218,28 @@ class WalletAndTransferTest {
         assertEquals(0, afterRead.unreadCount)
     }
 
+    @Test
+    fun `with the wallet disabled its endpoints do not exist`() = testApplication {
+        useTestConfig(database, walletEnabled = false)
+        val client = jsonClient()
+        val ada = client.register("ada@example.com")
+
+        val calls = listOf(
+            client.get(ApiRoutes.Wallet.BASE) { bearerAuth(ada.token) },
+            client.post(ApiRoutes.Wallet.TOP_UP) {
+                bearerAuth(ada.token)
+                contentType(ContentType.Application.Json)
+                setBody(TopUpRequest(Money(500_000, ngn), "any"))
+            },
+            client.get(ApiRoutes.PaymentMethods.BASE) { bearerAuth(ada.token) },
+            client.get(ApiRoutes.Transfers.BASE) { bearerAuth(ada.token) },
+        )
+        calls.forEach { assertEquals(HttpStatusCode.NotFound, it.status, it.call.request.url.encodedPath) }
+
+        // Everything else keeps working.
+        assertEquals(HttpStatusCode.OK, client.get(ApiRoutes.Notifications.BASE) { bearerAuth(ada.token) }.status)
+    }
+
     // --- helpers -------------------------------------------------------------
 
     private data class Account(val user: com.elozino.splitfy.domain.model.User, val token: String)

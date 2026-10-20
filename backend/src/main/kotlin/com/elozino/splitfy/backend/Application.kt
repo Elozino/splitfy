@@ -46,5 +46,5 @@ fun Application.module() {
     configureSecurity()
     configureRateLimiting()
     configureStatusPages()
-    configureRouting(connection)
+    configureRouting(connection, config.features)
 }

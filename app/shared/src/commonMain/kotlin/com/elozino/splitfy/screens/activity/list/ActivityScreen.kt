@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.ActivityFilter
+import com.elozino.splitfy.FeatureFlags
 import com.elozino.splitfy.api.dto.DebtEntry
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -44,8 +45,10 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ActivityScreen(
     viewModel: ActivityViewModel = koinViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToPay: () -> Unit = {},
-    onNavigateToRequest: () -> Unit = {}
+    /** Null when the wallet is off; rows then open Settle Up for their group instead. */
+    onNavigateToPay: (() -> Unit)? = null,
+    onNavigateToRequest: (() -> Unit)? = null,
+    onNavigateToSettleUp: (groupId: String) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tabs = listOf(
@@ -140,8 +143,14 @@ fun ActivityScreen(
                         ActivityItem(
                             data = item,
                             onActionClick = {
-                                if (item.actionLabel == "Pay") onNavigateToPay()
-                                else if (item.actionLabel == "Request") onNavigateToRequest()
+                                when {
+                                    item.isCompleted -> Unit
+                                    // Without a wallet, both directions settle by recording a payment.
+                                    onNavigateToPay == null || onNavigateToRequest == null ->
+                                        onNavigateToSettleUp(item.groupId)
+                                    item.actionLabel == "Pay" -> onNavigateToPay()
+                                    else -> onNavigateToRequest()
+                                }
                             }
                         )
                         HorizontalDivider(
@@ -168,11 +177,13 @@ private fun DebtEntry.toItem(currentUserId: String?): ActivityItemData {
         amount = amount.toPlainString() + " " + amount.currency.code,
         actionLabel = when {
             isSettled -> "Paid"
+            !FeatureFlags.WALLET -> "Settle"
             youArePayer -> "Pay"
             else -> "Request"
         },
         isOwed = youArePayee,
         isCompleted = isSettled,
+        groupId = groupId.value,
     )
 }
 

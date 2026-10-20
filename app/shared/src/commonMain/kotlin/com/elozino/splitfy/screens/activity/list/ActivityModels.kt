@@ -9,6 +9,7 @@ data class ActivityItemData(
     val amount: String,
     val actionLabel: String,
     val isOwed: Boolean = false,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val groupId: String = "",
 )
 

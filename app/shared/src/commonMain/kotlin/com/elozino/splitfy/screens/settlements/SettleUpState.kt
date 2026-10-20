@@ -36,8 +36,9 @@ data class SettleUpState(
 ) {
     val currency: CurrencyCode get() = group?.currency ?: CurrencyCode.NGN
 
-    fun nameOf(userId: UserId): String = when {
-        userId.value == currentUserId -> "You"
+    /** A member's name, or "You"/"you" for the viewer depending on where it sits in the sentence. */
+    fun nameOf(userId: UserId, startsSentence: Boolean = true): String = when {
+        userId.value == currentUserId -> if (startsSentence) "You" else "you"
         else -> group?.members?.firstOrNull { it.userId == userId }?.displayName ?: "Someone"
     }
 
