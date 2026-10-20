@@ -2,6 +2,7 @@ package com.elozino.splitfy.backend.routes
 
 import com.elozino.splitfy.api.ApiRoutes
 import com.elozino.splitfy.api.dto.UpdateProfileRequest
+import com.elozino.splitfy.backend.services.AccountDeletionService
 import com.elozino.splitfy.backend.services.UserService
 import com.elozino.splitfy.backend.utils.paginationLimit
 import com.elozino.splitfy.backend.utils.requireUser
@@ -9,11 +10,12 @@ import com.elozino.splitfy.backend.utils.uuidParam
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.Route
 
-fun Route.userRoutes(service: UserService) {
+fun Route.userRoutes(service: UserService, accountDeletion: AccountDeletionService) {
 
     get(ApiRoutes.Users.ME) {
         call.respond(HttpStatusCode.OK, service.me(call.requireUser().userId))
@@ -22,6 +24,12 @@ fun Route.userRoutes(service: UserService) {
     patch(ApiRoutes.Users.ME) {
         val updated = service.updateProfile(call.requireUser().userId, call.receive<UpdateProfileRequest>())
         call.respond(HttpStatusCode.OK, updated)
+    }
+
+    // Anonymises the account; refused with 409 while any group balance is unsettled.
+    delete(ApiRoutes.Users.ME) {
+        accountDeletion.delete(call.requireUser().userId)
+        call.respond(HttpStatusCode.NoContent)
     }
 
     get(ApiRoutes.Users.SEARCH) {

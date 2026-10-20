@@ -13,6 +13,7 @@ import com.elozino.splitfy.backend.routes.settlementRoutes
 import com.elozino.splitfy.backend.routes.transferRoutes
 import com.elozino.splitfy.backend.routes.userRoutes
 import com.elozino.splitfy.backend.routes.walletRoutes
+import com.elozino.splitfy.backend.services.AccountDeletionService
 import com.elozino.splitfy.backend.services.ActivityService
 import com.elozino.splitfy.backend.utils.AppConfig
 import com.elozino.splitfy.backend.services.AuthService
@@ -50,6 +51,7 @@ fun Application.configureRouting(database: Database, config: AppConfig) {
     val socialAuthService by inject<SocialAuthService>()
     val inviteService by inject<InviteService>()
     val userService by inject<UserService>()
+    val accountDeletionService by inject<AccountDeletionService>()
     val groupService by inject<GroupService>()
     val expenseService by inject<ExpenseService>()
     val settlementService by inject<SettlementService>()
@@ -71,7 +73,7 @@ fun Application.configureRouting(database: Database, config: AppConfig) {
 
         authenticate(JwtService.AUTH_JWT) {
             rateLimit(RateLimitScope.API.scopeName) {
-                userRoutes(userService)
+                userRoutes(userService, accountDeletionService)
                 groupRoutes(groupService)
                 expenseRoutes(expenseService)
                 settlementRoutes(settlementService)

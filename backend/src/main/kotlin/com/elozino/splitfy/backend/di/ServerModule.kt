@@ -15,6 +15,7 @@ import com.elozino.splitfy.backend.repositories.SettlementRepository
 import com.elozino.splitfy.backend.repositories.TransferRepository
 import com.elozino.splitfy.backend.repositories.UserRepository
 import com.elozino.splitfy.backend.repositories.WalletRepository
+import com.elozino.splitfy.backend.services.AccountDeletionService
 import com.elozino.splitfy.backend.services.ActivityService
 import com.elozino.splitfy.backend.services.AuthService
 import com.elozino.splitfy.backend.services.ContactFavoriteRepository
@@ -93,6 +94,7 @@ fun serverModule(config: AppConfig) = module {
     // Services
     single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { UserService(get()) }
+    single { AccountDeletionService(get(), get(), get()) }
     single { InviteService(get(), get(), get(), get(), get(), config.links.publicBaseUrl) }
     single {
         SocialAuthService(
