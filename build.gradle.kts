@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.kotlinSerialization) apply false
     alias(ktorLibs.plugins.ktor) apply false
+    alias(libs.plugins.googleServices) apply false
 }
 
 group = "com.elozino.splitfy"

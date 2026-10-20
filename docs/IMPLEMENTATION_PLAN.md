@@ -135,11 +135,11 @@ Assuming Paystack (NGN default currency):
 
 ## Phase 7 — Push notifications · M
 
-- [ ] Migration `V5__device_tokens.sql`: `device_tokens(user_id, platform, token UNIQUE, updated_at)`.
-- [ ] Register and unregister endpoints; the app registers on login and unregisters on logout.
-- [ ] FCM for Android, and for iOS through APNs (upload the APNs key to Firebase).
-- [ ] `NotificationService.notify` also sends a push, respecting the user's preferences from `notification_settings`.
-- [ ] Scheduled payment reminders for open balances older than N days (once a day, opt-out).
+- [x] Migration `V7__push_notifications.sql`: `device_tokens(user_id, platform, token UNIQUE, updated_at)` and `notification_preferences`.
+- [x] Register and unregister endpoints; the app registers on login and unregisters on logout.
+- [x] FCM for Android, and for iOS through APNs (upload the APNs key to Firebase). Setup: `docs/PUSH_NOTIFICATIONS.md`.
+- [x] `NotificationService.notify` also sends a push, respecting the user's preferences from `notification_settings`.
+- [x] Scheduled payment reminders for open balances older than N days (once a day, opt-out).
 
 ## Phase 8 — Offline-first · L
 
