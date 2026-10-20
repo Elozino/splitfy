@@ -78,7 +78,7 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     data class SettleUp(val groupId: String) : Route("settle_up", true)
 
     @Serializable
-    data class SplitDetail(val groupId: String) : Route("split_detail", true)
+    data class GroupSettings(val groupId: String) : Route("group_settings", true)
 
     @Serializable
     object UpgradePlan : Route("upgrade_plan", true)

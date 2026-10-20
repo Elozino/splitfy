@@ -8,6 +8,7 @@ data class GroupItemData(
     val members: String,
     val balance: String,
     val isOwed: Boolean,
+    val isSettled: Boolean = false,
 )
 
 data class GroupsState(
