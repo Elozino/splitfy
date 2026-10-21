@@ -98,6 +98,9 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
     single<NotificationRepository> { NotificationRepositoryImpl(get(), get()) }
     single<ContactRepository> { ContactRepositoryImpl(get(), get()) }
     single<UploadRepository> { UploadRepositoryImpl(get(), get(), storageHttpClient()) }
+    single<com.elozino.splitfy.repositories.AccountRepository> {
+        com.elozino.splitfy.repositories.AccountRepositoryImpl(get(), get())
+    }
     single { platformImageCompressor() }
 
     // Swap for the payment provider's SDK before taking real payments.
@@ -113,7 +116,7 @@ val viewModelModule: Module = module {
     factory { AuthViewModel(get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get(), get()) }
     factory { GroupsViewModel(get()) }
-    factory { NewGroupViewModel(get(), get()) }
+    factory { NewGroupViewModel(get(), get(), get()) }
     factory { (groupId: String) -> GroupDetailViewModel(groupId, get(), get(), get(), get(), get()) }
     factory { (groupId: String) -> AddExpenseViewModel(groupId, get(), get(), get(), get(), get()) }
     factory { (groupId: String) -> GroupSettingsViewModel(groupId, get(), get()) }
@@ -125,6 +128,13 @@ val viewModelModule: Module = module {
     factory { com.elozino.splitfy.screens.account.notification_settings.NotificationSettingsViewModel(get()) }
     factory { ContactsViewModel(get(), get()) }
     factory { AccountViewModel(get(), get(), get(), get(), get()) }
+    factory {
+        com.elozino.splitfy.screens.account.personal_info.PersonalInfoViewModel(
+            get(), get(), get(), com.elozino.splitfy.uploads.platformAvatarCropper(), get(),
+        )
+    }
+    factory { com.elozino.splitfy.screens.account.linked_accounts.LinkedAccountsViewModel(get()) }
+    factory { com.elozino.splitfy.screens.account.data_analytics.DataAnalyticsViewModel(get(), get()) }
 }
 
 /**

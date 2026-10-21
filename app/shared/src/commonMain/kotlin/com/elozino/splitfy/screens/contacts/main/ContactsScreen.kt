@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.contacts.main
 
+import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
@@ -110,6 +111,7 @@ private fun Contact.toData() = ContactData(
     id = userId.value,
     name = displayName,
     email = email,
+    avatarUrl = avatarUrl,
     isFavorite = isFavorite,
     balanceLabel = netBalance?.takeIf { !it.isZero }?.let { balance ->
         if (balance.isPositive) {
@@ -294,7 +296,7 @@ private fun ContactListItem(
             .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.LightGray))
+        UserAvatar(contact.avatarUrl, contact.name, size = 48.dp)
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(contact.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -492,7 +494,7 @@ private fun ContactDetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(40.dp))
-            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray))
+            UserAvatar(contact.avatarUrl, contact.name, size = 100.dp)
             Spacer(modifier = Modifier.height(16.dp))
             Text(contact.name, fontWeight = FontWeight.Bold, fontSize = 24.sp)
             Text(contact.email, color = Color.Gray, fontSize = 14.sp)

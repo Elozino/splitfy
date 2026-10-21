@@ -32,10 +32,27 @@ class UploadService(
     suspend fun requestSlot(groupId: UUID, request: UploadSlotRequest, callerId: UUID): UploadSlot {
         // Membership first, so a non-member learns nothing, not even that uploads are off.
         val (_, role) = groupService.requireMembership(groupId, callerId)
+        if (request.purpose == UploadPurpose.AVATAR) {
+            throw AppException.Validation(listOf(FieldError("purpose", "Upload a profile photo through your profile")))
+        }
         if (request.purpose == UploadPurpose.GROUP_COVER && role !in setOf(GroupRole.OWNER, GroupRole.ADMIN)) {
             throw AppException.Forbidden("Only an owner or admin can change the cover photo")
         }
+        val contentType = validate(request)
+        return issue(ObjectKeys.newKey(groupId, request.purpose, contentType), groupId, request, contentType, callerId)
+    }
 
+    /** A slot for the caller's own profile photo; the key can only ever be attached to them. */
+    suspend fun requestAvatarSlot(request: UploadSlotRequest, callerId: UUID): UploadSlot {
+        if (request.purpose != UploadPurpose.AVATAR) {
+            throw AppException.Validation(listOf(FieldError("purpose", "Only AVATAR uploads belong to a profile")))
+        }
+        val contentType = validate(request)
+        return issue(ObjectKeys.newAvatarKey(callerId, contentType), null, request, contentType, callerId)
+    }
+
+    /** Returns the normalised content type, or throws listing every problem. */
+    private fun validate(request: UploadSlotRequest): String {
         val contentType = request.contentType.substringBefore(';').trim().lowercase()
         val errors = buildList {
             if (contentType !in UploadRules.allowedContentTypes(request.purpose)) {
@@ -50,8 +67,16 @@ class UploadService(
         }
         if (errors.isNotEmpty()) throw AppException.Validation(errors)
         if (!storage.isEnabled) throw ObjectStorage.unavailable()
+        return contentType
+    }
 
-        val key = ObjectKeys.newKey(groupId, request.purpose, contentType)
+    private suspend fun issue(
+        key: String,
+        groupId: UUID?,
+        request: UploadSlotRequest,
+        contentType: String,
+        callerId: UUID,
+    ): UploadSlot {
         val signed = storage.presignUpload(key, contentType, request.sizeBytes)
         uploads.record(
             NewUpload(

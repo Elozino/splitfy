@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.expenses.add
 
+import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -623,6 +624,8 @@ private fun SplitWithScreen(
             ) {
                 items(state.members, key = { it.userId.value }) { member ->
                     SplitParticipantItem(
+                        avatarUrl = member.avatarUrl,
+                        avatarName = member.displayName,
                         name = if (member.userId.value == state.paidBy?.value) {
                             "${'$'}{member.displayName} (payer)"
                         } else {
@@ -650,6 +653,8 @@ private fun SplitWithScreen(
 
 @Composable
 private fun SplitParticipantItem(
+    avatarUrl: String?,
+    avatarName: String,
     name: String,
     isParticipant: Boolean,
     previewAmount: String?,
@@ -663,7 +668,7 @@ private fun SplitParticipantItem(
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+        UserAvatar(avatarUrl, avatarName)
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp)

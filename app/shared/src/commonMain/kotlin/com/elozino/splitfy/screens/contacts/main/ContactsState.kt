@@ -9,6 +9,7 @@ data class ContactData(
     val id: String,
     val name: String,
     val email: String,
+    val avatarUrl: String? = null,
     val isFavorite: Boolean = false,
     val balanceLabel: String? = null,
     val sharedGroups: Int = 0,

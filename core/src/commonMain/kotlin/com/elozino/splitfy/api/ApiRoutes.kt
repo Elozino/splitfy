@@ -29,6 +29,18 @@ object ApiRoutes {
         const val ME = "$BASE/me"
         fun byId(id: String) = "$BASE/$id"
         const val SEARCH = "$BASE/search"
+
+        /** Upload slot for the caller's own profile photo. */
+        const val ME_UPLOADS = "$ME/uploads"
+        const val EMAIL_CHANGE = "$ME/email-change"
+        const val EMAIL_CHANGE_CONFIRM = "$ME/email-change/confirm"
+
+        /** Google/Apple identities linked to the caller's account. */
+        const val IDENTITIES = "$ME/identities"
+        fun identity(provider: String) = "$IDENTITIES/$provider"
+
+        /** A JSON copy of everything the server holds about the caller. */
+        const val EXPORT = "$ME/export"
     }
 
     object Groups {
