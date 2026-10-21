@@ -91,18 +91,23 @@ class HttpClientFactory(
                         setBody(RefreshTokenRequest(refreshToken))
                     }
 
-                    if (response.status != HttpStatusCode.OK) {
-                        // The refresh token is revoked or expired: nothing to recover.
-                        sessionManager.signOut()
-                        return@refreshTokens null
+                    when {
+                        response.status == HttpStatusCode.OK -> Unit
+                        // The server rejected the refresh token: revoked, expired or
+                        // replayed. Only this ends the session.
+                        response.status == HttpStatusCode.Unauthorized -> {
+                            sessionManager.signOut()
+                            return@refreshTokens null
+                        }
+                        // A 5xx, a 429 or a proxy error says nothing about the session.
+                        // Signing out here logged out everyone whose access token
+                        // expired during a deploy or outage; fail this call instead.
+                        else -> throw RefreshUnavailableException(response.status.value)
                     }
 
                     val tokens = runCatching {
                         json.decodeFromString<TokenPair>(response.bodyAsText())
-                    }.getOrElse {
-                        sessionManager.signOut()
-                        return@refreshTokens null
-                    }
+                    }.getOrElse { throw RefreshUnavailableException(response.status.value) }
 
                     sessionManager.onTokensRefreshed(tokens)
                     BearerTokens(tokens.accessToken, tokens.refreshToken)
@@ -141,3 +146,10 @@ class HttpClientFactory(
         private const val CONNECT_TIMEOUT_MS = 15_000L
     }
 }
+
+/**
+ * The refresh endpoint could not answer (server error, rate limit, unreadable
+ * body). The session may well be fine, so the call fails without signing out.
+ */
+class RefreshUnavailableException(val status: Int) :
+    IllegalStateException("Token refresh unavailable (HTTP $status)")
