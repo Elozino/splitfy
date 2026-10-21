@@ -25,7 +25,7 @@ import com.elozino.splitfy.ui.theme.primaryLight
  *
  * The pull gesture needs a scrollable child to report overscroll. Screens here mix
  * lazy lists with plain columns and centred empty or error states, so [content] sits
- * in a scroll container exactly one screen tall: it has nothing to scroll itself,
+ * in a scroll container holding exactly one screen of content: it has nothing to scroll itself,
  * but passes a downward drag up to the refresh box, and a lazy list inside it keeps
  * scrolling normally.
  */
@@ -56,13 +56,14 @@ fun RefreshableBox(
         },
     ) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(maxHeight)
-                    .verticalScroll(rememberScrollState()),
-                content = content,
-            )
+            // The scroll container measures its child with unbounded height, so the
+            // child is pinned to one screen explicitly. Sizing the container instead
+            // left content unbounded: weighted sections collapsed to nothing and a
+            // LazyColumn inside crashed on the infinite height.
+            val screenHeight = maxHeight
+            Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Box(Modifier.fillMaxWidth().height(screenHeight), content = content)
+            }
         }
     }
 }
