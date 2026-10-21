@@ -33,6 +33,11 @@ import com.elozino.splitfy.backend.services.UserService
 import com.elozino.splitfy.backend.services.WalletService
 import com.elozino.splitfy.backend.services.UploadService
 import com.elozino.splitfy.backend.routes.uploadRoutes
+import com.elozino.splitfy.backend.routes.securityRoutes
+import com.elozino.splitfy.backend.services.TwoFactorService
+import com.elozino.splitfy.backend.routes.AccountServices
+import com.elozino.splitfy.backend.services.DataExportService
+import com.elozino.splitfy.backend.services.EmailChangeService
 import io.ktor.server.application.Application
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
@@ -65,6 +70,9 @@ fun Application.configureRouting(database: Database, config: AppConfig, metrics:
     val notificationService by inject<NotificationService>()
     val contactService by inject<ContactService>()
     val uploadService by inject<UploadService>()
+    val twoFactorService by inject<TwoFactorService>()
+    val emailChangeService by inject<EmailChangeService>()
+    val dataExportService by inject<DataExportService>()
 
     routing {
         swaggerUI(path = ApiRoutes.System.OPENAPI, swaggerFile = "openapi/documentation.yaml")
@@ -79,7 +87,10 @@ fun Application.configureRouting(database: Database, config: AppConfig, metrics:
 
         authenticate(JwtService.AUTH_JWT) {
             rateLimit(RateLimitScope.API.scopeName) {
-                userRoutes(userService, accountDeletionService)
+                userRoutes(
+                    userService,
+                    AccountServices(accountDeletionService, uploadService, emailChangeService, socialAuthService, dataExportService),
+                )
                 groupRoutes(groupService)
                 expenseRoutes(expenseService)
                 settlementRoutes(settlementService)
@@ -94,6 +105,7 @@ fun Application.configureRouting(database: Database, config: AppConfig, metrics:
                 pushRoutes(notificationService)
                 contactRoutes(contactService)
                 uploadRoutes(uploadService)
+                securityRoutes(authService, twoFactorService)
             }
         }
     }

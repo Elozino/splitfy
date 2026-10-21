@@ -6,6 +6,9 @@ import com.elozino.splitfy.backend.repositories.UploadRepository
 import com.elozino.splitfy.backend.services.UploadService
 import com.elozino.splitfy.backend.storage.ObjectStorage
 import com.elozino.splitfy.backend.repositories.EmailVerificationRepository
+import com.elozino.splitfy.backend.repositories.EmailChangeRepository
+import com.elozino.splitfy.backend.services.DataExportService
+import com.elozino.splitfy.backend.services.EmailChangeService
 import com.elozino.splitfy.backend.repositories.PasswordResetRepository
 import com.elozino.splitfy.backend.repositories.GroupInviteRepository
 import com.elozino.splitfy.backend.repositories.UserIdentityRepository
@@ -53,6 +56,9 @@ import com.elozino.splitfy.backend.services.UserService
 import com.elozino.splitfy.backend.services.WalletService
 import com.elozino.splitfy.backend.utils.AppConfig
 import com.elozino.splitfy.backend.utils.PasswordHasher
+import com.elozino.splitfy.backend.utils.SecretCipher
+import com.elozino.splitfy.backend.repositories.TwoFactorRepository
+import com.elozino.splitfy.backend.services.TwoFactorService
 import org.koin.dsl.module
 
 /**
@@ -90,10 +96,11 @@ fun serverModule(config: AppConfig) = module {
     single { PushDispatcher(get(), get(), get()) }.withOptions { onClose { it?.close() } }
 
     // Repositories
-    single { UserRepository() }
+    single { UserRepository(get<ObjectStorage>()::displayUrl) }
     single { RefreshTokenRepository() }
     single { PasswordResetRepository() }
     single { EmailVerificationRepository() }
+    single { EmailChangeRepository() }
     single { UserIdentityRepository() }
     single { GroupInviteRepository() }
     single { ObjectStorage(config.storage) }
@@ -112,8 +119,12 @@ fun serverModule(config: AppConfig) = module {
     single { PaymentReminderRepository() }
 
     // Services
-    single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { UserService(get()) }
+    single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { TwoFactorRepository() }
+    single { TwoFactorService(get(), get(), get(), SecretCipher(config.security.totpEncryptionKey)) }
+    single { UserService(get(), get()) }
+    single { EmailChangeService(get(), get(), get(), get(), get()) }
+    single { DataExportService(get(), get()) }
     single { AccountDeletionService(get(), get(), get()) }
     single { InviteService(get(), get(), get(), get(), get(), config.links.publicBaseUrl) }
     single {

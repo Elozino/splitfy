@@ -1,13 +1,20 @@
 package com.elozino.splitfy.backend.services
 
+import com.elozino.splitfy.api.FieldError
 import com.elozino.splitfy.api.dto.UpdateProfileRequest
+import com.elozino.splitfy.api.dto.UploadPurpose
+import com.elozino.splitfy.backend.repositories.UploadRepository
 import com.elozino.splitfy.backend.repositories.UserRepository
+import com.elozino.splitfy.backend.storage.ObjectKeys
 import com.elozino.splitfy.backend.utils.AppException
 import com.elozino.splitfy.domain.model.User
 import com.elozino.splitfy.validation.Validators
 import java.util.UUID
 
-class UserService(private val users: UserRepository) {
+class UserService(
+    private val users: UserRepository,
+    private val uploads: UploadRepository,
+) {
 
     suspend fun me(callerId: UUID): User =
         users.findById(callerId) ?: throw AppException.NotFound("User")
@@ -25,6 +32,13 @@ class UserService(private val users: UserRepository) {
             }
         }
         if (errors.isNotEmpty()) throw AppException.Validation(errors)
+
+        // An empty string removes the photo; anything else must be an avatar key issued to the caller.
+        request.avatarUrl?.takeIf { it.isNotEmpty() }?.let { key ->
+            if (!ObjectKeys.belongsToUser(key, callerId) || !uploads.wasIssuedToUser(key, callerId, UploadPurpose.AVATAR)) {
+                throw AppException.Validation(listOf(FieldError("avatarUrl", "Upload the photo through splitfy, then attach it")))
+            }
+        }
 
         return users.updateProfile(
             id = callerId,

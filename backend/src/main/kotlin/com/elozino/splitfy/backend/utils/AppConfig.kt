@@ -57,7 +57,11 @@ data class AppConfig(
     data class SecurityConfig(
         val bcryptCost: Int,
         val otpTtl: Duration,
-    )
+        /** Key material for [SecretCipher]; outside production it falls back to one derived from the JWT secret. */
+        val totpEncryptionKey: String = "",
+    ) {
+        override fun toString() = "SecurityConfig(bcryptCost=$bcryptCost, otpTtl=$otpTtl)"
+    }
 
     data class CorsConfig(
         val allowedHosts: List<String>,
@@ -196,6 +200,16 @@ data class AppConfig(
                     bcryptCost = config.propertyOrNull("security.bcryptCost")?.getString()?.toInt() ?: 12,
                     otpTtl = config.propertyOrNull("security.otpMinutes")?.getString()
                         ?.toLong()?.minutes ?: 10.minutes,
+                    totpEncryptionKey = config.propertyOrNull("security.totpEncryptionKey")?.getString().orEmpty().trim()
+                        .also { key ->
+                            require(key.isEmpty() || key.length >= MIN_JWT_SECRET_LENGTH) {
+                                "security.totpEncryptionKey must be at least $MIN_JWT_SECRET_LENGTH characters"
+                            }
+                            require(!(environment.isProduction && key.isEmpty())) {
+                                "security.totpEncryptionKey (TOTP_ENCRYPTION_KEY) is required in production"
+                            }
+                        }
+                        .ifEmpty { "dev-totp-key:$jwtSecret" },
                 ),
                 cors = CorsConfig(
                     allowedHosts = config.propertyOrNull("cors.allowedHosts")?.getList().orEmpty(),

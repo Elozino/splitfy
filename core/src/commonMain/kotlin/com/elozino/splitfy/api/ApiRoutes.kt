@@ -22,6 +22,30 @@ object ApiRoutes {
         const val VERIFY_EMAIL = "$BASE/verify-email"
         const val RESEND_VERIFICATION = "$BASE/verify-email/resend"
         fun oauth(provider: String) = "$BASE/oauth/$provider"
+
+        /** Second sign-in step for accounts with an authenticator app: trades a challenge and a code for tokens. */
+        const val TWO_FACTOR_VERIFY = "$BASE/2fa/verify"
+    }
+
+    /** The signed-in user's credentials: password, sessions on other devices, two-step verification. */
+    object Security {
+        const val BASE = "$API_PREFIX/security"
+        const val PASSWORD = "$BASE/password"
+        const val SESSIONS = "$BASE/sessions"
+        fun session(id: String) = "$SESSIONS/$id"
+        const val REVOKE_OTHER_SESSIONS = "$SESSIONS/revoke-others"
+        const val TWO_FACTOR_SETUP = "$BASE/2fa/setup"
+        const val TWO_FACTOR_ENABLE = "$BASE/2fa/enable"
+        const val TWO_FACTOR_DISABLE = "$BASE/2fa/disable"
+    }
+
+    /**
+     * Headers every app request carries so a session can be shown as "Ada's iPhone"
+     * rather than an opaque id. Informational only: nothing is authorised on them.
+     */
+    object Headers {
+        const val DEVICE_NAME = "X-Device-Name"
+        const val DEVICE_PLATFORM = "X-Device-Platform"
     }
 
     object Users {
@@ -29,6 +53,18 @@ object ApiRoutes {
         const val ME = "$BASE/me"
         fun byId(id: String) = "$BASE/$id"
         const val SEARCH = "$BASE/search"
+
+        /** Upload slot for the caller's own profile photo. */
+        const val ME_UPLOADS = "$ME/uploads"
+        const val EMAIL_CHANGE = "$ME/email-change"
+        const val EMAIL_CHANGE_CONFIRM = "$ME/email-change/confirm"
+
+        /** Google/Apple identities linked to the caller's account. */
+        const val IDENTITIES = "$ME/identities"
+        fun identity(provider: String) = "$IDENTITIES/$provider"
+
+        /** A JSON copy of everything the server holds about the caller. */
+        const val EXPORT = "$ME/export"
     }
 
     object Groups {

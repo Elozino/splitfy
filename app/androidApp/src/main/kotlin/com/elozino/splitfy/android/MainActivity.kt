@@ -3,7 +3,7 @@ package com.elozino.splitfy.android
 import android.os.Bundle
 import android.content.Intent
 import com.elozino.splitfy.invites.InviteLinks
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
@@ -12,8 +12,11 @@ import com.elozino.splitfy.App
 import com.elozino.splitfy.api.dto.PushData
 import com.elozino.splitfy.push.PushNotifications
 
-/** The only Activity: everything above it is shared Compose UI. */
-class MainActivity : ComponentActivity() {
+/**
+ * The only Activity: everything above it is shared Compose UI. A FragmentActivity
+ * (still a ComponentActivity) because the app lock's BiometricPrompt attaches to one.
+ */
+class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

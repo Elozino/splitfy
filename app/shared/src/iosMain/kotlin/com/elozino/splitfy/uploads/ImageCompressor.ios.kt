@@ -37,3 +37,30 @@ actual fun platformImageCompressor(): ImageCompressor = ImageCompressor { bytes 
         usePinned { memcpy(it.addressOf(0), jpeg.bytes, jpeg.length) }
     }
 }
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun platformAvatarCropper(): ImageCompressor = ImageCompressor { bytes ->
+    if (bytes.isEmpty()) return@ImageCompressor null
+    val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
+    val image = UIImage.imageWithData(data) ?: return@ImageCompressor null
+
+    val (width, height) = image.size.useContents { width to height }
+    val side = minOf(width, height)
+    val target = minOf(side, AVATAR_SIZE.toDouble())
+    val scale = target / side
+
+    // Draw the whole photo scaled and offset so its centred square fills the canvas;
+    // drawing also applies the EXIF orientation.
+    val format = UIGraphicsImageRendererFormat.defaultFormat().apply { setScale(1.0) }
+    val renderer = UIGraphicsImageRenderer(size = CGSizeMake(target, target), format = format)
+    val cropped = renderer.imageWithActions { _ ->
+        image.drawInRect(
+            CGRectMake(-(width - side) / 2 * scale, -(height - side) / 2 * scale, width * scale, height * scale)
+        )
+    }
+
+    val jpeg = UIImageJPEGRepresentation(cropped, ImageCompressor.JPEG_QUALITY / 100.0) ?: return@ImageCompressor null
+    ByteArray(jpeg.length.toInt()).apply {
+        usePinned { memcpy(it.addressOf(0), jpeg.bytes, jpeg.length) }
+    }
+}

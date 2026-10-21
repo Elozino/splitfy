@@ -10,6 +10,11 @@ import com.elozino.splitfy.api.dto.OAuthSignInRequest
 import com.elozino.splitfy.api.dto.RefreshTokenRequest
 import com.elozino.splitfy.api.dto.RegisterRequest
 import com.elozino.splitfy.api.dto.ResetPasswordRequest
+import com.elozino.splitfy.api.dto.TwoFactorVerifyRequest
+import com.elozino.splitfy.api.dto.DevicePlatform
+import com.elozino.splitfy.api.ApiRoutes.Headers
+import com.elozino.splitfy.backend.repositories.DeviceLabel
+import io.ktor.server.application.ApplicationCall
 import com.elozino.splitfy.api.dto.VerifyEmailRequest
 import com.elozino.splitfy.api.dto.VerifyOtpRequest
 import com.elozino.splitfy.api.dto.VerifyOtpResponse
@@ -35,12 +40,12 @@ fun Route.authRoutes(service: AuthService, social: SocialAuthService) {
     rateLimit(RateLimitScope.AUTH_STRICT.scopeName) {
 
         post(ApiRoutes.Auth.REGISTER) {
-            val response = service.register(call.receive<RegisterRequest>())
+            val response = service.register(call.receive<RegisterRequest>(), call.deviceLabel())
             call.respond(HttpStatusCode.Created, response)
         }
 
         post(ApiRoutes.Auth.LOGIN) {
-            call.respond(HttpStatusCode.OK, service.login(call.receive<LoginRequest>()))
+            call.respond(HttpStatusCode.OK, service.login(call.receive<LoginRequest>(), call.deviceLabel()))
         }
 
         post(ApiRoutes.Auth.FORGOT_PASSWORD) {
@@ -54,7 +59,13 @@ fun Route.authRoutes(service: AuthService, social: SocialAuthService) {
         post(ApiRoutes.Auth.oauth("{provider}")) {
             val provider = OAuthProvider.entries.firstOrNull { it.path == call.parameters["provider"] }
                 ?: throw AppException.NotFound("Sign-in provider")
-            call.respond(HttpStatusCode.OK, social.signIn(provider, call.receive<OAuthSignInRequest>()))
+            call.respond(HttpStatusCode.OK, social.signIn(provider, call.receive<OAuthSignInRequest>(), call.deviceLabel()))
+        }
+
+        // Same bucket as login: it is the other half of a password guess.
+        post(ApiRoutes.Auth.TWO_FACTOR_VERIFY) {
+            val request = call.receive<TwoFactorVerifyRequest>()
+            call.respond(HttpStatusCode.OK, service.verifyTwoFactor(request, call.deviceLabel()))
         }
 
         post(ApiRoutes.Auth.VERIFY_OTP) {
@@ -73,7 +84,7 @@ fun Route.authRoutes(service: AuthService, social: SocialAuthService) {
     rateLimit(RateLimitScope.AUTH_REFRESH.scopeName) {
         post(ApiRoutes.Auth.REFRESH) {
             val request = call.receive<RefreshTokenRequest>()
-            call.respond(HttpStatusCode.OK, service.refresh(request.refreshToken))
+            call.respond(HttpStatusCode.OK, service.refresh(request.refreshToken, call.deviceLabel()))
         }
     }
 
@@ -101,3 +112,20 @@ fun Route.authRoutes(service: AuthService, social: SocialAuthService) {
         }
     }
 }
+
+/**
+ * What the app says about the device it runs on, for the session list. Trimmed,
+ * stripped of control characters and capped, since it is shown back to the user.
+ */
+fun ApplicationCall.deviceLabel(): DeviceLabel = DeviceLabel(
+    name = request.headers[Headers.DEVICE_NAME]
+        ?.filterNot { it.isISOControl() }
+        ?.trim()
+        ?.take(MAX_DEVICE_NAME_LENGTH)
+        ?.ifEmpty { null },
+    platform = request.headers[Headers.DEVICE_PLATFORM]
+        ?.let { value -> DevicePlatform.entries.firstOrNull { it.name.equals(value.trim(), ignoreCase = true) } }
+        ?.name,
+)
+
+private const val MAX_DEVICE_NAME_LENGTH = 100

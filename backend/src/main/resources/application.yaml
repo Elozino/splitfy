@@ -37,6 +37,10 @@ jwt:
 security:
   bcryptCost: "$BCRYPT_COST:12"
   otpMinutes: "$OTP_MINUTES:10"
+  # Encrypts authenticator-app (TOTP) secrets at rest. Required in production; at
+  # least 32 random characters, e.g. `openssl rand -base64 32`. Changing it disables
+  # every enrolled authenticator, so treat it like a database key.
+  totpEncryptionKey: "$TOTP_ENCRYPTION_KEY:"
 
 cors:
   # Empty outside production means "any host", which suits local web tooling.

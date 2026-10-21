@@ -5,6 +5,7 @@ import com.elozino.splitfy.backend.repositories.GroupRepository
 import com.elozino.splitfy.backend.repositories.SettlementRepository
 import com.elozino.splitfy.backend.schema.ContactFavoritesTable
 import com.elozino.splitfy.backend.schema.DeviceTokensTable
+import com.elozino.splitfy.backend.schema.EmailChangesTable
 import com.elozino.splitfy.backend.schema.EmailVerificationsTable
 import com.elozino.splitfy.backend.schema.GroupMembersTable
 import com.elozino.splitfy.backend.schema.GroupsTable
@@ -14,6 +15,10 @@ import com.elozino.splitfy.backend.schema.PasswordResetsTable
 import com.elozino.splitfy.backend.schema.PaymentMethodsTable
 import com.elozino.splitfy.backend.schema.PaymentRemindersTable
 import com.elozino.splitfy.backend.schema.RefreshTokensTable
+import com.elozino.splitfy.backend.schema.AuthSessionsTable
+import com.elozino.splitfy.backend.schema.TotpRecoveryCodesTable
+import com.elozino.splitfy.backend.schema.TwoFactorChallengesTable
+import com.elozino.splitfy.backend.schema.UserTotpTable
 import com.elozino.splitfy.backend.schema.UserIdentitiesTable
 import com.elozino.splitfy.backend.schema.UsersTable
 import com.elozino.splitfy.backend.schema.WalletsTable
@@ -40,7 +45,7 @@ import org.jetbrains.exposed.sql.update
  * settlements reference it, and deleting it would either fail on those foreign
  * keys or rewrite other people's history. What goes is everything that identifies
  * or authenticates the person — email, name, phone, avatar, password, linked
- * Google/Apple identities, sessions, one-time codes, notifications, push device
+ * Google/Apple identities, sessions, one-time codes, the authenticator secret and recovery codes, notifications, push device
  * tokens and preferences, favourites and payment methods. Other members see "Deleted user" against past expenses.
  * Receipts and cover photos (`uploads`) belong to their group, not the uploader,
  * so they stay with the group's history; `uploaded_by` keeps pointing at the
@@ -112,8 +117,13 @@ class AccountDeletionService(
 
         UserIdentitiesTable.deleteWhere { userId eq callerId }
         RefreshTokensTable.deleteWhere { userId eq callerId }
+        AuthSessionsTable.deleteWhere { userId eq callerId }
+        UserTotpTable.deleteWhere { userId eq callerId }
+        TotpRecoveryCodesTable.deleteWhere { userId eq callerId }
+        TwoFactorChallengesTable.deleteWhere { userId eq callerId }
         PasswordResetsTable.deleteWhere { userId eq callerId }
         EmailVerificationsTable.deleteWhere { userId eq callerId }
+        EmailChangesTable.deleteWhere { userId eq callerId }
         NotificationsTable.deleteWhere { userId eq callerId }
         // The row survives, so ON DELETE CASCADE never fires: without this the
         // phone would keep getting pushes for groups the user is still listed in.

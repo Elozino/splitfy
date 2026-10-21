@@ -19,6 +19,7 @@ class SplitfyApplication : Application() {
         super.onCreate()
         // First, so a crash while wiring up the app is still reported.
         CrashReporting.start(
+            context = this,
             dsn = BuildConfig.SENTRY_DSN,
             isDebug = BuildConfig.DEBUG,
             release = "${BuildConfig.APPLICATION_ID}@${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}",

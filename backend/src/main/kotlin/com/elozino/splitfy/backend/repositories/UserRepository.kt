@@ -5,6 +5,7 @@ import com.elozino.splitfy.backend.schema.UsersTable
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.toJava
 import com.elozino.splitfy.backend.schema.toKotlin
+import com.elozino.splitfy.backend.storage.ObjectKeys
 import com.elozino.splitfy.domain.model.CurrencyCode
 import com.elozino.splitfy.domain.model.User
 import com.elozino.splitfy.domain.model.UserId
@@ -16,9 +17,15 @@ import kotlin.time.Clock
 data class UserRecord(
     val user: User,
     val passwordHash: String,
+    /** False while [passwordHash] is a random value nobody knows (Google/Apple sign-up). */
+    val hasPassword: Boolean = true,
 )
 
-class UserRepository {
+/**
+ * [avatarUrl] turns a stored profile-photo key into a displayable URL, or null when
+ * it can't be served.
+ */
+class UserRepository(private val avatarDisplayUrl: (String) -> String? = { null }) {
 
     suspend fun create(
         email: String,
@@ -28,6 +35,8 @@ class UserRepository {
         defaultCurrency: CurrencyCode,
         /** True when a provider (Google, Apple) has already proven the address. */
         emailVerified: Boolean = false,
+        /** False when [passwordHash] is random and nobody knows the password. */
+        hasPassword: Boolean = true,
     ): User = dbQuery {
         val now = dbNow()
         val id = UUID.randomUUID()
@@ -39,6 +48,7 @@ class UserRepository {
             it[UsersTable.phoneNumber] = phoneNumber
             it[UsersTable.defaultCurrency] = defaultCurrency.code
             if (emailVerified) it[emailVerifiedAt] = now.toJava()
+            it[UsersTable.hasPassword] = hasPassword
             it[createdAt] = now.toJava()
             it[updatedAt] = now.toJava()
         }
@@ -57,14 +67,21 @@ class UserRepository {
         UsersTable.selectAll()
             .where { UsersTable.email eq email.normalizedEmail() }
             .singleOrNull()
-            ?.toUserRecord()
+            ?.toUserRecord(avatarDisplayUrl)
     }
 
     suspend fun findById(id: UUID): User? = dbQuery {
         UsersTable.selectAll()
             .where { UsersTable.id eq id }
             .singleOrNull()
-            ?.toUser()
+            ?.toUser(avatarDisplayUrl)
+    }
+
+    suspend fun findRecordById(id: UUID): UserRecord? = dbQuery {
+        UsersTable.selectAll()
+            .where { (UsersTable.id eq id) and UsersTable.deletedAt.isNull() }
+            .singleOrNull()
+            ?.toUserRecord()
     }
 
     suspend fun findAllByIds(ids: Collection<UUID>): List<User> {
@@ -72,7 +89,7 @@ class UserRepository {
         return dbQuery {
             UsersTable.selectAll()
                 .where { UsersTable.id inList ids.toSet() }
-                .map { it.toUser() }
+                .map { it.toUser(avatarDisplayUrl) }
         }
     }
 
@@ -92,7 +109,7 @@ class UserRepository {
         UsersTable.selectAll()
             .where { (UsersTable.email eq email.normalizedEmail()) and UsersTable.emailVerifiedAt.isNotNull() }
             .singleOrNull()
-            ?.toUser()
+            ?.toUser(avatarDisplayUrl)
     }
 
     suspend fun markEmailVerified(id: UUID): Unit = dbQuery {
@@ -111,16 +128,52 @@ class UserRepository {
         UsersTable.update({ UsersTable.id eq id }) { statement ->
             displayName?.let { statement[UsersTable.displayName] = it.trim() }
             phoneNumber?.let { statement[UsersTable.phoneNumber] = it }
-            avatarUrl?.let { statement[UsersTable.avatarUrl] = it }
+            // An empty string removes the photo.
+            avatarUrl?.let { statement[UsersTable.avatarUrl] = it.ifEmpty { null } }
             defaultCurrency?.let { statement[UsersTable.defaultCurrency] = it.code }
             statement[updatedAt] = Clock.System.now().toJava()
         }
-        UsersTable.selectAll().where { UsersTable.id eq id }.singleOrNull()?.toUser()
+        UsersTable.selectAll().where { UsersTable.id eq id }.singleOrNull()?.toUser(avatarDisplayUrl)
     }
 
-    suspend fun updatePasswordHash(id: UUID, passwordHash: String): Boolean = dbQuery {
+    /**
+     * [usable] is false when [passwordHash] hashes a random value nobody knows, so the
+     * account has no password its owner could sign in with.
+     */
+    suspend fun updatePasswordHash(id: UUID, passwordHash: String, usable: Boolean = true): Boolean = dbQuery {
         UsersTable.update({ UsersTable.id eq id }) {
             it[UsersTable.passwordHash] = passwordHash
+            it[hasPassword] = usable
+            it[updatedAt] = Clock.System.now().toJava()
+        } > 0
+    }
+
+    suspend fun hasPassword(id: UUID): Boolean = dbQuery {
+        UsersTable.select(UsersTable.hasPassword).where { UsersTable.id eq id }.singleOrNull()?.get(UsersTable.hasPassword)
+            ?: false
+    }
+
+    /** Moves the account to [email], which the caller has just proven the user owns. */
+    suspend fun changeEmail(id: UUID, email: String): Unit = dbQuery {
+        val now = Clock.System.now().toJava()
+        UsersTable.update({ UsersTable.id eq id }) {
+            it[UsersTable.email] = email.normalizedEmail()
+            it[emailVerifiedAt] = now
+            it[updatedAt] = now
+        }
+    }
+
+    /**
+     * Takes an unproven address away from the account squatting on it: the email
+     * becomes a placeholder that can never receive mail, and nobody can sign in with
+     * the old password any more. Returns false if the account verified the address in
+     * the meantime, in which case it keeps it.
+     */
+    suspend fun releaseUnverifiedEmail(id: UUID, unusablePasswordHash: String): Boolean = dbQuery {
+        UsersTable.update({ (UsersTable.id eq id) and UsersTable.emailVerifiedAt.isNull() }) {
+            it[email] = "unclaimed-$id@released.invalid"
+            it[passwordHash] = unusablePasswordHash
+            it[hasPassword] = false
             it[updatedAt] = Clock.System.now().toJava()
         } > 0
     }
@@ -130,18 +183,20 @@ class UserRepository {
     }
 }
 
-internal fun ResultRow.toUser() = User(
+internal fun ResultRow.toUser(avatarUrl: (String) -> String? = { null }) = User(
     id = UserId(this[UsersTable.id].toString()),
     email = this[UsersTable.email],
     displayName = this[UsersTable.displayName],
     phoneNumber = this[UsersTable.phoneNumber],
-    avatarUrl = this[UsersTable.avatarUrl],
+    // Only keys this server issued are resolved; anything stored before uploads existed is dropped.
+    avatarUrl = this[UsersTable.avatarUrl]?.takeIf(ObjectKeys::isOurs)?.let(avatarUrl),
     defaultCurrency = CurrencyCode(this[UsersTable.defaultCurrency]),
     createdAt = this[UsersTable.createdAt].toKotlin(),
     emailVerified = this[UsersTable.emailVerifiedAt] != null,
 )
 
-internal fun ResultRow.toUserRecord() = UserRecord(
-    user = toUser(),
+internal fun ResultRow.toUserRecord(avatarUrl: (String) -> String? = { null }) = UserRecord(
+    user = toUser(avatarUrl),
     passwordHash = this[UsersTable.passwordHash],
+    hasPassword = this[UsersTable.hasPassword],
 )

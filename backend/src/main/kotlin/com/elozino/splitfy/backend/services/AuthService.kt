@@ -1,7 +1,14 @@
 package com.elozino.splitfy.backend.services
 
 import com.elozino.splitfy.api.ApiErrorCode
+import com.elozino.splitfy.api.FieldError
 import com.elozino.splitfy.api.dto.AuthResponse
+import com.elozino.splitfy.api.dto.ChangePasswordRequest
+import com.elozino.splitfy.api.dto.DevicePlatform
+import com.elozino.splitfy.api.dto.DeviceSession
+import com.elozino.splitfy.api.dto.SecurityOverview
+import com.elozino.splitfy.api.dto.SignInResponse
+import com.elozino.splitfy.api.dto.TwoFactorVerifyRequest
 import com.elozino.splitfy.api.dto.ForgotPasswordRequest
 import com.elozino.splitfy.api.dto.LoginRequest
 import com.elozino.splitfy.api.dto.RegisterRequest
@@ -9,6 +16,7 @@ import com.elozino.splitfy.api.dto.ResetPasswordRequest
 import com.elozino.splitfy.api.dto.TokenPair
 import com.elozino.splitfy.api.dto.VerifyEmailRequest
 import com.elozino.splitfy.api.dto.VerifyOtpRequest
+import com.elozino.splitfy.backend.repositories.DeviceLabel
 import com.elozino.splitfy.backend.repositories.EmailVerificationRepository
 import com.elozino.splitfy.backend.repositories.PasswordResetRepository
 import com.elozino.splitfy.backend.repositories.RefreshTokenRepository
@@ -17,6 +25,7 @@ import com.elozino.splitfy.backend.utils.AppConfig
 import com.elozino.splitfy.backend.utils.AppException
 import com.elozino.splitfy.backend.utils.PasswordHasher
 import com.elozino.splitfy.backend.utils.TokenGenerator
+import com.elozino.splitfy.backend.utils.UserPrincipal
 import com.elozino.splitfy.domain.model.User
 import com.elozino.splitfy.validation.Validators
 import java.util.UUID
@@ -43,11 +52,12 @@ class AuthService(
     private val config: AppConfig,
     private val notifier: OtpNotifier,
     private val notifications: NotificationService,
+    private val twoFactor: TwoFactorService,
 ) {
 
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
-    suspend fun register(request: RegisterRequest): AuthResponse {
+    suspend fun register(request: RegisterRequest, device: DeviceLabel = DeviceLabel.UNKNOWN): AuthResponse {
         Validators.register(request).let { if (it.isNotEmpty()) throw AppException.Validation(it) }
 
         if (users.existsByEmail(request.email)) {
@@ -66,10 +76,11 @@ class AuthService(
         )
         notifications.welcome(UUID.fromString(user.id.value), user.displayName)
         sendVerificationCode(user)
-        return AuthResponse(user, issueTokens(user, deviceId = null))
+        return AuthResponse(user, issueTokens(user, deviceId = null, device = device))
     }
 
-    suspend fun login(request: LoginRequest): AuthResponse {
+    /** Tokens, or a two-step challenge when the account has an authenticator app. */
+    suspend fun login(request: LoginRequest, device: DeviceLabel = DeviceLabel.UNKNOWN): SignInResponse {
         Validators.login(request).let { if (it.isNotEmpty()) throw AppException.Validation(it) }
 
         val record = users.findByEmail(request.email)
@@ -81,10 +92,29 @@ class AuthService(
         if (!hasher.verify(request.password, record.passwordHash)) {
             throw AppException.InvalidCredentials()
         }
-        return AuthResponse(record.user, issueTokens(record.user, request.deviceId))
+        return completeSignIn(record.user, request.deviceId, device)
     }
 
-    suspend fun refresh(presentedToken: String): TokenPair {
+    /**
+     * Every sign-in path ends here once its first factor has passed, so Google and
+     * Apple are held to the authenticator code exactly as a password is.
+     */
+    suspend fun completeSignIn(user: User, deviceId: String?, device: DeviceLabel): SignInResponse {
+        val userId = UUID.fromString(user.id.value)
+        if (twoFactor.isEnabled(userId)) {
+            return SignInResponse(twoFactor = twoFactor.createChallenge(userId, deviceId))
+        }
+        return SignInResponse(user = user, tokens = issueTokens(user, deviceId, device))
+    }
+
+    /** Second step: a right code turns the challenge into a session. */
+    suspend fun verifyTwoFactor(request: TwoFactorVerifyRequest, device: DeviceLabel): AuthResponse {
+        val challenge = twoFactor.redeem(request)
+        val user = users.findById(challenge.userId) ?: throw AppException.Unauthorized()
+        return AuthResponse(user, issueTokens(user, challenge.deviceId, device))
+    }
+
+    suspend fun refresh(presentedToken: String, device: DeviceLabel = DeviceLabel.UNKNOWN): TokenPair {
         val hash = TokenGenerator.sha256(presentedToken)
         val stored = refreshTokens.findByHash(hash)
             ?: throw AppException.Unauthorized("Refresh token is not valid", ApiErrorCode.TOKEN_INVALID)
@@ -99,10 +129,17 @@ class AuthService(
         if (!stored.isUsable(now)) {
             throw AppException.Unauthorized("Refresh token has expired", ApiErrorCode.TOKEN_EXPIRED)
         }
+        if (stored.sessionId != null && refreshTokens.isSessionRevoked(stored.sessionId)) {
+            throw AppException.Unauthorized("Session was revoked", ApiErrorCode.TOKEN_INVALID)
+        }
 
         val user = users.findById(stored.userId) ?: throw AppException.Unauthorized()
-        refreshTokens.revoke(stored.id)
-        return issueTokens(user, deviceId = null)
+        // Conditional on the token still being live, so two concurrent refreshes with
+        // the same token cannot both mint a successor.
+        if (!refreshTokens.revoke(stored.id)) {
+            throw AppException.Unauthorized("Refresh token is not valid", ApiErrorCode.TOKEN_INVALID)
+        }
+        return issueTokens(user, deviceId = null, device = device, sessionId = stored.sessionId)
     }
 
     suspend fun logout(presentedToken: String) {
@@ -181,7 +218,7 @@ class AuthService(
         ) ?: throw AppException.InvalidCredentials("Reset token is not valid or has expired")
 
         passwordResets.consume(resetId)
-        users.updatePasswordHash(userId, hasher.hash(request.newPassword))
+        users.updatePasswordHash(userId, hasher.hash(request.newPassword), usable = true)
 
         // A password change invalidates every existing session.
         refreshTokens.revokeAllForUser(userId)
@@ -226,20 +263,102 @@ class AuthService(
             .onFailure { logger.error("Could not send email verification code", it) }
     }
 
-    /** A fresh session for an account another flow has already authenticated. */
-    suspend fun startSession(user: User): AuthResponse = AuthResponse(user, issueTokens(user, deviceId = null))
+    suspend fun securityOverview(userId: UUID): SecurityOverview {
+        val record = users.findRecordById(userId) ?: throw AppException.Unauthorized()
+        val enabled = twoFactor.isEnabled(userId)
+        return SecurityOverview(
+            hasPassword = record.hasPassword,
+            twoFactorEnabled = enabled,
+            recoveryCodesRemaining = if (enabled) twoFactor.recoveryCodesRemaining(userId) else 0,
+        )
+    }
 
-    private suspend fun issueTokens(user: User, deviceId: String?): TokenPair {
+    /**
+     * Changes (or, for a Google/Apple account that never had one, sets) the password,
+     * then signs out every other device: whoever might have known the old password
+     * keeps nothing. The calling device stays signed in.
+     */
+    suspend fun changePassword(caller: UserPrincipal, request: ChangePasswordRequest) {
+        Validators.password(request.newPassword, "newPassword")
+            ?.let { throw AppException.Validation(listOf(it)) }
+        val record = users.findRecordById(caller.userId) ?: throw AppException.Unauthorized()
+
+        if (record.hasPassword) {
+            val current = request.currentPassword.orEmpty()
+            if (current.isEmpty()) {
+                throw AppException.Validation(listOf(FieldError("currentPassword", "Enter your current password")))
+            }
+            if (!hasher.verify(current, record.passwordHash)) {
+                // 400, not 401: the caller is signed in, and a 401 makes the client
+                // refresh and retry, doubling every guess.
+                throw AppException.BadRequest(
+                    "Your current password is incorrect",
+                    ApiErrorCode.INVALID_CREDENTIALS,
+                    listOf(FieldError("currentPassword", "Your current password is incorrect")),
+                )
+            }
+        }
+
+        users.updatePasswordHash(caller.userId, hasher.hash(request.newPassword), usable = true)
+        refreshTokens.revokeOtherSessions(caller.userId, keep = caller.sessionId)
+    }
+
+    suspend fun sessions(caller: UserPrincipal): List<DeviceSession> =
+        refreshTokens.activeSessions(caller.userId, Clock.System.now()).map { session ->
+            DeviceSession(
+                id = session.id.toString(),
+                deviceName = session.deviceName,
+                platform = DevicePlatform.entries.firstOrNull { it.name == session.platform },
+                createdAt = session.createdAt,
+                lastUsedAt = session.lastUsedAt,
+                current = session.id == caller.sessionId,
+            )
+        }
+
+    /** 404 for someone else's session as for a missing one, so ids cannot be probed. */
+    suspend fun revokeSession(caller: UserPrincipal, sessionId: String) {
+        val id = runCatching { UUID.fromString(sessionId) }.getOrNull() ?: throw AppException.NotFound("Session")
+        if (id == caller.sessionId) {
+            throw AppException.BadRequest("That's this device. Use Sign out instead.", ApiErrorCode.CONFLICT)
+        }
+        if (!refreshTokens.revokeSession(caller.userId, id)) throw AppException.NotFound("Session")
+    }
+
+    suspend fun revokeOtherSessions(caller: UserPrincipal): Int =
+        refreshTokens.revokeOtherSessions(caller.userId, keep = caller.sessionId)
+
+    /** A fresh session (or a 2FA challenge) for an account another flow has already authenticated. */
+    suspend fun startSession(user: User, device: DeviceLabel = DeviceLabel.UNKNOWN): SignInResponse =
+        completeSignIn(user, deviceId = null, device = device)
+
+    /**
+     * Mints a token pair. Without [sessionId] this is a new sign-in and a new
+     * session; with one it is a rotation inside that session.
+     */
+    private suspend fun issueTokens(
+        user: User,
+        deviceId: String?,
+        device: DeviceLabel,
+        sessionId: UUID? = null,
+    ): TokenPair {
         val userId = UUID.fromString(user.id.value)
         val refreshToken = TokenGenerator.opaqueToken()
+        val expiresAt = Clock.System.now().plus(config.jwt.refreshTokenTtl)
+        val session = if (sessionId != null) {
+            refreshTokens.touchSession(sessionId, device, expiresAt)
+            sessionId
+        } else {
+            refreshTokens.createSession(userId, device, expiresAt)
+        }
         refreshTokens.store(
             userId = userId,
             tokenHash = TokenGenerator.sha256(refreshToken),
             deviceId = deviceId,
-            expiresAt = Clock.System.now().plus(config.jwt.refreshTokenTtl),
+            expiresAt = expiresAt,
+            sessionId = session,
         )
         return TokenPair(
-            accessToken = jwt.createAccessToken(userId, user.email),
+            accessToken = jwt.createAccessToken(userId, user.email, session),
             refreshToken = refreshToken,
             expiresInSeconds = jwt.accessTokenTtl.inWholeSeconds,
         )
@@ -261,6 +380,12 @@ class AuthService(
 interface OtpNotifier {
     suspend fun sendPasswordResetCode(email: String, code: String)
     suspend fun sendEmailVerificationCode(email: String, code: String)
+
+    /** The code that confirms a change of address, sent to the new address. */
+    suspend fun sendEmailChangeCode(email: String, code: String)
+
+    /** Tells the previous address that the account has moved to [newEmail]. */
+    suspend fun sendEmailChangedNotice(oldEmail: String, newEmail: String)
 }
 
 /**
@@ -283,5 +408,13 @@ class LoggingOtpNotifier(private val environment: AppConfig.Environment) : OtpNo
 
     override suspend fun sendEmailVerificationCode(email: String, code: String) {
         logger.info("[dev] email verification code for {}: {}", email, code)
+    }
+
+    override suspend fun sendEmailChangeCode(email: String, code: String) {
+        logger.info("[dev] email change code for {}: {}", email, code)
+    }
+
+    override suspend fun sendEmailChangedNotice(oldEmail: String, newEmail: String) {
+        logger.info("[dev] email changed notice to {}: account now uses {}", oldEmail, newEmail)
     }
 }

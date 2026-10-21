@@ -8,7 +8,8 @@ import org.jetbrains.exposed.sql.Table
 /** Upload slots this server has issued; see `V6__uploads.sql`. */
 object UploadsTable : Table("uploads") {
     val objectKey = varchar("object_key", 255)
-    val groupId = uuid("group_id").references(GroupsTable.id, onDelete = ReferenceOption.CASCADE)
+    /** Null for a profile photo, which belongs to [uploadedBy] alone. */
+    val groupId = uuid("group_id").references(GroupsTable.id, onDelete = ReferenceOption.CASCADE).nullable()
     val purpose = enumerationByName("purpose", 16, UploadPurpose::class)
     val contentType = varchar("content_type", 64)
     val sizeBytes = long("size_bytes")

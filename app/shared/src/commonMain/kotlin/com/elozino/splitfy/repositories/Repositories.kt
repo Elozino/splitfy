@@ -43,7 +43,11 @@ interface AuthRepository {
         phoneNumber: String? = null,
     ): DataResult<User>
 
-    suspend fun login(email: String, password: String): DataResult<User>
+    /** Signs in, or reports that the account wants an authenticator code first. */
+    suspend fun login(email: String, password: String): DataResult<SignInResult>
+
+    /** Second step of a sign-in that returned [SignInResult.TwoFactorRequired]. */
+    suspend fun verifyTwoFactor(challengeToken: String, code: String): DataResult<User>
 
     suspend fun requestPasswordReset(email: String): DataResult<Unit>
 
@@ -56,7 +60,7 @@ interface AuthRepository {
 
     suspend fun resendVerification(): DataResult<Unit>
 
-    suspend fun signInWithProvider(provider: OAuthProvider, request: OAuthSignInRequest): DataResult<User>
+    suspend fun signInWithProvider(provider: OAuthProvider, request: OAuthSignInRequest): DataResult<SignInResult>
 
     suspend fun logout(): DataResult<Unit>
 
