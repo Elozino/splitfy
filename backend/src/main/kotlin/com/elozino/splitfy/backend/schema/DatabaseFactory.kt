@@ -28,6 +28,15 @@ class DatabaseFactory(private val config: AppConfig.DatabaseConfig) {
         return Database.connect(dataSource).also(ActiveDatabase::install)
     }
 
+    /**
+     * Applies pending migrations and returns how many ran, without starting a pool
+     * for the application. Backs the standalone `Migrate` entry point.
+     */
+    // Two connections: Flyway holds one for its lock while it migrates on another.
+    fun migrateOnly(): Int = HikariDataSource(hikariConfig().apply { maximumPoolSize = 2 }).use { source ->
+        migrate(source)
+    }
+
     fun close() {
         if (::dataSource.isInitialized && !dataSource.isClosed) dataSource.close()
         ActiveDatabase.clear()
@@ -48,14 +57,14 @@ class DatabaseFactory(private val config: AppConfig.DatabaseConfig) {
         validate()
     }
 
-    private fun migrate(source: DataSource) {
+    private fun migrate(source: DataSource): Int =
         Flyway.configure()
             .dataSource(source)
             .locations("classpath:db/migration")
             .baselineOnMigrate(true)
             .load()
             .migrate()
-    }
+            .migrationsExecuted
 
     private companion object {
         const val CONNECTION_TIMEOUT_MS = 10_000L

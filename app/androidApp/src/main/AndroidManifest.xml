@@ -21,8 +21,11 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        android:theme="@style/Theme.Splitfy">
 
+        <!-- Sentry is started from SplitfyApplication, and only when a DSN is set;
+             stop the Android SDK from also trying to start itself. -->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
         <!-- Used by FCM for notifications it displays while the app is in the background. -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
@@ -30,6 +33,17 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_splitfy" />
+
+        <!-- Serves files shared out of the app (Download my data); see rememberShareFile. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
 
         <service
             android:name=".android.push.SplitfyMessagingService"

@@ -22,6 +22,10 @@ materialIconsExtended = "1.7.3"
 navigationCompose = "2.9.2"
 coil = "3.4.0"
 peekaboo = "0.5.2"
+# QR codes for authenticator-app enrolment. 1.1.x is the line built against Compose 1.10 / Kotlin 2.3.
+qrose = "1.1.2"
+androidxBiometric = "1.1.0"
+androidxFragment = "1.8.8"
 
 # --- Kotlin ecosystem -------------------------------------------------------
 kotlinxSerializationJson = "1.11.0"
@@ -43,6 +47,8 @@ embeddedPostgres = "2.1.0"
 logback = "1.5.21"
 bcrypt = "0.10.2"
 micrometer = "1.14.2"
+sentry = "8.58.0"
+sentryKmp = "0.27.0"
 # Pinned to the version ktor-server-config-yaml already resolves, so the two agree.
 kaml = "0.79.0"
 
@@ -68,6 +74,7 @@ compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", v
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
 compose-materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
@@ -82,6 +89,9 @@ coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.r
 coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil" }
 peekaboo-ui = { module = "io.github.onseok:peekaboo-ui", version.ref = "peekaboo" }
 peekaboo-image-picker = { module = "io.github.onseok:peekaboo-image-picker", version.ref = "peekaboo" }
+qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidxBiometric" }
+androidx-fragment = { module = "androidx.fragment:fragment-ktx", version.ref = "androidxFragment" }
 
 # --- DI ---------------------------------------------------------------------
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
@@ -112,6 +122,8 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
 kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+sentry = { module = "io.sentry:sentry", version.ref = "sentry" }
+sentry-kmp = { module = "io.sentry:sentry-kotlin-multiplatform", version.ref = "sentryKmp" }
 
 # --- Test -------------------------------------------------------------------
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

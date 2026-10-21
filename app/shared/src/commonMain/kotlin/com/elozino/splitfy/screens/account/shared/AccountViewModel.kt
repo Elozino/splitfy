@@ -13,6 +13,7 @@ import com.elozino.splitfy.repositories.AuthRepository
 import com.elozino.splitfy.repositories.UserRepository
 import com.elozino.splitfy.repositories.WalletRepository
 import com.elozino.splitfy.SessionManager
+import com.elozino.splitfy.SessionState
 import com.elozino.splitfy.userMessage
 import com.elozino.splitfy.validation.Validators
 import kotlinx.coroutines.async
@@ -40,6 +41,12 @@ class AccountViewModel(
 
     init {
         load()
+        // Personal Info has its own view model; pick up the photo and name it saves.
+        viewModelScope.launch {
+            sessionManager.state.collect { session ->
+                (session as? SessionState.SignedIn)?.user?.let { user -> _state.update { it.copy(user = user) } }
+            }
+        }
     }
 
     fun load() {
@@ -211,6 +218,24 @@ class AccountViewModel(
             _state.update { it.copy(isSigningOut = true) }
             authRepository.logout()
             _state.update { it.copy(isSigningOut = false, signedOut = true) }
+        }
+    }
+
+    fun setDeleteAccountDialogVisible(isVisible: Boolean) =
+        _state.update { it.copy(isDeleteAccountDialogVisible = isVisible, deleteAccountError = null) }
+
+    /** On success the session is cleared, which takes the app back to sign-in. */
+    fun deleteAccount() {
+        viewModelScope.launch {
+            _state.update { it.copy(isDeletingAccount = true, deleteAccountError = null) }
+            when (val result = authRepository.deleteAccount()) {
+                is DataResult.Success -> _state.update {
+                    it.copy(isDeletingAccount = false, isDeleteAccountDialogVisible = false, signedOut = true)
+                }
+                is DataResult.Failure -> _state.update {
+                    it.copy(isDeletingAccount = false, deleteAccountError = result.error.userMessage())
+                }
+            }
         }
     }
 

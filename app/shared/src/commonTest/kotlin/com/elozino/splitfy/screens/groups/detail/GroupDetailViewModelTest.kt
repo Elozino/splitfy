@@ -3,6 +3,7 @@ package com.elozino.splitfy.screens.groups.detail
 import com.elozino.splitfy.DataError
 import com.elozino.splitfy.DataResult
 import com.elozino.splitfy.SessionManager
+import com.elozino.splitfy.userMessage
 import com.elozino.splitfy.api.ApiErrorCode
 import com.elozino.splitfy.api.dto.CreateExpenseRequest
 import com.elozino.splitfy.api.dto.CreateGroupRequest
@@ -39,7 +40,9 @@ import kotlin.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -234,13 +237,69 @@ class GroupDetailViewModelTest {
         assertEquals("Receipt was not found", vm.state.value.errorMessage)
     }
 
+    @Test
+    fun `a failed first load is reported as a failure and a retry clears it`() = runTest(dispatcher) {
+        groups.getResult = DataResult.Failure(DataError.Offline)
+        val vm = viewModel(owner)
+        advanceUntilIdle()
+
+        assertEquals(DataError.Offline.userMessage(), vm.state.value.loadError)
+        // The snackbar consuming the message must not hide the failure state.
+        vm.consumeError()
+        assertEquals(DataError.Offline.userMessage(), vm.state.value.loadError)
+
+        groups.getResult = null
+        vm.load()
+        advanceUntilIdle()
+
+        assertNull(vm.state.value.loadError)
+        assertEquals("Flat", vm.state.value.group?.name)
+    }
+
+    @Test
+    fun `a failed refresh keeps the loaded group instead of showing a failure`() = runTest(dispatcher) {
+        val vm = viewModel(owner)
+        advanceUntilIdle()
+
+        groups.getResult = DataResult.Failure(DataError.Offline)
+        vm.load()
+        advanceUntilIdle()
+
+        assertNull(vm.state.value.loadError)
+        assertEquals("Flat", vm.state.value.group?.name)
+    }
+
+    @Test
+    fun `pull to refresh keeps the content on screen and reloads it`() = runTest(dispatcher) {
+        val vm = viewModel(owner)
+        advanceUntilIdle()
+
+        val gate = CompletableDeferred<Unit>().also { groups.gate = it }
+        vm.refresh()
+        runCurrent()
+        // While refreshing, the group stays visible and no placeholders are asked for.
+        assertTrue(vm.state.value.isRefreshing)
+        assertFalse(vm.state.value.isLoading)
+        assertEquals("Flat", vm.state.value.group?.name)
+
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertFalse(vm.state.value.isRefreshing)
+    }
+
     private inner class FakeGroups(private var current: Group) : GroupRepository {
         val addedEmails = mutableListOf<String>()
         var addResult: DataResult<Group>? = null
         var removeResult: DataResult<Group>? = null
         val updates = mutableListOf<UpdateGroupRequest>()
+        var getResult: DataResult<Group>? = null
+        /** When set, `get` waits on it, so a test can look at the in-flight state. */
+        var gate: CompletableDeferred<Unit>? = null
 
-        override suspend fun get(groupId: String) = DataResult.Success(current)
+        override suspend fun get(groupId: String): DataResult<Group> {
+            gate?.await()
+            return getResult ?: DataResult.Success(current)
+        }
         override suspend fun balances(groupId: String) =
             DataResult.Success(GroupBalancesResponse(groupId, current.currency, emptyList(), emptyList()))
 

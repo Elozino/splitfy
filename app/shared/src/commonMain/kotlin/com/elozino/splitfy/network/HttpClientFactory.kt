@@ -4,6 +4,8 @@ import com.elozino.splitfy.api.ApiRoutes
 import com.elozino.splitfy.api.dto.RefreshTokenRequest
 import com.elozino.splitfy.api.dto.TokenPair
 import com.elozino.splitfy.SessionManager
+import com.elozino.splitfy.security.DeviceIdentity
+import com.elozino.splitfy.security.toHeaderValue
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.auth.Auth
@@ -39,6 +41,8 @@ class HttpClientFactory(
     private val engine: HttpClientEngine,
     private val config: ApiConfig,
     private val sessionManager: SessionManager,
+    /** Names this device in the account's session list; null sends nothing. */
+    private val device: DeviceIdentity? = null,
 ) {
 
     fun create(): HttpClient = HttpClient(engine) {
@@ -91,18 +95,23 @@ class HttpClientFactory(
                         setBody(RefreshTokenRequest(refreshToken))
                     }
 
-                    if (response.status != HttpStatusCode.OK) {
-                        // The refresh token is revoked or expired: nothing to recover.
-                        sessionManager.signOut()
-                        return@refreshTokens null
+                    when {
+                        response.status == HttpStatusCode.OK -> Unit
+                        // The server rejected the refresh token: revoked, expired or
+                        // replayed. Only this ends the session.
+                        response.status == HttpStatusCode.Unauthorized -> {
+                            sessionManager.signOut()
+                            return@refreshTokens null
+                        }
+                        // A 5xx, a 429 or a proxy error says nothing about the session.
+                        // Signing out here logged out everyone whose access token
+                        // expired during a deploy or outage; fail this call instead.
+                        else -> throw RefreshUnavailableException(response.status.value)
                     }
 
                     val tokens = runCatching {
                         json.decodeFromString<TokenPair>(response.bodyAsText())
-                    }.getOrElse {
-                        sessionManager.signOut()
-                        return@refreshTokens null
-                    }
+                    }.getOrElse { throw RefreshUnavailableException(response.status.value) }
 
                     sessionManager.onTokensRefreshed(tokens)
                     BearerTokens(tokens.accessToken, tokens.refreshToken)
@@ -120,6 +129,10 @@ class HttpClientFactory(
             url(config.baseUrl)
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Accept, ContentType.Application.Json.toString())
+            device?.let {
+                it.name.toHeaderValue().takeIf(String::isNotEmpty)?.let { name -> header(ApiRoutes.Headers.DEVICE_NAME, name) }
+                header(ApiRoutes.Headers.DEVICE_PLATFORM, it.platform.name)
+            }
         }
     }
 
@@ -141,3 +154,10 @@ class HttpClientFactory(
         private const val CONNECT_TIMEOUT_MS = 15_000L
     }
 }
+
+/**
+ * The refresh endpoint could not answer (server error, rate limit, unreadable
+ * body). The session may well be fine, so the call fails without signing out.
+ */
+class RefreshUnavailableException(val status: Int) :
+    IllegalStateException("Token refresh unavailable (HTTP $status)")

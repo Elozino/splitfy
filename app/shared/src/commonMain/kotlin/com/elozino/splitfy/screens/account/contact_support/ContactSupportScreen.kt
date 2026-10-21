@@ -1,114 +1,54 @@
 package com.elozino.splitfy.screens.account.contact_support
 
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.automirrored.filled.Message
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Facebook
-import androidx.compose.material.icons.filled.HeadsetMic
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phonelink
-import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.RemoveRedEye
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tag
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
-import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
-import kotlinx.coroutines.delay
-import org.koin.compose.viewmodel.koinViewModel
+import com.elozino.splitfy.screens.account.legal.SupportContact
+import com.elozino.splitfy.screens.account.legal.rememberSupportMailer
 
+/**
+ * Every option opens the user's mail app addressed to [SupportContact.EMAIL] with
+ * a subject that tells support what kind of request it is. If no mail app can take
+ * it, the address is shown so it can be copied.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactSupportScreen(onNavigateBack: () -> Unit) {
+    val sendMail = rememberSupportMailer()
+    var mailAppMissing by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -116,29 +56,49 @@ fun ContactSupportScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }, containerColor = Color.White
+        }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        val items = listOf(
-            "Customer Service" to Icons.Default.HeadsetMic,
-            "WhatsApp" to Icons.AutoMirrored.Filled.Message,
-            "Website" to Icons.Default.Language,
-            "Facebook" to Icons.Default.Facebook,
-            "Twitter" to Icons.Default.Tag,
-            "Instagram" to Icons.Default.CameraAlt
+        val options = listOf(
+            SupportOption(Icons.Default.Email, "Email support", "Questions about using splitfy", "splitfy support request"),
+            SupportOption(Icons.Default.BugReport, "Report a problem", "Something isn't working as it should", "splitfy problem report"),
+            SupportOption(Icons.Default.PrivacyTip, "Privacy request", "Access, correct or export your data", "splitfy privacy request"),
         )
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
-            items.forEach { (name, icon) ->
+            options.forEach { option ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                        .clickable { mailAppMissing = !sendMail(option.subject) }
+                        .padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(icon, contentDescription = null, tint = primaryLight)
+                    Icon(option.icon, contentDescription = null, tint = AppTheme.colors.brand)
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text(name, fontWeight = FontWeight.Bold)
+                    Column {
+                        Text(option.title, fontWeight = FontWeight.Bold)
+                        Text(option.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    }
                 }
             }
+
+            Spacer(modifier = Modifier.padding(top = 16.dp))
+            Text(
+                if (mailAppMissing) "No mail app is set up on this device. Write to us at:" else "Or write to us at:",
+                color = if (mailAppMissing) AppTheme.colors.negative else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+            )
+            SelectionContainer {
+                Text(SupportContact.EMAIL, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+            }
+            Text(
+                "We usually reply within two working days.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 16.dp),
+            )
         }
     }
 }
+
+private data class SupportOption(val icon: ImageVector, val title: String, val detail: String, val subject: String)

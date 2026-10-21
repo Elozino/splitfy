@@ -1,5 +1,9 @@
 package com.elozino.splitfy.screens.groups.list
 
+import com.elozino.splitfy.ui.components.RefreshableBox
+import com.elozino.splitfy.ui.components.LoadErrorState
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,7 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.GroupSummary
 import com.elozino.splitfy.ui.components.SearchField
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -41,7 +45,10 @@ fun GroupsScreen(
     GroupsListScreen(
         groups = state.groups.map { it.toItem() },
         isLoading = state.isLoading,
+        isRefreshing = state.isRefreshing,
+        onRefresh = viewModel::refresh,
         errorMessage = state.errorMessage,
+        onRetry = viewModel::load,
         onCreateGroupClick = onNavigateToNewGroup,
         onGroupClick = { item -> onNavigateToGroupDetail(item.id) }
     )
@@ -62,7 +69,10 @@ private fun GroupSummary.toItem() = GroupItemData(
 private fun GroupsListScreen(
     groups: List<GroupItemData>,
     isLoading: Boolean,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     errorMessage: String?,
+    onRetry: () -> Unit,
     onCreateGroupClick: () -> Unit,
     onGroupClick: (GroupItemData) -> Unit
 ) {
@@ -92,68 +102,85 @@ private fun GroupsListScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreateGroupClick,
-                containerColor = primaryLight,
-                contentColor = Color.Black,
+                containerColor = AppTheme.colors.brand,
+                contentColor = AppTheme.colors.onBrand,
                 shape = CircleShape,
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Group")
             }
         }
     ) { padding ->
-        if (isLoading && groups.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(
-                    top = padding.calculateTopPadding(),
-                    start = padding.calculateStartPadding(LayoutDirection.Ltr),
-                    end = padding.calculateEndPadding(LayoutDirection.Ltr)
-                ),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = primaryLight)
-            }
-        } else if (groups.isEmpty()) {
-            EmptyGroupsState(onCreateGroupClick, padding)
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
+        RefreshableBox(isRefreshing = isRefreshing, onRefresh = onRefresh, indicatorPadding = padding) {
+            if (isLoading && groups.isEmpty()) {
+                // Card-shaped placeholders, so the real cards replace them in place.
+                SkeletonList(
+                    modifier = Modifier.padding(
                         top = padding.calculateTopPadding(),
                         start = padding.calculateStartPadding(LayoutDirection.Ltr),
                         end = padding.calculateEndPadding(LayoutDirection.Ltr)
                     ),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                errorMessage?.let { message ->
-                    item {
-                        Text(
-                            text = message,
-                            color = Color(0xFFD32F2F),
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                    count = 5,
+                    contentPadding = PaddingValues(16.dp),
+                    spacing = 12.dp,
+                ) { index ->
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        SkeletonListItem(
+                            modifier = Modifier.padding(16.dp),
+                            titleFraction = 0.45f + (index % 3) * 0.1f,
+                            subtitleFraction = 0.3f,
                         )
                     }
                 }
-                if (shown.isEmpty()) {
-                    item {
-                        Text(
-                            text = "No groups match \"${query.trim()}\"",
-                            color = Color.Gray,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(8.dp)
-                        )
+            } else if (groups.isEmpty() && errorMessage != null) {
+                LoadErrorState(errorMessage, onRetry = onRetry, modifier = Modifier.padding(padding))
+            } else if (groups.isEmpty()) {
+                EmptyGroupsState(onCreateGroupClick, padding)
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            top = padding.calculateTopPadding(),
+                            start = padding.calculateStartPadding(LayoutDirection.Ltr),
+                            end = padding.calculateEndPadding(LayoutDirection.Ltr)
+                        ),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    errorMessage?.let { message ->
+                        item {
+                            Text(
+                                text = message,
+                                color = AppTheme.colors.negative,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
                     }
-                }
-                items(shown, key = { it.id }) { group ->
-                    GroupItem(group, onClick = { onGroupClick(group) })
+                    if (shown.isEmpty()) {
+                        item {
+                            Text(
+                                text = "No groups match \"${query.trim()}\"",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+                    items(shown, key = { it.id }) { group ->
+                        GroupItem(group, onClick = { onGroupClick(group) })
+                    }
                 }
             }
         }
@@ -184,15 +211,15 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
                 modifier = Modifier
                     .size(100.dp, 130.dp)
                     .offset(x = (-20).dp, y = (-10).dp)
-                    .border(1.dp, Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
             ) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .offset(y = (-8).dp)
                         .size(40.dp, 12.dp)
-                        .background(primaryLight.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                        .background(AppTheme.colors.brand.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
                 )
             }
             
@@ -201,15 +228,15 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
                 modifier = Modifier
                     .size(110.dp, 140.dp)
                     .offset(x = 10.dp, y = 10.dp)
-                    .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
             ) {
                Box(
                    modifier = Modifier
                        .align(Alignment.TopCenter)
                        .offset(y = (-10).dp)
                        .size(50.dp, 15.dp)
-                       .background(primaryLight, RoundedCornerShape(4.dp))
+                       .background(AppTheme.colors.brand, RoundedCornerShape(4.dp))
                )
             }
         }
@@ -221,7 +248,7 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
         )
         Text(
             text = "You haven't created any group yet.",
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
         )
@@ -230,9 +257,9 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
             onClick = onCreateClick,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(100.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
         ) {
-            Text("Create a New Group", color = Color.Black, fontWeight = FontWeight.Bold)
+            Text("Create a New Group", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -244,7 +271,7 @@ fun GroupItem(data: GroupItemData, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -257,33 +284,33 @@ fun GroupItem(data: GroupItemData, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(primaryLight.copy(alpha = 0.2f)),
+                    .background(AppTheme.colors.brand.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Group, contentDescription = null, tint = primaryLight)
+                Icon(Icons.Default.Group, contentDescription = null, tint = AppTheme.colors.brand)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = data.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = data.members, fontSize = 12.sp, color = Color.Gray)
+                Text(text = data.members, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Column(horizontalAlignment = Alignment.End) {
                 if (data.isSettled) {
-                    Text(text = "Settled up", fontSize = 12.sp, color = Color.Gray)
+                    Text(text = "Settled up", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     Text(
                         text = data.balance,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = if (data.isOwed) Color(0xFF4CAF50) else Color(0xFFE57373)
+                        color = if (data.isOwed) AppTheme.colors.positive else AppTheme.colors.negative
                     )
                     Text(
                         text = if (data.isOwed) "You are owed" else "You owe",
                         fontSize = 10.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

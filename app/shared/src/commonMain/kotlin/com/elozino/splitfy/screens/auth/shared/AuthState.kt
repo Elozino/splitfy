@@ -22,7 +22,14 @@ data class AuthState(
     val isConfirmPasswordVisible: Boolean = false,
     val otpSecondsRemaining: Int = 55,
     val emailVerified: Boolean = false,
+    /** Set when the password (or Google/Apple) was right but the account wants an authenticator code. */
+    val twoFactorChallenge: String? = null,
+    val twoFactorCode: String = "",
+    val useRecoveryCode: Boolean = false,
 ) {
+    val canSubmitTwoFactor: Boolean
+        get() = !isSubmitting && if (useRecoveryCode) twoFactorCode.count(Char::isLetterOrDigit) >= 10 else twoFactorCode.length == 6
+
     val canSubmitLogin: Boolean
         get() = !isSubmitting && email.isNotBlank() && password.isNotBlank()
 

@@ -14,6 +14,7 @@ import com.elozino.splitfy.backend.routes.settlementRoutes
 import com.elozino.splitfy.backend.routes.transferRoutes
 import com.elozino.splitfy.backend.routes.userRoutes
 import com.elozino.splitfy.backend.routes.walletRoutes
+import com.elozino.splitfy.backend.services.AccountDeletionService
 import com.elozino.splitfy.backend.services.ActivityService
 import com.elozino.splitfy.backend.utils.AppConfig
 import com.elozino.splitfy.backend.services.AuthService
@@ -32,11 +33,17 @@ import com.elozino.splitfy.backend.services.UserService
 import com.elozino.splitfy.backend.services.WalletService
 import com.elozino.splitfy.backend.services.UploadService
 import com.elozino.splitfy.backend.routes.uploadRoutes
+import com.elozino.splitfy.backend.routes.securityRoutes
+import com.elozino.splitfy.backend.services.TwoFactorService
+import com.elozino.splitfy.backend.routes.AccountServices
+import com.elozino.splitfy.backend.services.DataExportService
+import com.elozino.splitfy.backend.services.EmailChangeService
 import io.ktor.server.application.Application
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.routing.routing
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import org.jetbrains.exposed.sql.Database
 import org.koin.ktor.ext.inject
 
@@ -47,12 +54,13 @@ import org.koin.ktor.ext.inject
  * new endpoint is protected by default — forgetting an `authenticate {}` block
  * cannot silently expose data.
  */
-fun Application.configureRouting(database: Database, config: AppConfig) {
+fun Application.configureRouting(database: Database, config: AppConfig, metrics: PrometheusMeterRegistry) {
     val features = config.features
     val authService by inject<AuthService>()
     val socialAuthService by inject<SocialAuthService>()
     val inviteService by inject<InviteService>()
     val userService by inject<UserService>()
+    val accountDeletionService by inject<AccountDeletionService>()
     val groupService by inject<GroupService>()
     val expenseService by inject<ExpenseService>()
     val settlementService by inject<SettlementService>()
@@ -62,12 +70,16 @@ fun Application.configureRouting(database: Database, config: AppConfig) {
     val notificationService by inject<NotificationService>()
     val contactService by inject<ContactService>()
     val uploadService by inject<UploadService>()
+    val twoFactorService by inject<TwoFactorService>()
+    val emailChangeService by inject<EmailChangeService>()
+    val dataExportService by inject<DataExportService>()
 
     routing {
         swaggerUI(path = ApiRoutes.System.OPENAPI, swaggerFile = "openapi/documentation.yaml")
         openApiRoutes()
 
         healthRoutes(database)
+        metricsRoute(metrics, config.observability)
         authRoutes(authService, socialAuthService)
         rateLimit(RateLimitScope.AUTH_GENERAL.scopeName) {
             publicInviteRoutes(inviteService, config.links)
@@ -75,7 +87,10 @@ fun Application.configureRouting(database: Database, config: AppConfig) {
 
         authenticate(JwtService.AUTH_JWT) {
             rateLimit(RateLimitScope.API.scopeName) {
-                userRoutes(userService)
+                userRoutes(
+                    userService,
+                    AccountServices(accountDeletionService, uploadService, emailChangeService, socialAuthService, dataExportService),
+                )
                 groupRoutes(groupService)
                 expenseRoutes(expenseService)
                 settlementRoutes(settlementService)
@@ -90,6 +105,7 @@ fun Application.configureRouting(database: Database, config: AppConfig) {
                 pushRoutes(notificationService)
                 contactRoutes(contactService)
                 uploadRoutes(uploadService)
+                securityRoutes(authService, twoFactorService)
             }
         }
     }

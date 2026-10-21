@@ -31,7 +31,9 @@ fun Application.configureSecurity() {
                 val email = credential.payload.getClaim(JwtService.CLAIM_EMAIL).asString()
                     ?: return@validate null
                 val userId = runCatching { UUID.fromString(subject) }.getOrNull() ?: return@validate null
-                UserPrincipal(userId, email)
+                val sessionId = credential.payload.getClaim(JwtService.CLAIM_SESSION).asString()
+                    ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                UserPrincipal(userId, email, sessionId)
             }
 
             challenge { _, _ ->

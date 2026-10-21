@@ -1,5 +1,7 @@
 package com.elozino.splitfy.ui.components
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,7 +38,7 @@ fun AuthTextField(
             text = label,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
@@ -46,7 +48,7 @@ fun AuthTextField(
             placeholder = {
                 Text(
                     text = placeholder,
-                    color = Color.LightGray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             leadingIcon = leadingIcon?.let {
@@ -54,7 +56,7 @@ fun AuthTextField(
                     Icon(
                         imageVector = it,
                         contentDescription = null,
-                        tint = if (value.isEmpty()) Color.LightGray else Color.Black
+                        tint = if (value.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                     )
                 }
             },
@@ -63,11 +65,11 @@ fun AuthTextField(
             keyboardOptions = keyboardOptions,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFF5F5F5),
-                unfocusedContainerColor = Color(0xFFF5F5F5),
+                focusedContainerColor = AppTheme.colors.field,
+                unfocusedContainerColor = AppTheme.colors.field,
                 focusedBorderColor = Color.Transparent,
                 unfocusedBorderColor = Color.Transparent,
-                cursorColor = Color.Black
+                cursorColor = MaterialTheme.colorScheme.onSurface
             ),
             maxLines = 1
         )

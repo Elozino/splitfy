@@ -1,5 +1,7 @@
 package com.elozino.splitfy.di
 
+import com.elozino.splitfy.crash.CrashReportingSettings
+import com.elozino.splitfy.crash.IosCrashReportingSettings
 import com.russhwolf.settings.ExperimentalSettingsImplementation
 import com.russhwolf.settings.KeychainSettings
 import com.russhwolf.settings.Settings
@@ -13,4 +15,5 @@ import org.koin.dsl.module
 @OptIn(ExperimentalSettingsImplementation::class)
 actual fun platformModule(): Module = module {
     single<Settings> { KeychainSettings(service = "com.elozino.splitfy.session") }
+    single<CrashReportingSettings> { IosCrashReportingSettings() }
 }

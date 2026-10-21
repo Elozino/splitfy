@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.elozino.splitfy.api.dto.Contact
 import com.elozino.splitfy.api.dto.CreateGroupRequest
 import com.elozino.splitfy.DataResult
+import com.elozino.splitfy.SessionManager
+import com.elozino.splitfy.SessionState
 import com.elozino.splitfy.domain.model.CurrencyCode
 import com.elozino.splitfy.domain.model.GroupCategory
 import com.elozino.splitfy.domain.model.UserId
@@ -27,9 +29,15 @@ import kotlinx.coroutines.launch
 class NewGroupViewModel(
     private val groupRepository: GroupRepository,
     private val contactRepository: ContactRepository,
+    sessionManager: SessionManager? = null,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(NewGroupState())
+    // New groups start in the currency the user picked under Personal Info.
+    private val _state = MutableStateFlow(
+        NewGroupState(
+            currency = (sessionManager?.state?.value as? SessionState.SignedIn)?.user?.defaultCurrency ?: CurrencyCode.NGN,
+        )
+    )
     val state: StateFlow<NewGroupState> = _state.asStateFlow()
 
     init {

@@ -18,6 +18,10 @@ data class AccountState(
     val isSigningOut: Boolean = false,
     val isQrDialogVisible: Boolean = false,
     val isLogoutDialogVisible: Boolean = false,
+    val isDeleteAccountDialogVisible: Boolean = false,
+    val isDeletingAccount: Boolean = false,
+    /** Why the server refused to delete the account, e.g. the groups still owing money. */
+    val deleteAccountError: String? = null,
     val profileFullName: String = "",
     val profilePhone: String = "",
     val isThemeSheetVisible: Boolean = false,

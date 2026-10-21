@@ -25,6 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.material3.LocalContentColor
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,6 +38,7 @@ import coil3.compose.AsyncImage
 import com.elozino.splitfy.ui.generated.resources.ic_apple
 import com.elozino.splitfy.ui.generated.resources.UiRes
 import com.elozino.splitfy.screens.auth.shared.AuthOption
+import com.elozino.splitfy.screens.auth.shared.AuthButtonStyle
 import com.elozino.splitfy.screens.auth.shared.AuthType
 import com.elozino.splitfy.screens.auth.shared.authOptions
 import com.elozino.splitfy.screens.auth.shared.authOption
@@ -57,6 +61,7 @@ fun AuthScreen(
     onNavigateToRegister: () -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
     onSignedIn: () -> Unit = {},
+    onTwoFactorRequired: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val socialSignIn = rememberSocialSignIn(koinInject<SocialSignInConfig>())
@@ -65,6 +70,9 @@ fun AuthScreen(
     // Driven by the server accepting the token, not by the tap.
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated) onSignedIn()
+    }
+    LaunchedEffect(state.twoFactorChallenge) {
+        if (state.twoFactorChallenge != null) onTwoFactorRequired()
     }
 
     Scaffold(
@@ -150,7 +158,7 @@ fun AuthScreen(
                 item {
                     if (state.isSubmitting) {
                         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color(0xFFFEBB1B))
+                            CircularProgressIndicator(color = AppTheme.colors.brand)
                         }
                     }
                     AuthFieldError(state.errorMessage)
@@ -167,9 +175,10 @@ fun AuthButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val isTransparent = option.backgroundColor == Color.Transparent
-    val isWhite = option.backgroundColor == Color.White
-    val primaryColor = Color(0xFFFEBB1B)
+    val style = option.style
+    val brand = AppTheme.colors.brand
+    val isOutlined = style == AuthButtonStyle.Outlined
+    val isSurface = style == AuthButtonStyle.Surface
 
     Button(
         onClick = onClick,
@@ -179,24 +188,26 @@ fun AuthButton(
             .height(56.dp),
         shape = RoundedCornerShape(100.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = option.backgroundColor,
-            contentColor = if (isTransparent) {
-                primaryColor
-            } else if (isWhite) {
-                Color.Black
-            } else {
-                Color.White
+            containerColor = when (style) {
+                AuthButtonStyle.Surface -> MaterialTheme.colorScheme.surface
+                AuthButtonStyle.Brand -> brand
+                AuthButtonStyle.Outlined -> Color.Transparent
+            },
+            contentColor = when (style) {
+                AuthButtonStyle.Surface -> MaterialTheme.colorScheme.onSurface
+                AuthButtonStyle.Brand -> AppTheme.colors.onBrand
+                AuthButtonStyle.Outlined -> brand
             }
         ),
-        border = if (isTransparent) {
-            BorderStroke(1.dp, primaryColor)
-        } else if (isWhite) {
-            BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
+        border = if (isOutlined) {
+            BorderStroke(1.dp, brand)
+        } else if (isSurface) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         } else {
             null
         },
         elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = if (isWhite) 1.dp else 0.dp
+            defaultElevation = if (isSurface) 1.dp else 0.dp
         ),
         contentPadding = PaddingValues(horizontal = 24.dp)
     ) {
@@ -204,7 +215,9 @@ fun AuthButton(
             AsyncImage(
                 model = UiRes.getUri(option.iconUri),
                 contentDescription = option.title,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
+                // The Apple glyph is solid black; follow the text colour so it shows on dark.
+                colorFilter = if (option.type == AuthType.Apple) ColorFilter.tint(LocalContentColor.current) else null
             )
         }
         Text(

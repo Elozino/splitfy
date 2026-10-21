@@ -8,6 +8,8 @@ import com.elozino.splitfy.domain.model.User
 
 data class HomeState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val user: User? = null,
     val groups: List<GroupSummary> = emptyList(),
     val walletBalance: Money = Money.zero(CurrencyCode.NGN),
@@ -17,6 +19,9 @@ data class HomeState(
     val errorMessage: String? = null,
 ) {
     val hasActivity: Boolean get() = recentEntries.isNotEmpty()
+
+    /** The first load failed and there is nothing to show: say so rather than "0.00". */
+    val loadFailed: Boolean get() = !isLoading && groups.isEmpty() && errorMessage != null
     val owedToYouByCurrency: Map<CurrencyCode, Money> get() = sumByCurrency { it.isPositive }
     val youOweByCurrency: Map<CurrencyCode, Money>
         get() = sumByCurrency { it.isNegative }.mapValues { it.value.abs() }

@@ -165,4 +165,39 @@ class AuthRepositoryTest {
         assertNull(storage.readTokens())
         assertIs<SessionState.SignedOut>(session.state.value)
     }
+
+    @Test
+    fun `a two-step challenge stores nothing until the code is verified`() = runTest {
+        val body = """{"twoFactor":{"challengeToken":"challenge-1","expiresInSeconds":300}}"""
+        val (repository, session, storage) = repository(HttpStatusCode.OK, body)
+
+        val result = repository.login("ada@example.com", "Password123")
+
+        val outcome = assertIs<DataResult.Success<SignInResult>>(result).data
+        assertEquals(SignInResult.TwoFactorRequired("challenge-1", 300), outcome)
+        assertNull(storage.readTokens())
+        assertTrue(!session.isSignedIn)
+    }
+
+    @Test
+    fun `a verified code signs in like a login`() = runTest {
+        val (repository, session, storage) = repository(HttpStatusCode.OK, successBody)
+
+        val result = repository.verifyTwoFactor("challenge-1", "123456")
+
+        assertEquals("ada@example.com", assertIs<DataResult.Success<*>>(result).data.let { (it as com.elozino.splitfy.domain.model.User).email })
+        assertTrue(session.isSignedIn)
+        assertEquals("access-123", storage.readTokens()?.accessToken)
+    }
+
+    @Test
+    fun `a wrong second-step code is reported without signing anyone out`() = runTest {
+        val body = """{"code":"INVALID_CREDENTIALS","message":"That code isn't right."}"""
+        val (repository, session, _) = repository(HttpStatusCode.Unauthorized, body)
+
+        val result = repository.verifyTwoFactor("challenge-1", "000000")
+
+        assertEquals("That code isn't right.", assertIs<DataResult.Failure>(result).error.userMessage())
+        assertIs<SessionState.SignedOut>(session.state.value)
+    }
 }

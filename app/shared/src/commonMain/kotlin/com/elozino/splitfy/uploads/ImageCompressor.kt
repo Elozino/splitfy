@@ -20,3 +20,12 @@ fun interface ImageCompressor {
 }
 
 expect fun platformImageCompressor(): ImageCompressor
+
+/** Side of the square profile photo, in pixels: sharp at 100dp on a 3x screen. */
+const val AVATAR_SIZE = 512
+
+/**
+ * Turns a photo into a profile picture: the largest centred square, scaled to
+ * [AVATAR_SIZE] pixels and re-encoded as JPEG. Null when the bytes are not an image.
+ */
+expect fun platformAvatarCropper(): ImageCompressor

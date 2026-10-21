@@ -1,5 +1,11 @@
 package com.elozino.splitfy.screens.notifications.list
 
+import com.elozino.splitfy.ui.components.RefreshableBox
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.components.LoadErrorState
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -57,51 +63,61 @@ fun NotificationScreen(
             )
         }
     ) { padding ->
-        // Grouped by day, newest first, straight from the API.
-        val notifications = state.items
-            .groupBy { it.createdAt.toString().take(10) }
-            .map { (day, items) -> NotificationSection(day, items.map { it.toItem() }) }
+        RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
+            // Grouped by day, newest first, straight from the API.
+            val notifications = state.items
+                .groupBy { it.createdAt.toString().take(10) }
+                .map { (day, items) -> NotificationSection(day, items.map { it.toItem() }) }
 
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFFFEBB1B))
-            }
-            return@Scaffold
-        }
-
-        if (state.isEmpty) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("You're all caught up", color = Color.Gray, fontSize = 16.sp)
-            }
-            return@Scaffold
-        }
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            notifications.forEach { section ->
-                item {
-                    Text(
-                        text = section.title,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-                        color = Color.Gray,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+            if (state.isLoading) {
+                SkeletonList(modifier = Modifier.padding(padding), count = 6) { index ->
+                    SkeletonListItem(
+                        avatarSize = 44.dp,
+                        titleFraction = 0.5f + (index % 3) * 0.1f,
+                        subtitleFraction = 0.75f,
+                        trailing = false,
                     )
                 }
-                items(section.items) { notification ->
-                    NotificationItem(
-                        data = notification,
-                        onClick = { viewModel.markRead(notification.id) }
-                    )
+                return@RefreshableBox
+            }
+
+            val loadError = state.errorMessage
+            if (loadError != null && state.items.isEmpty()) {
+                LoadErrorState(loadError, onRetry = viewModel::load, modifier = Modifier.padding(padding))
+                return@RefreshableBox
+            }
+
+            if (state.isEmpty) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("You're all caught up", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
+                }
+                return@RefreshableBox
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                notifications.forEach { section ->
+                    item {
+                        Text(
+                            text = section.title,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    items(section.items) { notification ->
+                        NotificationItem(
+                            data = notification,
+                            onClick = { viewModel.markRead(notification.id) }
+                        )
+                    }
                 }
             }
         }
@@ -120,7 +136,7 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .border(1.dp, Color.LightGray.copy(alpha = 0.3f), CircleShape)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                 .clip(CircleShape)
                 .padding(12.dp),
             contentAlignment = Alignment.Center
@@ -129,7 +145,7 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
                 imageVector = data.icon,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
-                tint = Color.Black
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -150,7 +166,7 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
                     Box(
                         modifier = Modifier
                             .size(8.dp)
-                            .background(Color(0xFFFEBB1B), CircleShape)
+                            .background(AppTheme.colors.brand, CircleShape)
                     )
                 }
             }
@@ -158,14 +174,14 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
             Text(
                 text = data.message,
                 fontSize = 13.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = data.time,
                 fontSize = 12.sp,
-                color = Color.Gray.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
 
@@ -174,7 +190,7 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = Color.LightGray,
+            tint = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier.size(20.dp)
         )
     }

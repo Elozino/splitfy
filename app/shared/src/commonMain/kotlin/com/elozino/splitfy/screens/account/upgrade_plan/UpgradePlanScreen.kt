@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.upgrade_plan
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
 
 import androidx.compose.foundation.background
@@ -103,7 +105,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -122,19 +123,19 @@ fun UpgradePlanScreen(
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
-            }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
         )
-    }, containerColor = Color.White, bottomBar = {
+    }, containerColor = MaterialTheme.colorScheme.background, bottomBar = {
         Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
             Button(
                 onClick = onNavigateToPayment,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
                 Text(
                     "Continue - ${if (state.selectedBillingTab == 0) "$4.99" else "$49.99"}",
-                    color = Color.Black,
+                    color = AppTheme.colors.onBrand,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -146,14 +147,14 @@ fun UpgradePlanScreen(
             Surface(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp).fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFF5F5F5)
+                color = AppTheme.colors.field
             ) {
                 Row {
                     listOf("Monthly", "Yearly").forEachIndexed { index, title ->
                         val isSelected = state.selectedBillingTab == index
                         Box(
                             modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) primaryLight else Color.Transparent)
+                                .background(if (isSelected) AppTheme.colors.brand else Color.Transparent)
                                 .clickable { viewModel.selectBillingTab(index) }, contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -170,7 +171,7 @@ fun UpgradePlanScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    "splitfy Premium", fontWeight = FontWeight.Bold, color = primaryLight, fontSize = 18.sp
+                    "splitfy Premium", fontWeight = FontWeight.Bold, color = AppTheme.colors.brand, fontSize = 18.sp
                 )
 
                 Row(
@@ -182,18 +183,18 @@ fun UpgradePlanScreen(
                     Text(
                         if (state.selectedBillingTab == 0) " / month" else " / year",
                         fontSize = 16.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
                 }
 
                 if (state.selectedBillingTab == 1) {
                     Surface(
-                        color = Color(0xFFFFF9C4), shape = RoundedCornerShape(100.dp)
+                        color = AppTheme.colors.brand.copy(alpha = 0.2f), shape = RoundedCornerShape(100.dp)
                     ) {
                         Text(
                             "Save 15%",
-                            color = Color(0xFFFBC02D),
+                            color = AppTheme.colors.brand,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -220,11 +221,11 @@ fun UpgradePlanScreen(
                         Icon(
                             Icons.Default.Check,
                             contentDescription = null,
-                            tint = primaryLight,
+                            tint = AppTheme.colors.brand,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
-                        Text(benefit, fontSize = 14.sp, color = Color.DarkGray)
+                        Text(benefit, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }

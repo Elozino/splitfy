@@ -1,6 +1,8 @@
 package com.elozino.splitfy.screens.account.upgrade_success
 
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -102,13 +104,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun UpgradeSuccessScreen(onDone: () -> Unit) {
-    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -123,11 +124,11 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
             Spacer(modifier = Modifier.weight(0.15f))
 
             Box(
-                modifier = Modifier.size(120.dp).background(primaryLight, CircleShape),
+                modifier = Modifier.size(120.dp).background(AppTheme.colors.brand, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    Icons.Default.Star, contentDescription = null, tint = Color.Black, modifier = Modifier.size(60.dp)
+                    Icons.Default.Star, contentDescription = null, tint = AppTheme.colors.onBrand, modifier = Modifier.size(60.dp)
                 )
             }
 
@@ -135,7 +136,7 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
             Text("Congratulations!", fontWeight = FontWeight.Bold, fontSize = 28.sp)
             Text(
                 "Welcome to splitfy Premium!",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp),
                 fontSize = 16.sp
             )
@@ -151,11 +152,11 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
                         Icon(
                             Icons.Default.Check,
                             contentDescription = null,
-                            tint = primaryLight,
+                            tint = AppTheme.colors.brand,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
-                        Text(benefit, fontSize = 15.sp, color = Color.DarkGray)
+                        Text(benefit, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -164,7 +165,7 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
             Text(
                 "Enjoy an ad-free experience, priority support, and much more throughout the year. Thank you for choosing to elevate your splitfy experience.",
                 fontSize = 13.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
@@ -175,9 +176,9 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
                 onClick = onDone,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
-                Text("OK", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("OK", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(16.dp))
         }

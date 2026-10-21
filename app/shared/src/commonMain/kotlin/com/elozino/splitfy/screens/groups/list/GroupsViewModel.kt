@@ -58,7 +58,7 @@ class GroupsViewModel(
     private fun fetch(isRefresh: Boolean) {
         viewModelScope.launch {
             _state.update {
-                it.copy(isLoading = !isRefresh && it.groups.isEmpty(), isRefreshing = isRefresh)
+                it.copy(isLoading = !isRefresh && it.groups.isEmpty(), isRefreshing = isRefresh, errorMessage = null)
             }
             when (val result = groupRepository.list(_state.value.includeArchived)) {
                 is DataResult.Success -> _state.update {

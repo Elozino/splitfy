@@ -33,3 +33,25 @@ actual fun platformImageCompressor(): ImageCompressor = ImageCompressor { bytes 
         out.toByteArray()
     }
 }
+
+actual fun platformAvatarCropper(): ImageCompressor = ImageCompressor { bytes ->
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@ImageCompressor null
+
+    // Decode no larger than needed: the short side only has to cover AVATAR_SIZE.
+    var sample = 1
+    while (minOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= AVATAR_SIZE) sample *= 2
+    val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+        ?: return@ImageCompressor null
+
+    val side = minOf(decoded.width, decoded.height)
+    val square = Bitmap.createBitmap(decoded, (decoded.width - side) / 2, (decoded.height - side) / 2, side, side)
+    val scaled = if (side > AVATAR_SIZE) Bitmap.createScaledBitmap(square, AVATAR_SIZE, AVATAR_SIZE, true) else square
+
+    ByteArrayOutputStream().use { out ->
+        scaled.compress(Bitmap.CompressFormat.JPEG, ImageCompressor.JPEG_QUALITY, out)
+        listOf(scaled, square, decoded).distinct().forEach { it.recycle() }
+        out.toByteArray()
+    }
+}

@@ -20,6 +20,8 @@ internal data class ExpenseItemData(
 
 data class GroupDetailState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val group: Group? = null,
     val expenses: List<Expense> = emptyList(),
     val balances: List<Balance> = emptyList(),
@@ -31,6 +33,8 @@ data class GroupDetailState(
     val currentUserId: String? = null,
     val selectedTab: Int = 0,
     val isOverflowMenuVisible: Boolean = false,
+    /** Why the group couldn't be loaded at all. Unlike [errorMessage], not cleared by the snackbar. */
+    val loadError: String? = null,
     val isAddMemberDialogVisible: Boolean = false,
     val memberEmail: String = "",
     val memberError: String? = null,
@@ -56,6 +60,18 @@ data class GroupDetailState(
         canManageMembers && member.role != GroupRole.OWNER && member.userId.value != currentUserId
 
     val hasMore: Boolean get() = nextCursor != null
+
+    /** Which actions the bottom bar offers, from where the group's money stands. */
+    val actions: GroupActions
+        get() = when {
+            group == null -> GroupActions.None
+            expenses.isEmpty() -> GroupActions.AddOnly
+            suggestedTransfers.isEmpty() -> GroupActions.SettledUp
+            else -> GroupActions.AddAndSettle
+        }
+
+    /** Nothing to show yet: the screen draws placeholders rather than zeroes. */
+    val isFirstLoad: Boolean get() = isLoading && group == null
     fun yourBalance(userId: String?): Money? =
         balances.firstOrNull { it.userId.value == userId }?.net
     val currency get() = group?.currency ?: CurrencyCode.NGN
@@ -71,3 +87,16 @@ data class GroupDetailState(
             .fold(Money.zero(currency)) { acc, expense -> acc + expense.total }
 }
 
+enum class GroupActions {
+    /** Still loading, or the group couldn't be loaded: no actions yet. */
+    None,
+
+    /** No expenses yet, so there is nothing to settle. */
+    AddOnly,
+
+    /** Someone owes someone. */
+    AddAndSettle,
+
+    /** Expenses exist and nobody owes anything: celebrate, keep a way to add more. */
+    SettledUp,
+}

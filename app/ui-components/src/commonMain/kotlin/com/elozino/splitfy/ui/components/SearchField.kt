@@ -1,5 +1,7 @@
 package com.elozino.splitfy.ui.components
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,7 +25,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.elozino.splitfy.ui.theme.primaryLight
 
 /**
  * The search box that replaces a top bar's title while searching. It takes focus
@@ -45,14 +46,14 @@ fun SearchField(
             .fillMaxWidth()
             .padding(end = 16.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(primaryLight.copy(alpha = 0.2f))
+            .background(AppTheme.colors.brand.copy(alpha = 0.2f))
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
         TextField(
             value = query,
             onValueChange = onQueryChange,
-            placeholder = { Text(placeholder, color = Color.Gray) },
+            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
             colors = TextFieldDefaults.colors(
@@ -61,13 +62,13 @@ fun SearchField(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Black) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) },
             trailingIcon = {
                 IconButton(onClick = {
                     onQueryChange("")
                     onClose()
                 }) {
-                    Icon(Icons.Default.Close, contentDescription = "Close search", tint = Color.Black)
+                    Icon(Icons.Default.Close, contentDescription = "Close search", tint = MaterialTheme.colorScheme.onSurface)
                 }
             },
         )

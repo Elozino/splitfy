@@ -9,6 +9,7 @@ data class ContactData(
     val id: String,
     val name: String,
     val email: String,
+    val avatarUrl: String? = null,
     val isFavorite: Boolean = false,
     val balanceLabel: String? = null,
     val sharedGroups: Int = 0,
@@ -16,6 +17,8 @@ data class ContactData(
 
 data class ContactsState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val contacts: List<Contact> = emptyList(),
     val favorites: List<Contact> = emptyList(),
     val query: String = "",

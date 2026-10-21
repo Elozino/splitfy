@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.notification_settings
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.elozino.splitfy.ui.theme.primaryLight
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,11 +67,11 @@ fun NotificationSettingsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         val preferences = state.preferences
         when {
@@ -80,7 +81,7 @@ fun NotificationSettingsScreen(
                 item {
                     Text(
                         "Choose what reaches your phone. Everything still shows in your notification list.",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
@@ -94,29 +95,29 @@ fun NotificationSettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(setting.label, fontWeight = FontWeight.Medium)
                             Spacer(Modifier.height(2.dp))
-                            Text(setting.description, color = Color.Gray, fontSize = 12.sp)
+                            Text(setting.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         }
                         Spacer(Modifier.width(12.dp))
                         Switch(
                             checked = setting.read(preferences),
                             onCheckedChange = { viewModel.toggle(setting, it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White, checkedTrackColor = primaryLight
+                                checkedThumbColor = Color.White, checkedTrackColor = AppTheme.colors.brand
                             )
                         )
                     }
                 }
             }
             state.isLoading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = primaryLight)
+                CircularProgressIndicator(color = AppTheme.colors.brand)
             }
             else -> Column(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text(state.errorMessage ?: "Couldn't load your settings", color = Color.Gray)
-                TextButton(onClick = viewModel::load) { Text("Try again", color = primaryLight) }
+                Text(state.errorMessage ?: "Couldn't load your settings", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = viewModel::load) { Text("Try again", color = AppTheme.colors.brand) }
             }
         }
     }

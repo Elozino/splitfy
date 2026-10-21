@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The window behind the first Compose frame and the Android 12+ splash. It
+        follows the system light/dark setting; once the app draws, AppTheme applies
+        the user's own choice from App Appearance.
+    -->
+    <style name="Theme.Splitfy" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/splitfy_window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <color name="splitfy_window_background">#FFFFFFFF</color>
+</resources>

@@ -17,6 +17,7 @@ class AppConfigTest {
         "jwt.secret" to "a-production-secret-that-is-long-enough",
         "jwt.issuer" to "https://api.splitfy.app",
         "jwt.audience" to "splitfy-mobile",
+        "security.totpEncryptionKey" to "a-production-totp-key-that-is-long-enough",
         *overrides,
     )
 
@@ -48,6 +49,14 @@ class AppConfigTest {
                 "database.password" to AppConfig.INSECURE_DEV_DATABASE_PASSWORD,
             )
         )
+    }
+
+    @Test
+    fun `production refuses to start without a TOTP encryption key`() {
+        val error = assertFailsWith<IllegalArgumentException> {
+            AppConfig.from(config("security.totpEncryptionKey" to ""))
+        }
+        assertEquals("security.totpEncryptionKey (TOTP_ENCRYPTION_KEY) is required in production", error.message)
     }
 
     @Test

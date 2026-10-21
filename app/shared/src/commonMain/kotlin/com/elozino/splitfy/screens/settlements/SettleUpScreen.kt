@@ -1,5 +1,11 @@
 package com.elozino.splitfy.screens.settlements
 
+import com.elozino.splitfy.ui.components.RefreshableBox
+import com.elozino.splitfy.ui.components.LoadErrorState
+import com.elozino.splitfy.ui.components.SkeletonText
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
+import com.elozino.splitfy.ui.components.SkeletonBlock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +43,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -55,12 +62,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.domain.model.Settlement
 import com.elozino.splitfy.domain.model.SuggestedTransfer
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-private val Owed = Color(0xFF4CAF50)
-private val Owes = Color(0xFFE57373)
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,78 +97,92 @@ fun SettleUpScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        when {
-            state.isLoading && state.group == null -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = primaryLight)
-            }
-
-            state.isAllSettled -> AllSettled(Modifier.padding(padding))
-
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                section("Waiting for you to confirm", state.awaitingYourConfirmation) { settlement ->
-                    PendingRow(
-                        title = "${state.nameOf(settlement.fromUserId)} says they paid you",
-                        settlement = settlement,
-                        isBusy = settlement.id.value in state.busySettlementIds,
-                        primaryLabel = "Confirm",
-                        onPrimary = { viewModel.confirm(settlement) },
-                        secondaryLabel = "Not received",
-                        onSecondary = { viewModel.cancel(settlement) },
-                    )
+        RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
+            when {
+                state.isLoading && state.group == null -> SkeletonList(
+                    modifier = Modifier.padding(padding),
+                    count = 5,
+                    spacing = 18.dp,
+                ) { index ->
+                    if (index == 0) {
+                        SkeletonText(0.35f, height = 16.dp)
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SkeletonListItem(modifier = Modifier.weight(1f), avatarSize = 40.dp, trailing = false)
+                            Spacer(Modifier.width(12.dp))
+                            SkeletonBlock(Modifier.width(110.dp).height(36.dp), RoundedCornerShape(100.dp))
+                        }
+                    }
                 }
 
-                section("Your payments", state.yourTransfers) { transfer ->
-                    val youPay = transfer.from.value == state.currentUserId
-                    TransferRow(
-                        title = if (youPay) {
-                            "You owe ${state.nameOf(transfer.to)}"
-                        } else {
-                            "${state.nameOf(transfer.from)} owes you"
-                        },
-                        transfer = transfer,
-                        youPay = youPay,
-                        actionLabel = if (youPay) "Mark as paid" else "Record payment",
-                        onAction = { viewModel.startPayment(transfer) },
-                    )
-                }
+                state.loadError != null && state.group == null ->
+                    LoadErrorState(state.loadError!!, onRetry = viewModel::load, modifier = Modifier.padding(padding))
 
-                section("Waiting for them to confirm", state.awaitingTheirConfirmation) { settlement ->
-                    PendingRow(
-                        title = "You paid ${state.nameOf(settlement.toUserId)}",
-                        settlement = settlement,
-                        isBusy = settlement.id.value in state.busySettlementIds,
-                        secondaryLabel = "Cancel",
-                        onSecondary = { viewModel.cancel(settlement) },
-                    )
-                }
+                state.isAllSettled -> AllSettled(Modifier.padding(padding))
 
-                section("Between other members", state.otherTransfers) { transfer ->
-                    TransferRow(
-                        title = "${state.nameOf(transfer.from)} owes ${state.nameOf(transfer.to)}",
-                        transfer = transfer,
-                        youPay = false,
-                    )
-                }
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    section("Waiting for you to confirm", state.awaitingYourConfirmation) { settlement ->
+                        PendingRow(
+                            title = "${state.nameOf(settlement.fromUserId)} says they paid you",
+                            settlement = settlement,
+                            isBusy = settlement.id.value in state.busySettlementIds,
+                            primaryLabel = "Confirm",
+                            onPrimary = { viewModel.confirm(settlement) },
+                            secondaryLabel = "Not received",
+                            onSecondary = { viewModel.cancel(settlement) },
+                        )
+                    }
 
-                section("History", state.history) { settlement ->
-                    HistoryRow(
-                        title = "${state.nameOf(settlement.fromUserId)} paid " +
-                            state.nameOf(settlement.toUserId, startsSentence = false),
-                        settlement = settlement,
-                    )
+                    section("Your payments", state.yourTransfers) { transfer ->
+                        val youPay = transfer.from.value == state.currentUserId
+                        TransferRow(
+                            title = if (youPay) {
+                                "You owe ${state.nameOf(transfer.to)}"
+                            } else {
+                                "${state.nameOf(transfer.from)} owes you"
+                            },
+                            transfer = transfer,
+                            youPay = youPay,
+                            actionLabel = if (youPay) "Mark as paid" else "Record payment",
+                            onAction = { viewModel.startPayment(transfer) },
+                        )
+                    }
+
+                    section("Waiting for them to confirm", state.awaitingTheirConfirmation) { settlement ->
+                        PendingRow(
+                            title = "You paid ${state.nameOf(settlement.toUserId)}",
+                            settlement = settlement,
+                            isBusy = settlement.id.value in state.busySettlementIds,
+                            secondaryLabel = "Cancel",
+                            onSecondary = { viewModel.cancel(settlement) },
+                        )
+                    }
+
+                    section("Between other members", state.otherTransfers) { transfer ->
+                        TransferRow(
+                            title = "${state.nameOf(transfer.from)} owes ${state.nameOf(transfer.to)}",
+                            transfer = transfer,
+                            youPay = false,
+                        )
+                    }
+
+                    section("History", state.history) { settlement ->
+                        HistoryRow(
+                            title = "${state.nameOf(settlement.fromUserId)} paid " +
+                                state.nameOf(settlement.toUserId, startsSentence = false),
+                            settlement = settlement,
+                        )
+                    }
                 }
             }
         }
@@ -202,7 +223,7 @@ private fun <T> LazyListScope.section(title: String, rows: List<T>, row: @Compos
         )
     }
     items(rows) { row(it) }
-    item { HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f)) }
+    item { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
 }
 
 @Composable
@@ -216,13 +237,13 @@ private fun AllSettled(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(12.dp))
         Text("Everyone is settled up", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
-        Text("Nobody owes anything in this group.", color = Color.Gray, fontSize = 14.sp)
+        Text("Nobody owes anything in this group.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
     }
 }
 
 @Composable
 private fun Avatar() {
-    Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+    Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
 }
 
 @Composable
@@ -240,7 +261,7 @@ private fun TransferRow(
             Text(title, fontWeight = FontWeight.Bold)
             Text(
                 "${transfer.amount.toPlainString()} ${transfer.amount.currency.code}",
-                color = if (youPay) Owes else Owed,
+                color = if (youPay) AppTheme.colors.negative else AppTheme.colors.positive,
                 fontSize = 12.sp,
             )
         }
@@ -248,10 +269,10 @@ private fun TransferRow(
             Button(
                 onClick = onAction,
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight),
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             ) {
-                Text(actionLabel, color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(actionLabel, color = AppTheme.colors.onBrand, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -276,7 +297,7 @@ private fun PendingRow(
                 Text(
                     "${settlement.amount.toPlainString()} ${settlement.amount.currency.code}" +
                         (settlement.note?.let { " · $it" } ?: ""),
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                 )
             }
@@ -287,24 +308,24 @@ private fun PendingRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (isBusy) {
-                CircularProgressIndicator(color = primaryLight, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(color = AppTheme.colors.brand, modifier = Modifier.size(24.dp))
                 return@Row
             }
             if (primaryLabel != null) {
                 Button(
                     onClick = onPrimary,
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight),
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand),
                 ) {
-                    Text(primaryLabel, color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(primaryLabel, color = AppTheme.colors.onBrand, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
             OutlinedButton(
                 onClick = onSecondary,
                 shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, Color.LightGray),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
-                Text(secondaryLabel, color = Color.Black, fontSize = 12.sp)
+                Text(secondaryLabel, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
             }
         }
     }
@@ -317,7 +338,7 @@ private fun HistoryRow(title: String, settlement: Settlement) {
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, fontWeight = FontWeight.Medium)
-            Text(settlement.settledAt.toString().take(10), color = Color.Gray, fontSize = 12.sp)
+            Text(settlement.settledAt.toString().take(10), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
         Text(
             "${settlement.amount.toPlainString()} ${settlement.amount.currency.code}",
@@ -343,7 +364,7 @@ private fun RecordPaymentSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier = Modifier
@@ -353,7 +374,7 @@ private fun RecordPaymentSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(title, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Text(hint, color = Color.Gray, fontSize = 13.sp)
+            Text(hint, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
 
             OutlinedTextField(
                 value = draft.amountText,
@@ -367,24 +388,24 @@ private fun RecordPaymentSheet(
                 value = draft.note,
                 onValueChange = onNoteChange,
                 label = { Text("Note (optional)") },
-                placeholder = { Text("e.g. Bank transfer", color = Color.Gray) },
+                placeholder = { Text("e.g. Bank transfer", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            errorMessage?.let { Text(it, color = Color.Red, fontSize = 13.sp) }
+            errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
 
             Button(
                 onClick = onSubmit,
                 enabled = !isSubmitting,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight),
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand),
             ) {
                 if (isSubmitting) {
-                    CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = AppTheme.colors.onBrand, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Record payment", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Record payment", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(Modifier.height(8.dp))

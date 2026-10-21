@@ -1,5 +1,6 @@
 package com.elozino.splitfy.invites
 
+import com.elozino.splitfy.ui.components.SkeletonText
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,10 +30,16 @@ fun InvitePreviewDialog(token: String, signedIn: Boolean, onSignIn: () -> Unit, 
     }
     AlertDialog(
         onDismissRequest = { if (!busy) InviteLinks.clear() },
-        title = { Text(preview?.groupName ?: "Group invitation") },
+        title = {
+            if (preview == null && error == null) SkeletonText(0.6f, height = 24.dp)
+            else Text(preview?.groupName ?: "Group invitation")
+        },
         text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             preview?.let { Text("${it.invitedBy} invited you to join ${it.memberCount} members on Splitfy.") }
-            if (preview == null && error == null) CircularProgressIndicator()
+            if (preview == null && error == null) {
+                SkeletonText(0.9f)
+                SkeletonText(0.5f)
+            }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         } },
         dismissButton = { TextButton(onClick = { InviteLinks.clear() }, enabled = !busy) { Text("Not now") } },

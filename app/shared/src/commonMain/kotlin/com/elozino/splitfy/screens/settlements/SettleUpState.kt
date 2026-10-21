@@ -25,6 +25,8 @@ data class PaymentDraft(
 
 data class SettleUpState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val group: Group? = null,
     val currentUserId: String? = null,
     val suggestedTransfers: List<SuggestedTransfer> = emptyList(),
@@ -33,6 +35,8 @@ data class SettleUpState(
     val busySettlementIds: Set<String> = emptySet(),
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
+    /** Why the screen couldn't load at all. Unlike [errorMessage], not cleared by the snackbar. */
+    val loadError: String? = null,
 ) {
     val currency: CurrencyCode get() = group?.currency ?: CurrencyCode.NGN
 

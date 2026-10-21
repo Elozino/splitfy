@@ -1,6 +1,8 @@
 package com.elozino.splitfy.screens.auth.otp
 
 import androidx.compose.foundation.background
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -108,7 +110,7 @@ fun VerifyEmailScreen(
         onNavigateBack = onDone,
         footer = {
             TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
-                Text("Skip for now", color = Color.Gray, fontSize = 16.sp)
+                Text("Skip for now", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
             }
         },
     )
@@ -152,7 +154,7 @@ private fun CodeEntryScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -171,7 +173,7 @@ private fun CodeEntryScreen(
                     text = title,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -184,7 +186,7 @@ private fun CodeEntryScreen(
 
             val emailText = buildAnnotatedString {
                 append("We have sent a code to ")
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Black)) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)) {
                     append(maskEmail(email))
                 }
                 append(". Enter it below to verify.")
@@ -193,7 +195,7 @@ private fun CodeEntryScreen(
             Text(
                 text = emailText,
                 fontSize = 16.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 24.sp
             )
 
@@ -219,7 +221,7 @@ private fun CodeEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 fontSize = 16.sp,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -233,7 +235,7 @@ private fun CodeEntryScreen(
                     .clickable(enabled = secondsRemaining == 0, onClick = onResend),
                 textAlign = TextAlign.Center,
                 fontSize = 16.sp,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             footer()
@@ -275,10 +277,10 @@ fun OtpBox(
     Box(
         modifier = modifier
             .height(60.dp)
-            .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+            .background(AppTheme.colors.field, RoundedCornerShape(12.dp))
             .border(
                 width = 1.dp,
-                color = if (value.isNotEmpty()) Color(0xFFFEBB1B) else Color.Transparent,
+                color = if (value.isNotEmpty()) AppTheme.colors.brand else Color.Transparent,
                 shape = RoundedCornerShape(12.dp)
             ),
         contentAlignment = Alignment.Center
@@ -287,7 +289,7 @@ fun OtpBox(
             text = value,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -328,7 +330,7 @@ fun NumberKeyboard(
                             text = char,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

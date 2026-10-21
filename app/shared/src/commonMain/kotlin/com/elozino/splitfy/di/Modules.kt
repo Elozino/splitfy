@@ -1,5 +1,7 @@
 package com.elozino.splitfy.di
 
+import com.elozino.splitfy.screens.account.appearance.AppearanceViewModel
+import com.elozino.splitfy.preferences.ThemePreferences
 import com.elozino.splitfy.social.SocialSignInConfig
 import com.elozino.splitfy.social.platformGoogleClientId
 import com.elozino.splitfy.CardTokenizer
@@ -29,6 +31,14 @@ import com.elozino.splitfy.repositories.UserRepositoryImpl
 import com.elozino.splitfy.repositories.WalletRepository
 import com.elozino.splitfy.repositories.WalletRepositoryImpl
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
+import com.elozino.splitfy.screens.account.security_settings.ChangePasswordViewModel
+import com.elozino.splitfy.screens.account.security_settings.DevicesViewModel
+import com.elozino.splitfy.screens.account.security_settings.SecurityViewModel
+import com.elozino.splitfy.screens.account.security_settings.TwoFactorSetupViewModel
+import com.elozino.splitfy.repositories.SecurityRepository
+import com.elozino.splitfy.repositories.SecurityRepositoryImpl
+import com.elozino.splitfy.security.AppLockController
+import com.elozino.splitfy.security.AppLockSettings
 import com.elozino.splitfy.screens.activity.list.ActivityViewModel
 import com.elozino.splitfy.screens.auth.shared.AuthViewModel
 import com.elozino.splitfy.screens.contacts.main.ContactsViewModel
@@ -70,6 +80,7 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
 
     single { ApiConfig.forBuild(isDebug, apiBaseUrl) }
     single { SessionStorage(get()) }
+    single { ThemePreferences(get()) }
     single { SessionManager(get()) }
     single { ApiCaller(get()) }
 
@@ -78,6 +89,7 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
             engine = createHttpClientEngine(),
             config = get(),
             sessionManager = get(),
+            device = runCatching { com.elozino.splitfy.security.currentDeviceIdentity() }.getOrNull(),
         ).create()
     }
 
@@ -98,7 +110,13 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
     single<NotificationRepository> { NotificationRepositoryImpl(get(), get()) }
     single<ContactRepository> { ContactRepositoryImpl(get(), get()) }
     single<UploadRepository> { UploadRepositoryImpl(get(), get(), storageHttpClient()) }
+    single<com.elozino.splitfy.repositories.AccountRepository> {
+        com.elozino.splitfy.repositories.AccountRepositoryImpl(get(), get())
+    }
     single { platformImageCompressor() }
+    single<SecurityRepository> { SecurityRepositoryImpl(get(), get()) }
+    single { AppLockSettings(get()) }
+    single { AppLockController(get(), get()) }
 
     // Swap for the payment provider's SDK before taking real payments.
     single<CardTokenizer> { DevCardTokenizer() }
@@ -113,7 +131,7 @@ val viewModelModule: Module = module {
     factory { AuthViewModel(get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get(), get()) }
     factory { GroupsViewModel(get()) }
-    factory { NewGroupViewModel(get(), get()) }
+    factory { NewGroupViewModel(get(), get(), get()) }
     factory { (groupId: String) -> GroupDetailViewModel(groupId, get(), get(), get(), get(), get()) }
     factory { (groupId: String) -> AddExpenseViewModel(groupId, get(), get(), get(), get(), get()) }
     factory { (groupId: String) -> GroupSettingsViewModel(groupId, get(), get()) }
@@ -124,7 +142,19 @@ val viewModelModule: Module = module {
     factory { NotificationViewModel(get()) }
     factory { com.elozino.splitfy.screens.account.notification_settings.NotificationSettingsViewModel(get()) }
     factory { ContactsViewModel(get(), get()) }
+    factory { AppearanceViewModel(get()) }
     factory { AccountViewModel(get(), get(), get(), get(), get()) }
+    factory { SecurityViewModel(get(), get()) }
+    factory { (hasPassword: Boolean) -> ChangePasswordViewModel(hasPassword, get()) }
+    factory { DevicesViewModel(get()) }
+    factory { TwoFactorSetupViewModel(get()) }
+    factory {
+        com.elozino.splitfy.screens.account.personal_info.PersonalInfoViewModel(
+            get(), get(), get(), com.elozino.splitfy.uploads.platformAvatarCropper(), get(),
+        )
+    }
+    factory { com.elozino.splitfy.screens.account.linked_accounts.LinkedAccountsViewModel(get()) }
+    factory { com.elozino.splitfy.screens.account.data_analytics.DataAnalyticsViewModel(get(), get()) }
 }
 
 /**

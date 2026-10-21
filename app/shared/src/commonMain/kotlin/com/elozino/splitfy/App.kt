@@ -1,11 +1,18 @@
 package com.elozino.splitfy
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import org.koin.compose.koinInject
+import com.elozino.splitfy.ui.theme.isAppInDarkTheme
+import com.elozino.splitfy.preferences.SystemBarsEffect
+import com.elozino.splitfy.preferences.ThemePreferences
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.ImageLoader
 import coil3.svg.SvgDecoder
 import com.elozino.splitfy.navigation.NavSetup
+import com.elozino.splitfy.security.AppLockGate
 import com.elozino.splitfy.ui.theme.AppTheme
 import org.koin.compose.KoinContext
 
@@ -26,8 +33,12 @@ fun App() {
                 .build()
         }
 
-        AppTheme {
-            NavSetup()
+        val themeMode by koinInject<ThemePreferences>().mode.collectAsState()
+        AppTheme(mode = themeMode) {
+            SystemBarsEffect(darkTheme = isAppInDarkTheme)
+            AppLockGate {
+                NavSetup()
+            }
         }
     }
 }
