@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.domain.model.GroupCategory
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.elozino.splitfy.screens.expenses.add.label
@@ -80,7 +80,7 @@ fun GroupSettingsScreen(
 
                     state.errorMessage?.let { message ->
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+                        Text(message, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
                     }
                 }
             }
@@ -164,17 +164,17 @@ private fun EditGroupScreen(
                     onClick = onNavigateBack,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = viewModel::save,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Save", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Save", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -192,17 +192,17 @@ private fun EditGroupScreen(
                     .fillMaxWidth()
                     .height(180.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(12.dp)
                         .size(32.dp)
-                        .background(primaryLight, CircleShape),
+                        .background(AppTheme.colors.brand, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Black)
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = AppTheme.colors.onBrand)
                 }
             }
             
@@ -214,8 +214,8 @@ private fun EditGroupScreen(
                 onValueChange = viewModel::onNameChange,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = Color(0xFFF5F5F5),
-                    focusedContainerColor = Color(0xFFF5F5F5),
+                    unfocusedContainerColor = AppTheme.colors.field,
+                    focusedContainerColor = AppTheme.colors.field,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -230,8 +230,8 @@ private fun EditGroupScreen(
                 onValueChange = viewModel::onDescriptionChange,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 100.dp),
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = Color(0xFFF5F5F5),
-                    focusedContainerColor = Color(0xFFF5F5F5),
+                    unfocusedContainerColor = AppTheme.colors.field,
+                    focusedContainerColor = AppTheme.colors.field,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -244,7 +244,7 @@ private fun EditGroupScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFF5F5F5)
+                color = AppTheme.colors.field
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -280,8 +280,8 @@ private fun EditGroupScreen(
                         label = { Text(label) },
                         shape = RoundedCornerShape(100.dp),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = primaryLight,
-                            selectedLabelColor = Color.Black
+                            selectedContainerColor = AppTheme.colors.brand,
+                            selectedLabelColor = AppTheme.colors.onBrand
                         )
                     )
                 }
@@ -302,16 +302,16 @@ private fun ConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, fontWeight = FontWeight.Bold, color = if (isError) Color.Red else Color.Black) },
+        title = { Text(title, fontWeight = FontWeight.Bold, color = if (isError) AppTheme.colors.negative else MaterialTheme.colorScheme.onSurface) },
         text = { Text(text, textAlign = androidx.compose.ui.text.style.TextAlign.Center) },
         confirmButton = {
             Button(
                 onClick = onConfirm,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = if (isError) Color.Red else primaryLight),
+                colors = ButtonDefaults.buttonColors(containerColor = if (isError) AppTheme.colors.negative else AppTheme.colors.brand),
                 shape = RoundedCornerShape(100.dp)
             ) {
-                Text(confirmLabel, color = if (isError) Color.White else Color.Black, fontWeight = FontWeight.Bold)
+                Text(confirmLabel, color = if (isError) Color.White else AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -319,13 +319,13 @@ private fun ConfirmationDialog(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, primaryLight)
+                border = BorderStroke(1.dp, AppTheme.colors.brand)
             ) {
-                Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             }
         },
         shape = RoundedCornerShape(24.dp),
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     )
 }
 
@@ -347,13 +347,13 @@ private fun SettingsItem(
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .background(if (isError) Color.Red.copy(alpha = 0.1f) else Color.LightGray.copy(alpha = 0.2f)),
+                .background(if (isError) AppTheme.colors.negative.copy(alpha = 0.1f) else MaterialTheme.colorScheme.outlineVariant),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (isError) Color.Red else Color.Black,
+                tint = if (isError) AppTheme.colors.negative else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -361,11 +361,11 @@ private fun SettingsItem(
         Text(
             text = title,
             modifier = Modifier.weight(1f),
-            color = if (isError) Color.Red else Color.Black,
+            color = if (isError) AppTheme.colors.negative else MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp
         )
-        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.billing_subscriptions
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.upgrade_success.benefitListShort
 
 import androidx.compose.foundation.background
@@ -103,7 +105,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -119,20 +120,20 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }, containerColor = Color.White
+        }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("splitfy Premium", fontWeight = FontWeight.Bold, color = primaryLight)
+                    Text("splitfy Premium", fontWeight = FontWeight.Bold, color = AppTheme.colors.brand)
                     Text(
                         "$49.99 / year",
                         fontSize = 36.sp,
@@ -148,11 +149,11 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = null,
-                                tint = primaryLight,
+                                tint = AppTheme.colors.brand,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(benefit, fontSize = 14.sp, color = Color.Gray)
+                            Text(benefit, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -162,7 +163,7 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
                 "Your subscription will expire on Dec 27, 2024. Please renew your subscription to continue using premium benefits.",
                 textAlign = TextAlign.Center,
                 fontSize = 12.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -170,9 +171,9 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
                 onClick = { },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
-                Text("Renew Subscription", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Renew Subscription", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
             }
         }
     }

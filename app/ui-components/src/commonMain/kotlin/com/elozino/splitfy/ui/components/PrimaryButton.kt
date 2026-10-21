@@ -1,5 +1,6 @@
 package com.elozino.splitfy.ui.components
 
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,8 +19,8 @@ fun PrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    containerColor: Color = Color(0xFFFEBB1B),
-    contentColor: Color = Color.Black,
+    containerColor: Color = AppTheme.colors.brand,
+    contentColor: Color = AppTheme.colors.onBrand,
     enabled: Boolean = true
 ) {
     Button(

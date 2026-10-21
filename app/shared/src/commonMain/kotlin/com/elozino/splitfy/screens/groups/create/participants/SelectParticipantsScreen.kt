@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.groups.create.shared.NewGroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,10 +58,10 @@ fun SelectParticipantsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -73,20 +73,20 @@ fun SelectParticipantsScreen(
                     onClick = onNavigateBack,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = viewModel::create,
                     enabled = !state.isSaving,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
                     Text(
                         text = if (state.isSaving) "Saving…" else "Save",
-                        color = Color.Black,
+                        color = AppTheme.colors.onBrand,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -104,12 +104,12 @@ fun SelectParticipantsScreen(
                         value = searchQuery,
                         onValueChange = viewModel::onSearchChange,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
-                        placeholder = { Text("Search contact", color = Color.Gray) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+                        placeholder = { Text("Search contact", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         shape = RoundedCornerShape(12.dp),
                         colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color(0xFFF5F5F5),
-                            focusedContainerColor = Color(0xFFF5F5F5),
+                            unfocusedContainerColor = AppTheme.colors.field,
+                            focusedContainerColor = AppTheme.colors.field,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         )
@@ -126,16 +126,16 @@ fun SelectParticipantsScreen(
                         ) {
                             items(selectedContacts, key = { it.userId.value }) { contact ->
                                 Box(contentAlignment = Alignment.BottomEnd) {
-                                    Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Color.LightGray))
+                                    Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
                                     Box(
                                         modifier = Modifier
                                             .size(18.dp)
-                                            .background(Color.Black, CircleShape)
-                                            .border(1.dp, Color.White, CircleShape)
+                                            .background(MaterialTheme.colorScheme.inverseSurface, CircleShape)
+                                            .border(1.dp, MaterialTheme.colorScheme.surface, CircleShape)
                                             .clickable { viewModel.toggleParticipant(contact) },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(Icons.Default.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                        Icon(Icons.Default.Close, contentDescription = null, tint = MaterialTheme.colorScheme.inverseOnSurface, modifier = Modifier.size(12.dp))
                                     }
                                 }
                             }
@@ -148,7 +148,7 @@ fun SelectParticipantsScreen(
                     Surface(
                         modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFF5F5F5)
+                        color = AppTheme.colors.field
                     ) {
                         Row {
                             val tabs = listOf("All Contacts", "Favorites")
@@ -159,14 +159,14 @@ fun SelectParticipantsScreen(
                                         .weight(1f)
                                         .fillMaxHeight()
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(if (isSelected) primaryLight else Color.Transparent)
+                                        .background(if (isSelected) AppTheme.colors.brand else Color.Transparent)
                                         .clickable { viewModel.onParticipantsTabSelected(index) },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = title,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSelected) Color.Black else Color.Gray,
+                                        color = if (isSelected) AppTheme.colors.onBrand else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 14.sp
                                     )
                                 }
@@ -193,7 +193,7 @@ fun SelectParticipantsScreen(
                         Text(
                             text = "No contacts yet. You can add people to the group later.",
                             modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp
                         )
                     }
@@ -208,14 +208,14 @@ fun SelectParticipantsScreen(
                             .clickable { viewModel.toggleParticipant(contact) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.LightGray))
+                        Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(contact.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(contact.email, fontSize = 12.sp, color = Color.Gray)
+                            Text(contact.email, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (isSelected) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.Black)
+                            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -230,7 +230,7 @@ fun SelectParticipantsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items("ABCDEFGHIJKLMNOPQRSTUVWXYZ".toList()) { char ->
-                    Text(text = char.toString(), fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                    Text(text = char.toString(), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                 }
             }
         }

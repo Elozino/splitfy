@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.language
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
 
 import androidx.compose.foundation.clickable
@@ -29,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.elozino.splitfy.ui.theme.primaryLight
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,9 +47,9 @@ fun AppLanguageScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }, containerColor = Color.White
+        }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         val languages = listOf(
             "English (US)",
@@ -73,7 +74,7 @@ fun AppLanguageScreen(
                     RadioButton(
                         selected = state.selectedLanguage == lang,
                         onClick = { viewModel.selectLanguage(lang) },
-                        colors = RadioButtonDefaults.colors(selectedColor = primaryLight)
+                        colors = RadioButtonDefaults.colors(selectedColor = AppTheme.colors.brand)
                     )
                 }
             }

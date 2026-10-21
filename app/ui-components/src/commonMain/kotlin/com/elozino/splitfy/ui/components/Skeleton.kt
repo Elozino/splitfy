@@ -1,5 +1,6 @@
 package com.elozino.splitfy.ui.components
 
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -41,9 +42,6 @@ import androidx.compose.ui.unit.dp
  * progress (a button that was tapped), not for content that hasn't arrived yet.
  */
 
-private val SkeletonBase = Color(0xFFECECEC)
-private val SkeletonHighlight = Color(0xFFF6F6F6)
-
 /** For placeholders drawn on the brand yellow: a translucent darkening instead of grey. */
 private val AccentBase = Color.Black.copy(alpha = 0.10f)
 private val AccentHighlight = Color.Black.copy(alpha = 0.04f)
@@ -62,10 +60,11 @@ fun Modifier.shimmer(onAccent: Boolean = false): Modifier = composed {
         animationSpec = infiniteRepeatable(tween(durationMillis = 1200, easing = LinearEasing), RepeatMode.Restart),
         label = "shimmerPhase",
     )
+    val theme = AppTheme.colors
     val colors = if (onAccent) {
         listOf(AccentBase, AccentHighlight, AccentBase)
     } else {
-        listOf(SkeletonBase, SkeletonHighlight, SkeletonBase)
+        listOf(theme.skeletonBase, theme.skeletonHighlight, theme.skeletonBase)
     }
     drawBehind {
         // The highlight band is as wide as the shape and sweeps from just off its

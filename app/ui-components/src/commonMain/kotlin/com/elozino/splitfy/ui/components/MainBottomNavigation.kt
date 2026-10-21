@@ -1,5 +1,7 @@
 package com.elozino.splitfy.ui.components
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -37,10 +39,10 @@ fun MainBottomNavigation(
     centerContentDescription: String = "Scan",
 ) {
     NavigationBar(
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         windowInsets =  WindowInsets(0, 0, 0, 20),
-        modifier = Modifier.border(0.5.dp, Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp))
+        modifier = Modifier.border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp))
     ) {
         NavigationBarItem(
             selected = selectedTab == 0,
@@ -48,10 +50,10 @@ fun MainBottomNavigation(
             icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
             label = { Text("Home", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.Black,
-                selectedTextColor = Color.Black,
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
+                selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 indicatorColor = Color.Transparent
             )
         )
@@ -61,10 +63,10 @@ fun MainBottomNavigation(
             icon = { Icon(Icons.Default.Group, contentDescription = "Groups") },
             label = { Text("Groups", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.Black,
-                selectedTextColor = Color.Black,
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
+                selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 indicatorColor = Color.Transparent
             )
         )
@@ -80,7 +82,7 @@ fun MainBottomNavigation(
                     .size(52.dp)
                     .offset(y = (-4).dp),
                 shape = CircleShape,
-                color = Color(0xFFFEBB1B),
+                color = AppTheme.colors.brand,
                 shadowElevation = 4.dp
             ) {
                 Box(
@@ -91,7 +93,7 @@ fun MainBottomNavigation(
                         imageVector = centerIcon,
                         contentDescription = centerContentDescription,
                         modifier = Modifier.size(24.dp),
-                        tint = Color.Black
+                        tint = AppTheme.colors.onBrand
                     )
                 }
             }
@@ -103,10 +105,10 @@ fun MainBottomNavigation(
             icon = { Icon(Icons.Default.Contacts, contentDescription = "Contacts") },
             label = { Text("Contacts", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.Black,
-                selectedTextColor = Color.Black,
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
+                selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 indicatorColor = Color.Transparent
             )
         )
@@ -116,10 +118,10 @@ fun MainBottomNavigation(
             icon = { Icon(Icons.Default.Person, contentDescription = "Account") },
             label = { Text("Account", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.Black,
-                selectedTextColor = Color.Black,
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
+                selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 indicatorColor = Color.Transparent
             )
         )

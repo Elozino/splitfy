@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark counterpart of values/themes.xml: no white flash when the phone is in dark mode. -->
+    <style name="Theme.Splitfy" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splitfy_window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Matches backgroundDark in ui-components' Color.kt. -->
+    <color name="splitfy_window_background">#FF151412</color>
+</resources>

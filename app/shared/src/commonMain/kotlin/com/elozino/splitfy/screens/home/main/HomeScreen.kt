@@ -1,6 +1,8 @@
 package com.elozino.splitfy.screens.home.main
 
 import com.elozino.splitfy.ui.components.RefreshableBox
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.components.LoadErrorState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,7 +65,7 @@ fun HomeScreen(
                         text = "splitfy",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -71,7 +73,7 @@ fun HomeScreen(
                         imageVector = Icons.Default.Category,
                         contentDescription = "Logo",
                         modifier = Modifier.padding(start = 16.dp).size(28.dp),
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 actions = {
@@ -87,13 +89,13 @@ fun HomeScreen(
                                 imageVector = Icons.Outlined.Notifications,
                                 contentDescription = "Notifications",
                                 modifier = Modifier.size(28.dp),
-                                tint = Color.Black
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFFEBB1B)
+                    containerColor = AppTheme.colors.brand
                 )
             )
         }
@@ -160,7 +162,7 @@ fun BalanceHeader(
     onHistoryClick: () -> Unit = {}
 ) {
     Surface(
-        color = Color(0xFFFEBB1B)
+        color = AppTheme.colors.brand
     ) {
         Column(
             modifier = Modifier
@@ -178,21 +180,21 @@ fun BalanceHeader(
                     text = state.walletBalance.toPlainString(),
                     fontSize = 56.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = state.walletBalance.currency.code,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 8.dp, start = 6.dp),
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
             Text(
                 text = "Available balance",
                 fontSize = 14.sp,
-                color = Color.Black.copy(alpha = 0.8f),
+                color = AppTheme.colors.onBrand.copy(alpha = 0.8f),
                 fontWeight = FontWeight.Medium
             )
 
@@ -202,7 +204,7 @@ fun BalanceHeader(
                     text = "Owed to you ${state.totalOwedToYou.toPlainString()}  ·  " +
                             "You owe ${state.totalYouOwe.toPlainString()}",
                     fontSize = 13.sp,
-                    color = Color.Black.copy(alpha = 0.8f),
+                    color = AppTheme.colors.onBrand.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -234,7 +236,7 @@ fun ActionItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
         Box(
             modifier = Modifier
                 .size(52.dp)
-                .border(1.2.dp, Color.Black.copy(alpha = 0.6f), CircleShape)
+                .border(1.2.dp, AppTheme.colors.onBrand.copy(alpha = 0.6f), CircleShape)
                 .clip(CircleShape)
                 .clickable { onClick() }
                 .padding(12.dp),
@@ -244,7 +246,7 @@ fun ActionItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
                 imageVector = icon,
                 contentDescription = label,
                 modifier = Modifier.size(24.dp),
-                tint = Color.Black
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -253,7 +255,7 @@ fun ActionItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -278,7 +280,7 @@ fun ActivitySection(
                 text = "Activity",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -286,14 +288,14 @@ fun ActivitySection(
             ) {
                 Text(
                     text = "View All",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = Color.Gray,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -316,20 +318,20 @@ fun ActivitySection(
                     imageVector = Icons.Default.Inbox,
                     contentDescription = null,
                     modifier = Modifier.size(80.dp),
-                    tint = Color.LightGray
+                    tint = MaterialTheme.colorScheme.surfaceVariant
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "No Transactions",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "You haven't made any transactions.",
                     fontSize = 16.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     lineHeight = 22.sp
                 )
@@ -357,19 +359,19 @@ private fun RecentEntryRow(entry: LedgerEntry) {
                 text = entry.counterpartyName ?: entry.description,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = entry.note ?: entry.type.name.lowercase().replace('_', ' '),
                 fontSize = 13.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Text(
             text = (if (entry.type.isCredit) "+ " else "- ") + entry.amount.toPlainString(),
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = if (entry.type.isCredit) Color(0xFF2E7D32) else Color.Black
+            color = if (entry.type.isCredit) AppTheme.colors.positive else MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -386,7 +388,7 @@ fun PositionHeader(
     onActivityClick: () -> Unit,
 ) {
     val net = state.netPosition
-    Surface(color = Color(0xFFFEBB1B)) {
+    Surface(color = AppTheme.colors.brand) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -401,11 +403,11 @@ fun PositionHeader(
                 Spacer(modifier = Modifier.height(10.dp))
                 SkeletonBlock(Modifier.width(140.dp).height(14.dp), RoundedCornerShape(6.dp), onAccent = true)
             } else if (state.loadFailed) {
-                Text(text = "—", fontSize = 56.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(text = "—", fontSize = 56.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     text = "Couldn't load your balance",
                     fontSize = 14.sp,
-                    color = Color.Black.copy(alpha = 0.8f),
+                    color = AppTheme.colors.onBrand.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium
                 )
             } else Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center) {
@@ -413,14 +415,14 @@ fun PositionHeader(
                     text = net.abs().toPlainString(),
                     fontSize = 56.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = net.currency.code,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 8.dp, start = 6.dp),
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             if (!(state.isLoading && state.groups.isEmpty()) && !state.loadFailed) Text(
@@ -430,7 +432,7 @@ fun PositionHeader(
                     else -> "You're all settled up"
                 },
                 fontSize = 14.sp,
-                color = Color.Black.copy(alpha = 0.8f),
+                color = AppTheme.colors.onBrand.copy(alpha = 0.8f),
                 fontWeight = FontWeight.Medium
             )
 
@@ -440,7 +442,7 @@ fun PositionHeader(
                     text = "Owed to you ${state.totalOwedToYou.toPlainString()}  ·  " +
                         "You owe ${state.totalYouOwe.toPlainString()}",
                     fontSize = 13.sp,
-                    color = Color.Black.copy(alpha = 0.8f),
+                    color = AppTheme.colors.onBrand.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -448,7 +450,7 @@ fun PositionHeader(
                 Text(
                     text = "Groups in other currencies are not included",
                     fontSize = 12.sp,
-                    color = Color.Black.copy(alpha = 0.6f)
+                    color = AppTheme.colors.onBrand.copy(alpha = 0.6f)
                 )
             }
 
@@ -478,17 +480,17 @@ fun GroupsSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Your groups", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("Your groups", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             if (state.groups.isNotEmpty()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.clickable { onViewAllClick() }
                 ) {
-                    Text("View All", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("View All", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -518,24 +520,24 @@ fun GroupsSection(
                     imageVector = Icons.Default.Groups,
                     contentDescription = null,
                     modifier = Modifier.size(80.dp),
-                    tint = Color.LightGray
+                    tint = MaterialTheme.colorScheme.surfaceVariant
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("No groups yet", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text("No groups yet", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Create a group for a trip, a flat or a night out, then add what everyone spent.",
                     fontSize = 16.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     lineHeight = 22.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onNewGroupClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEBB1B)),
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand),
                 ) {
-                    Text("Create a group", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Create a group", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             }
             return@Column
@@ -554,20 +556,20 @@ private const val HOME_GROUP_LIMIT = 5
 /** Shown until the email is confirmed, since unconfirmed accounts can't be added by email. */
 @Composable
 private fun VerifyEmailBanner(onClick: () -> Unit) {
-    Surface(color = Color(0xFFFFF3CD), modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
+    Surface(color = AppTheme.colors.brand.copy(alpha = 0.2f), modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.MarkEmailUnread, contentDescription = null, tint = Color.Black)
+            Icon(Icons.Default.MarkEmailUnread, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Confirm your email so friends can add you to groups",
                 fontSize = 13.sp,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Black)
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -581,7 +583,7 @@ private fun GroupRow(summary: GroupSummary, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(summary.group.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+            Text(summary.group.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
             Text(
                 text = when {
                     balance.isPositive -> "You are owed"
@@ -589,7 +591,7 @@ private fun GroupRow(summary: GroupSummary, onClick: () -> Unit) {
                     else -> "Settled up"
                 },
                 fontSize = 13.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         if (!balance.isZero) {
@@ -597,7 +599,7 @@ private fun GroupRow(summary: GroupSummary, onClick: () -> Unit) {
                 text = "${balance.abs().toPlainString()} ${balance.currency.code}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (balance.isPositive) Color(0xFF2E7D32) else Color(0xFFC62828)
+                color = if (balance.isPositive) AppTheme.colors.positive else AppTheme.colors.negative
             )
         }
     }

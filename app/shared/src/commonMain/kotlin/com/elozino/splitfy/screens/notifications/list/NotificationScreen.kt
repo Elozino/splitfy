@@ -1,6 +1,8 @@
 package com.elozino.splitfy.screens.notifications.list
 
 import com.elozino.splitfy.ui.components.RefreshableBox
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
@@ -90,7 +92,7 @@ fun NotificationScreen(
                     modifier = Modifier.fillMaxSize().padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("You're all caught up", color = Color.Gray, fontSize = 16.sp)
+                    Text("You're all caught up", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
                 }
                 return@RefreshableBox
             }
@@ -105,7 +107,7 @@ fun NotificationScreen(
                         Text(
                             text = section.title,
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -134,7 +136,7 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .border(1.dp, Color.LightGray.copy(alpha = 0.3f), CircleShape)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                 .clip(CircleShape)
                 .padding(12.dp),
             contentAlignment = Alignment.Center
@@ -143,7 +145,7 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
                 imageVector = data.icon,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
-                tint = Color.Black
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -164,7 +166,7 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
                     Box(
                         modifier = Modifier
                             .size(8.dp)
-                            .background(Color(0xFFFEBB1B), CircleShape)
+                            .background(AppTheme.colors.brand, CircleShape)
                     )
                 }
             }
@@ -172,14 +174,14 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
             Text(
                 text = data.message,
                 fontSize = 13.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = data.time,
                 fontSize = 12.sp,
-                color = Color.Gray.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
 
@@ -188,7 +190,7 @@ fun NotificationItem(data: NotificationItemData, onClick: () -> Unit = {}) {
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = Color.LightGray,
+            tint = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier.size(20.dp)
         )
     }

@@ -1,6 +1,8 @@
 package com.elozino.splitfy.screens.activity.list
 
 import com.elozino.splitfy.ui.components.RefreshableBox
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.components.LoadErrorState
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
@@ -120,8 +122,8 @@ fun ActivityScreen(
                         Button(
                             onClick = { viewModel.onFilterChange(filter) },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected) Color(0xFFFEBB1B) else Color.Transparent,
-                                contentColor = if (isSelected) Color.Black else Color.Gray
+                                containerColor = if (isSelected) AppTheme.colors.brand else Color.Transparent,
+                                contentColor = if (isSelected) AppTheme.colors.onBrand else MaterialTheme.colorScheme.onSurfaceVariant
                             ),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.weight(1f),
@@ -175,14 +177,14 @@ fun ActivityScreen(
 
                 if (state.isEmpty) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nothing outstanding 🎉", color = Color.Gray, fontSize = 16.sp)
+                        Text("Nothing outstanding 🎉", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
                     }
                     return@Column
                 }
 
                 if (activities.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nothing matches \"$needle\"", color = Color.Gray, fontSize = 16.sp)
+                        Text("Nothing matches \"$needle\"", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
                     }
                     return@Column
                 }
@@ -193,7 +195,7 @@ fun ActivityScreen(
                             Text(
                                 text = section.date,
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                                color = Color.Gray,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
                             )
@@ -214,7 +216,7 @@ fun ActivityScreen(
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 24.dp),
-                                color = Color.LightGray.copy(alpha = 0.3f)
+                                color = MaterialTheme.colorScheme.outlineVariant
                             )
                         }
                     }
@@ -265,13 +267,13 @@ fun ActivityItem(data: ActivityItemData, onActionClick: () -> Unit = {}) {
             Text(
                 text = "${data.status} ${data.target}",
                 fontSize = 12.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
         Text(
             text = data.amount,
-            color = if (data.isCompleted) Color.Gray else Color(0xFFE57373),
+            color = if (data.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else AppTheme.colors.negative,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             modifier = Modifier.padding(horizontal = 8.dp)
@@ -280,8 +282,8 @@ fun ActivityItem(data: ActivityItemData, onActionClick: () -> Unit = {}) {
         Button(
             onClick = onActionClick,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (data.isCompleted) Color.Transparent else Color(0xFFFEBB1B),
-                contentColor = Color.Black
+                containerColor = if (data.isCompleted) Color.Transparent else AppTheme.colors.brand,
+                contentColor = if (data.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else AppTheme.colors.onBrand
             ),
             shape = RoundedCornerShape(20.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
@@ -290,7 +292,7 @@ fun ActivityItem(data: ActivityItemData, onActionClick: () -> Unit = {}) {
                 .then(
                     if (data.isCompleted) Modifier.background(Color.Transparent).padding(0.dp) else Modifier
                 ),
-            border = if (data.isCompleted) androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray) else null,
+            border = if (data.isCompleted) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant) else null,
             elevation = null
         ) {
             Text(text = data.actionLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold)
