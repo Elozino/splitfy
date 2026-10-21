@@ -30,8 +30,8 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.update
 
 /**
- * [coverUrl] turns a stored cover key into something a client can display (a public
- * or signed URL), or null when it can't be served.
+ * [coverUrl] turns a stored cover or avatar key into something a client can display
+ * (a public or signed URL), or null when it can't be served.
  */
 class GroupRepository(private val coverUrl: (String) -> String? = { null }) {
 
@@ -166,7 +166,7 @@ class GroupRepository(private val coverUrl: (String) -> String? = { null }) {
                 GroupMember(
                     userId = UserId(row[GroupMembersTable.userId].toString()),
                     displayName = row[UsersTable.displayName],
-                    avatarUrl = row[UsersTable.avatarUrl],
+                    avatarUrl = row[UsersTable.avatarUrl]?.takeIf(ObjectKeys::isOurs)?.let(coverUrl),
                     role = row[GroupMembersTable.role],
                     joinedAt = row[GroupMembersTable.joinedAt].toKotlin(),
                 )

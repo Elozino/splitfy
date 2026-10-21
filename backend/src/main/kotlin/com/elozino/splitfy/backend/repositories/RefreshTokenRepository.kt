@@ -161,3 +161,49 @@ open class OneTimeCodeRepository(private val table: OneTimeCodesTable) {
 class PasswordResetRepository : OneTimeCodeRepository(PasswordResetsTable)
 
 class EmailVerificationRepository : OneTimeCodeRepository(EmailVerificationsTable)
+
+/** A pending change of address, as stored in `email_changes`. */
+data class PendingEmailChange(val id: UUID, val newEmail: String, val expiresAt: Instant)
+
+/** Codes that move an account to a new address; the code is sent to that address. */
+class EmailChangeRepository : OneTimeCodeRepository(EmailChangesTable) {
+
+    /** Replaces any change still pending, so only the newest code works. */
+    suspend fun createChange(userId: UUID, newEmail: String, codeHash: String, expiresAt: Instant): UUID {
+        cancelPending(userId)
+        return dbQuery {
+            val id = UUID.randomUUID()
+            EmailChangesTable.insert {
+                it[EmailChangesTable.id] = id
+                it[EmailChangesTable.userId] = userId
+                it[EmailChangesTable.newEmail] = newEmail
+                it[EmailChangesTable.codeHash] = codeHash
+                it[EmailChangesTable.expiresAt] = expiresAt.toJava()
+                it[EmailChangesTable.createdAt] = Clock.System.now().toJava()
+            }
+            id
+        }
+    }
+
+    suspend fun findActiveChange(userId: UUID, codeHash: String, now: Instant): PendingEmailChange? {
+        val id = findActive(userId, codeHash, now) ?: return null
+        return dbQuery {
+            EmailChangesTable.selectAll().where { EmailChangesTable.id eq id }.singleOrNull()?.let {
+                PendingEmailChange(id, it[EmailChangesTable.newEmail], it[EmailChangesTable.expiresAt].toKotlin())
+            }
+        }
+    }
+
+    /** How many changes [userId] has started since [since], for the daily cap. */
+    suspend fun countIssuedSince(userId: UUID, since: Instant): Long = dbQuery {
+        EmailChangesTable.selectAll()
+            .where { (EmailChangesTable.userId eq userId) and (EmailChangesTable.createdAt greaterEq since.toJava()) }
+            .count()
+    }
+
+    suspend fun cancelPending(userId: UUID): Unit = dbQuery {
+        EmailChangesTable.update({ (EmailChangesTable.userId eq userId) and EmailChangesTable.consumedAt.isNull() }) {
+            it[consumedAt] = Clock.System.now().toJava()
+        }
+    }
+}

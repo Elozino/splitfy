@@ -52,6 +52,10 @@ sealed class AppException(
         code: ApiErrorCode = ApiErrorCode.CONFLICT,
     ) : AppException(HttpStatusCode.Conflict, code, message)
 
+    class TooManyRequests(
+        message: String,
+    ) : AppException(HttpStatusCode.TooManyRequests, ApiErrorCode.RATE_LIMITED, message)
+
     class Unavailable(
         message: String,
         code: ApiErrorCode = ApiErrorCode.STORAGE_UNAVAILABLE,

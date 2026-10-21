@@ -6,6 +6,9 @@ import com.elozino.splitfy.backend.repositories.UploadRepository
 import com.elozino.splitfy.backend.services.UploadService
 import com.elozino.splitfy.backend.storage.ObjectStorage
 import com.elozino.splitfy.backend.repositories.EmailVerificationRepository
+import com.elozino.splitfy.backend.repositories.EmailChangeRepository
+import com.elozino.splitfy.backend.services.DataExportService
+import com.elozino.splitfy.backend.services.EmailChangeService
 import com.elozino.splitfy.backend.repositories.PasswordResetRepository
 import com.elozino.splitfy.backend.repositories.GroupInviteRepository
 import com.elozino.splitfy.backend.repositories.UserIdentityRepository
@@ -90,10 +93,11 @@ fun serverModule(config: AppConfig) = module {
     single { PushDispatcher(get(), get(), get()) }.withOptions { onClose { it?.close() } }
 
     // Repositories
-    single { UserRepository() }
+    single { UserRepository(get<ObjectStorage>()::displayUrl) }
     single { RefreshTokenRepository() }
     single { PasswordResetRepository() }
     single { EmailVerificationRepository() }
+    single { EmailChangeRepository() }
     single { UserIdentityRepository() }
     single { GroupInviteRepository() }
     single { ObjectStorage(config.storage) }
@@ -113,7 +117,9 @@ fun serverModule(config: AppConfig) = module {
 
     // Services
     single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    single { UserService(get()) }
+    single { UserService(get(), get()) }
+    single { EmailChangeService(get(), get(), get(), get(), get()) }
+    single { DataExportService(get(), get()) }
     single { AccountDeletionService(get(), get(), get()) }
     single { InviteService(get(), get(), get(), get(), get(), config.links.publicBaseUrl) }
     single {

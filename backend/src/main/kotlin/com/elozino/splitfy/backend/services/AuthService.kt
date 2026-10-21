@@ -261,6 +261,12 @@ class AuthService(
 interface OtpNotifier {
     suspend fun sendPasswordResetCode(email: String, code: String)
     suspend fun sendEmailVerificationCode(email: String, code: String)
+
+    /** The code that confirms a change of address, sent to the new address. */
+    suspend fun sendEmailChangeCode(email: String, code: String)
+
+    /** Tells the previous address that the account has moved to [newEmail]. */
+    suspend fun sendEmailChangedNotice(oldEmail: String, newEmail: String)
 }
 
 /**
@@ -283,5 +289,13 @@ class LoggingOtpNotifier(private val environment: AppConfig.Environment) : OtpNo
 
     override suspend fun sendEmailVerificationCode(email: String, code: String) {
         logger.info("[dev] email verification code for {}: {}", email, code)
+    }
+
+    override suspend fun sendEmailChangeCode(email: String, code: String) {
+        logger.info("[dev] email change code for {}: {}", email, code)
+    }
+
+    override suspend fun sendEmailChangedNotice(oldEmail: String, newEmail: String) {
+        logger.info("[dev] email changed notice to {}: account now uses {}", oldEmail, newEmail)
     }
 }
