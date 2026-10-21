@@ -1,5 +1,12 @@
 package com.elozino.splitfy.screens.groups.detail.expense
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import com.elozino.splitfy.ui.components.SkeletonText
+import com.elozino.splitfy.ui.components.SkeletonList
+import com.elozino.splitfy.ui.components.SkeletonBlock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -72,7 +79,10 @@ fun ExpenseDetailScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(expense?.description ?: "Expense", fontWeight = FontWeight.Bold) },
+                title = {
+                    if (expense == null) SkeletonBlock(Modifier.width(140.dp).height(20.dp), RoundedCornerShape(6.dp))
+                    else Text(expense.description, fontWeight = FontWeight.Bold)
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
@@ -96,7 +106,15 @@ fun ExpenseDetailScreen(
                     .background(primaryLight),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (expense == null) Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SkeletonBlock(Modifier.size(80.dp), CircleShape, onAccent = true)
+                    SkeletonBlock(Modifier.width(180.dp).height(36.dp), onAccent = true)
+                    SkeletonBlock(Modifier.width(130.dp).height(16.dp), RoundedCornerShape(6.dp), onAccent = true)
+                    SkeletonBlock(Modifier.width(100.dp).height(12.dp), RoundedCornerShape(6.dp), onAccent = true)
+                } else Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center
@@ -134,7 +152,18 @@ fun ExpenseDetailScreen(
                     .background(Color.White)
                     .padding(24.dp)
             ) {
-                DetailRow("Total", expense?.total?.toPlainString().orEmpty())
+                if (expense == null) {
+                    // Label/value pairs, the shape of the detail rows below.
+                    SkeletonList(count = 6, contentPadding = PaddingValues(0.dp), spacing = 22.dp) { index ->
+                        Row {
+                            SkeletonText(0.25f + (index % 2) * 0.1f, height = 14.dp, modifier = Modifier.weight(1f))
+                            Spacer(Modifier.width(48.dp))
+                            SkeletonBlock(Modifier.width(80.dp).height(14.dp), RoundedCornerShape(6.dp))
+                        }
+                    }
+                    return@Column
+                }
+                DetailRow("Total", expense.total.toPlainString())
                 DetailRow("Your share", yourShare?.toPlainString() ?: "-")
                 DetailRow("Split", expense?.splitMethod?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "-")
                 DetailRow("Group", state.group?.name.orEmpty())

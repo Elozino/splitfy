@@ -1,5 +1,8 @@
 package com.elozino.splitfy.screens.transactions.history
 
+import androidx.compose.foundation.layout.PaddingValues
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -78,12 +81,7 @@ fun TransactionHistoryScreen(
                     )
 
                     when {
-                        state.isLoading -> Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = primaryLight)
-                        }
+                        state.isLoading -> SkeletonList(count = 7, contentPadding = PaddingValues(vertical = 8.dp))
 
                         filteredTransactions.isEmpty() -> Box(
                             modifier = Modifier.fillMaxSize(),

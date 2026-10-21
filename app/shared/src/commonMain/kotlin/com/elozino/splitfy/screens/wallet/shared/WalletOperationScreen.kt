@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.wallet.shared
 
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -228,8 +230,8 @@ private fun MethodStep(
         }
     ) { padding ->
         if (state.isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = primaryLight)
+            SkeletonList(modifier = Modifier.padding(padding), count = 4) {
+                SkeletonListItem(avatarSize = 40.dp, trailing = false)
             }
             return@Scaffold
         }

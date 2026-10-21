@@ -1,5 +1,8 @@
 package com.elozino.splitfy.screens.notifications.list
 
+import com.elozino.splitfy.ui.components.LoadErrorState
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,12 +66,20 @@ fun NotificationScreen(
             .map { (day, items) -> NotificationSection(day, items.map { it.toItem() }) }
 
         if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFFFEBB1B))
+            SkeletonList(modifier = Modifier.padding(padding), count = 6) { index ->
+                SkeletonListItem(
+                    avatarSize = 44.dp,
+                    titleFraction = 0.5f + (index % 3) * 0.1f,
+                    subtitleFraction = 0.75f,
+                    trailing = false,
+                )
             }
+            return@Scaffold
+        }
+
+        val loadError = state.errorMessage
+        if (loadError != null && state.items.isEmpty()) {
+            LoadErrorState(loadError, onRetry = viewModel::load, modifier = Modifier.padding(padding))
             return@Scaffold
         }
 

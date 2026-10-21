@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.overview
 
+import com.elozino.splitfy.ui.components.SkeletonText
+import com.elozino.splitfy.ui.components.SkeletonCircle
 import com.elozino.splitfy.FeatureFlags
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
 
@@ -162,24 +164,33 @@ fun AccountScreen(
                 Row(
                     modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier.size(60.dp).clip(CircleShape).background(Color.LightGray)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = state.displayName.ifEmpty { "Your profile" },
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                    if (state.isLoading && state.user == null) {
+                        SkeletonCircle(60.dp)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SkeletonText(0.55f, height = 20.dp)
+                            SkeletonText(0.7f, height = 14.dp)
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier.size(60.dp).clip(CircleShape).background(Color.LightGray)
                         )
-                        Text(state.email, color = Color.Gray, fontSize = 14.sp)
-                        if (!state.balance.isZero) {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Balance ${state.balance.toPlainString()} ${state.balance.currency.code}",
-                                color = Color(0xFF2E7D32),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium
+                                text = state.displayName.ifEmpty { "Your profile" },
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
                             )
+                            Text(state.email, color = Color.Gray, fontSize = 14.sp)
+                            if (!state.balance.isZero) {
+                                Text(
+                                    text = "Balance ${state.balance.toPlainString()} ${state.balance.currency.code}",
+                                    color = Color(0xFF2E7D32),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                         }
                     }
                     IconButton(onClick = onNavigateToPersonalInfo) {

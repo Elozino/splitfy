@@ -17,6 +17,9 @@ data class HomeState(
     val errorMessage: String? = null,
 ) {
     val hasActivity: Boolean get() = recentEntries.isNotEmpty()
+
+    /** The first load failed and there is nothing to show: say so rather than "0.00". */
+    val loadFailed: Boolean get() = !isLoading && groups.isEmpty() && errorMessage != null
     val owedToYouByCurrency: Map<CurrencyCode, Money> get() = sumByCurrency { it.isPositive }
     val youOweByCurrency: Map<CurrencyCode, Money>
         get() = sumByCurrency { it.isNegative }.mapValues { it.value.abs() }
