@@ -16,6 +16,8 @@ import kotlin.time.Clock
 data class UserRecord(
     val user: User,
     val passwordHash: String,
+    /** False while [passwordHash] is a random value nobody knows (Google/Apple sign-up). */
+    val passwordSet: Boolean = true,
 )
 
 class UserRepository {
@@ -28,6 +30,8 @@ class UserRepository {
         defaultCurrency: CurrencyCode,
         /** True when a provider (Google, Apple) has already proven the address. */
         emailVerified: Boolean = false,
+        /** False when [passwordHash] is a placeholder the user never chose. */
+        passwordSet: Boolean = true,
     ): User = dbQuery {
         val now = dbNow()
         val id = UUID.randomUUID()
@@ -35,6 +39,7 @@ class UserRepository {
             it[UsersTable.id] = id
             it[UsersTable.email] = email.normalizedEmail()
             it[UsersTable.passwordHash] = passwordHash
+            it[UsersTable.passwordSet] = passwordSet
             it[UsersTable.displayName] = displayName.trim()
             it[UsersTable.phoneNumber] = phoneNumber
             it[UsersTable.defaultCurrency] = defaultCurrency.code
@@ -65,6 +70,13 @@ class UserRepository {
             .where { UsersTable.id eq id }
             .singleOrNull()
             ?.toUser()
+    }
+
+    suspend fun findRecordById(id: UUID): UserRecord? = dbQuery {
+        UsersTable.selectAll()
+            .where { (UsersTable.id eq id) and UsersTable.deletedAt.isNull() }
+            .singleOrNull()
+            ?.toUserRecord()
     }
 
     suspend fun findAllByIds(ids: Collection<UUID>): List<User> {
@@ -118,9 +130,11 @@ class UserRepository {
         UsersTable.selectAll().where { UsersTable.id eq id }.singleOrNull()?.toUser()
     }
 
-    suspend fun updatePasswordHash(id: UUID, passwordHash: String): Boolean = dbQuery {
+    /** [passwordSet] is false only when the hash is a random placeholder, as for a provider sign-up. */
+    suspend fun updatePasswordHash(id: UUID, passwordHash: String, passwordSet: Boolean = true): Boolean = dbQuery {
         UsersTable.update({ UsersTable.id eq id }) {
             it[UsersTable.passwordHash] = passwordHash
+            it[UsersTable.passwordSet] = passwordSet
             it[updatedAt] = Clock.System.now().toJava()
         } > 0
     }
@@ -144,4 +158,5 @@ internal fun ResultRow.toUser() = User(
 internal fun ResultRow.toUserRecord() = UserRecord(
     user = toUser(),
     passwordHash = this[UsersTable.passwordHash],
+    passwordSet = this[UsersTable.passwordSet],
 )

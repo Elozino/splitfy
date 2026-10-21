@@ -34,6 +34,7 @@ tags:
   - name: Notifications
   - name: Contacts
   - name: Uploads
+  - name: Security
   - name: System
 
 paths:
@@ -154,8 +155,15 @@ paths:
   /api/v1/auth/login:
     post:
       tags: [Auth]
-      summary: Exchange credentials for a token pair
+      summary: Exchange credentials for a token pair, or a two-step challenge
+      description: |
+        Without two-step verification the body is an `AuthResponse` (user and tokens).
+        With it, only `twoFactor` is set: send its `challengeToken` and a code to
+        `POST /api/v1/auth/2fa/verify` within five minutes to get tokens.
       security: []
+      parameters:
+        - { $ref: "#/components/parameters/DeviceName" }
+        - { $ref: "#/components/parameters/DevicePlatform" }
       requestBody:
         required: true
         content:
@@ -163,10 +171,10 @@ paths:
             schema: { $ref: "#/components/schemas/LoginRequest" }
       responses:
         "200":
-          description: Signed in
+          description: Signed in, or the password was right and a code is needed
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/AuthResponse" }
+              schema: { $ref: "#/components/schemas/SignInResponse" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "429": { $ref: "#/components/responses/RateLimited" }
 
@@ -176,8 +184,13 @@ paths:
       summary: Rotate a refresh token
       description: |
         The presented token is consumed. Replaying a consumed token revokes every
-        session for that user, on the assumption the token was stolen.
+        session for that user, on the assumption the token was stolen. The new token
+        stays in the same device session, whose name and platform are refreshed from
+        the device headers.
       security: []
+      parameters:
+        - { $ref: "#/components/parameters/DeviceName" }
+        - { $ref: "#/components/parameters/DevicePlatform" }
       requestBody:
         required: true
         content:
@@ -313,6 +326,8 @@ paths:
           in: path
           required: true
           schema: { type: string, enum: [google, apple] }
+        - { $ref: "#/components/parameters/DeviceName" }
+        - { $ref: "#/components/parameters/DevicePlatform" }
       requestBody:
         required: true
         content:
@@ -326,10 +341,10 @@ paths:
                 displayName: { type: string, nullable: true, description: "Apple shares the name only on first sign-in" }
       responses:
         "200":
-          description: Signed in
+          description: Signed in, or a two-step challenge when the account has an authenticator app
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/AuthResponse" }
+              schema: { $ref: "#/components/schemas/SignInResponse" }
         "400":
           description: The provider did not share a verified email
           content:
@@ -1203,6 +1218,182 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ContactsResponse" }
 
+  /api/v1/auth/2fa/verify:
+    post:
+      tags: [Auth]
+      summary: Second sign-in step - trade a challenge and a code for tokens
+      description: |
+        `code` is the authenticator app's current six digits or one unused recovery
+        code (which is then spent). A challenge lasts five minutes and allows five
+        wrong codes; five wrong codes on the account (from anywhere) lock code entry
+        for fifteen minutes.
+      security: []
+      parameters:
+        - { $ref: "#/components/parameters/DeviceName" }
+        - { $ref: "#/components/parameters/DevicePlatform" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TwoFactorVerifyRequest" }
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "401":
+          description: Wrong code (`INVALID_CREDENTIALS`), or an expired or used challenge
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/v1/security:
+    get:
+      tags: [Security]
+      summary: Password and two-step verification status for the Security screen
+      responses:
+        "200":
+          description: Overview
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SecurityOverview" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/security/password:
+    post:
+      tags: [Security]
+      summary: Change the password, or set one for a Google/Apple account
+      description: |
+        `currentPassword` is required unless `SecurityOverview.passwordSet` is false.
+        On success every other device is signed out; the calling device stays signed in.
+        A wrong current password is a 400 (`INVALID_CREDENTIALS`), not a 401.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChangePasswordRequest" }
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/v1/security/sessions:
+    get:
+      tags: [Security]
+      summary: Devices currently signed in to this account
+      description: One entry per device session (a chain of rotating refresh tokens), most recently used first.
+      responses:
+        "200":
+          description: Active sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DeviceSession" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/security/sessions/{id}:
+    delete:
+      tags: [Security]
+      summary: Sign one device out
+      description: |
+        Its refresh token stops working at once; an access token it already holds
+        lasts until it expires (at most 15 minutes). The calling device cannot
+        remove itself here (use logout).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Signed out }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/security/sessions/revoke-others:
+    post:
+      tags: [Security]
+      summary: Sign out of every device except this one
+      responses:
+        "200":
+          description: How many sessions were ended
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RevokedSessionsResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/security/2fa/setup:
+    post:
+      tags: [Security]
+      summary: Start enrolling an authenticator app
+      description: |
+        Returns a new secret and its `otpauth://` URI (for a QR code). Sign-in is
+        unchanged until `/security/2fa/enable` confirms a code. Calling again
+        replaces a pending secret. Needs a verified email address.
+      responses:
+        "200":
+          description: Secret to add to the authenticator app
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TwoFactorSetupResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /api/v1/security/2fa/enable:
+    post:
+      tags: [Security]
+      summary: Confirm the authenticator app with a code and turn two-step verification on
+      description: Returns ten single-use recovery codes. They are stored hashed and cannot be shown again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TwoFactorEnableRequest" }
+      responses:
+        "200":
+          description: Enabled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecoveryCodesResponse" }
+        "400":
+          description: Wrong code (`INVALID_CREDENTIALS`) or setup not started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/v1/security/2fa/disable:
+    post:
+      tags: [Security]
+      summary: Turn two-step verification off
+      description: Needs a current authenticator code, an unused recovery code, or the account password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TwoFactorDisableRequest" }
+      responses:
+        "200":
+          description: Disabled (also when it was already off)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+        "400":
+          description: Wrong code or password (`INVALID_CREDENTIALS`), or neither given
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1230,6 +1421,15 @@ components:
       name: limit
       in: query
       schema: { type: integer, default: 25, minimum: 1, maximum: 100 }
+    DeviceName:
+      name: X-Device-Name
+      in: header
+      description: What the device calls itself (e.g. "Pixel 8"), shown in the session list. Up to 100 characters.
+      schema: { type: string }
+    DevicePlatform:
+      name: X-Device-Platform
+      in: header
+      schema: { type: string, enum: [ANDROID, IOS] }
 
   responses:
     ValidationError:
@@ -1563,6 +1763,86 @@ components:
       properties:
         user: { $ref: "#/components/schemas/User" }
         tokens: { $ref: "#/components/schemas/TokenPair" }
+
+    SignInResponse:
+      type: object
+      description: Either `user` and `tokens` (signed in), or only `twoFactor` (a code is needed).
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        tokens: { $ref: "#/components/schemas/TokenPair" }
+        twoFactor: { $ref: "#/components/schemas/TwoFactorChallenge" }
+
+    TwoFactorChallenge:
+      type: object
+      required: [challengeToken, expiresInSeconds]
+      properties:
+        challengeToken: { type: string }
+        expiresInSeconds: { type: integer, format: int64 }
+
+    TwoFactorVerifyRequest:
+      type: object
+      required: [challengeToken, code]
+      properties:
+        challengeToken: { type: string }
+        code: { type: string, description: "Six digits from the authenticator app, or a recovery code" }
+
+    SecurityOverview:
+      type: object
+      required: [passwordSet, twoFactorEnabled]
+      properties:
+        passwordSet:
+          type: boolean
+          description: False for Google/Apple accounts that never chose a password; they may set one without a current password.
+        twoFactorEnabled: { type: boolean }
+        recoveryCodesRemaining: { type: integer }
+
+    ChangePasswordRequest:
+      type: object
+      required: [newPassword]
+      properties:
+        currentPassword: { type: string, nullable: true }
+        newPassword: { type: string, minLength: 8 }
+
+    DeviceSession:
+      type: object
+      required: [id, createdAt, lastUsedAt]
+      properties:
+        id: { type: string, format: uuid }
+        deviceName: { type: string, nullable: true }
+        platform: { type: string, enum: [ANDROID, IOS], nullable: true }
+        createdAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time }
+        current: { type: boolean, description: "The device making this request" }
+
+    RevokedSessionsResponse:
+      type: object
+      properties:
+        revoked: { type: integer }
+
+    TwoFactorSetupResponse:
+      type: object
+      properties:
+        secret: { type: string, description: "Base32, for typing into the app by hand" }
+        otpauthUri: { type: string, description: "otpauth://totp/... for a QR code" }
+
+    TwoFactorEnableRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string }
+
+    RecoveryCodesResponse:
+      type: object
+      properties:
+        recoveryCodes:
+          type: array
+          items: { type: string }
+
+    TwoFactorDisableRequest:
+      type: object
+      properties:
+        code: { type: string, nullable: true }
+        password: { type: string, nullable: true }
 
     RegisterRequest:
       type: object

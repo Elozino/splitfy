@@ -52,6 +52,11 @@ sealed class AppException(
         code: ApiErrorCode = ApiErrorCode.CONFLICT,
     ) : AppException(HttpStatusCode.Conflict, code, message)
 
+    /** Too many wrong codes for one account, however many addresses they came from. */
+    class TooManyAttempts(
+        message: String,
+    ) : AppException(HttpStatusCode.TooManyRequests, ApiErrorCode.RATE_LIMITED, message)
+
     class Unavailable(
         message: String,
         code: ApiErrorCode = ApiErrorCode.STORAGE_UNAVAILABLE,

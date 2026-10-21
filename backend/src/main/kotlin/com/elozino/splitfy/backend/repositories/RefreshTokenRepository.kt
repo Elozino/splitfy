@@ -3,7 +3,13 @@ package com.elozino.splitfy.backend.repositories
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.SortOrder
 import com.elozino.splitfy.backend.schema.*
+import org.jetbrains.exposed.sql.Op
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.neq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
@@ -16,6 +22,8 @@ data class StoredRefreshToken(
     val userId: UUID,
     val expiresAt: Instant,
     val revokedAt: Instant?,
+    /** Null only for tokens issued before sessions existed and not yet rotated. */
+    val sessionId: UUID? = null,
 ) {
     fun isUsable(now: Instant): Boolean = revokedAt == null && expiresAt > now
 }
@@ -34,6 +42,7 @@ class RefreshTokenRepository {
         tokenHash: String,
         deviceId: String?,
         expiresAt: Instant,
+        sessionId: UUID? = null,
     ): UUID = dbQuery {
         val id = UUID.randomUUID()
         RefreshTokensTable.insert {
@@ -41,6 +50,7 @@ class RefreshTokenRepository {
             it[RefreshTokensTable.userId] = userId
             it[RefreshTokensTable.tokenHash] = tokenHash
             it[RefreshTokensTable.deviceId] = deviceId
+            it[RefreshTokensTable.sessionId] = sessionId
             it[RefreshTokensTable.expiresAt] = expiresAt.toJava()
             it[createdAt] = Clock.System.now().toJava()
         }
@@ -57,6 +67,7 @@ class RefreshTokenRepository {
                     userId = it[RefreshTokensTable.userId],
                     expiresAt = it[RefreshTokensTable.expiresAt].toKotlin(),
                     revokedAt = it[RefreshTokensTable.revokedAt]?.toKotlin(),
+                    sessionId = it[RefreshTokensTable.sessionId],
                 )
             }
     }
@@ -69,23 +80,143 @@ class RefreshTokenRepository {
         } > 0
     }
 
+    /** Signing out: the token stops working and its device leaves the session list. */
     suspend fun revokeByHash(tokenHash: String): Boolean = dbQuery {
+        val now = Clock.System.now().toJava()
+        val sessionId = RefreshTokensTable.selectAll()
+            .where { RefreshTokensTable.tokenHash eq tokenHash }
+            .singleOrNull()
+            ?.get(RefreshTokensTable.sessionId)
+        sessionId?.let { id ->
+            AuthSessionsTable.update({ (AuthSessionsTable.id eq id) and AuthSessionsTable.revokedAt.isNull() }) {
+                it[revokedAt] = now
+            }
+        }
         RefreshTokensTable.update({
             (RefreshTokensTable.tokenHash eq tokenHash) and RefreshTokensTable.revokedAt.isNull()
         }) {
-            it[revokedAt] = Clock.System.now().toJava()
+            it[revokedAt] = now
         } > 0
     }
 
     /** Used on replay detection and on "sign out of all devices". */
     suspend fun revokeAllForUser(userId: UUID): Int = dbQuery {
+        val now = Clock.System.now().toJava()
+        AuthSessionsTable.update({ (AuthSessionsTable.userId eq userId) and AuthSessionsTable.revokedAt.isNull() }) {
+            it[revokedAt] = now
+        }
         RefreshTokensTable.update({
             (RefreshTokensTable.userId eq userId) and RefreshTokensTable.revokedAt.isNull()
         }) {
-            it[revokedAt] = Clock.System.now().toJava()
+            it[revokedAt] = now
         }
     }
+
+    // --- Sessions -------------------------------------------------------------
+
+    suspend fun createSession(userId: UUID, device: DeviceLabel, expiresAt: Instant): UUID = dbQuery {
+        val id = UUID.randomUUID()
+        val now = dbNow().toJava()
+        AuthSessionsTable.insert {
+            it[AuthSessionsTable.id] = id
+            it[AuthSessionsTable.userId] = userId
+            it[deviceName] = device.name
+            it[platform] = device.platform
+            it[createdAt] = now
+            it[lastUsedAt] = now
+            it[AuthSessionsTable.expiresAt] = expiresAt.toJava()
+        }
+        id
+    }
+
+    /** A refresh: the session lives on with a new expiry, and picks up a renamed device. */
+    suspend fun touchSession(sessionId: UUID, device: DeviceLabel, expiresAt: Instant): Unit = dbQuery {
+        AuthSessionsTable.update({ AuthSessionsTable.id eq sessionId }) {
+            it[lastUsedAt] = dbNow().toJava()
+            it[AuthSessionsTable.expiresAt] = expiresAt.toJava()
+            device.name?.let { name -> it[deviceName] = name }
+            device.platform?.let { value -> it[platform] = value }
+        }
+    }
+
+    suspend fun isSessionRevoked(sessionId: UUID): Boolean = dbQuery {
+        AuthSessionsTable.selectAll()
+            .where { AuthSessionsTable.id eq sessionId }
+            .singleOrNull()
+            ?.let { it[AuthSessionsTable.revokedAt] != null }
+            ?: true
+    }
+
+    /** Signed-in devices, most recently used first. */
+    suspend fun activeSessions(userId: UUID, now: Instant): List<StoredSession> = dbQuery {
+        AuthSessionsTable.selectAll()
+            .where {
+                (AuthSessionsTable.userId eq userId) and
+                    AuthSessionsTable.revokedAt.isNull() and
+                    (AuthSessionsTable.expiresAt greater now.toJava())
+            }
+            .orderBy(AuthSessionsTable.lastUsedAt, SortOrder.DESC)
+            .map {
+                StoredSession(
+                    id = it[AuthSessionsTable.id],
+                    deviceName = it[AuthSessionsTable.deviceName],
+                    platform = it[AuthSessionsTable.platform],
+                    createdAt = it[AuthSessionsTable.createdAt].toKotlin(),
+                    lastUsedAt = it[AuthSessionsTable.lastUsedAt].toKotlin(),
+                )
+            }
+    }
+
+    /**
+     * Ends one of [userId]'s sessions. Its refresh tokens are deleted rather than
+     * marked revoked: a revoked token presented again reads as theft and signs the
+     * user out everywhere, which is not what removing one device should do.
+     */
+    suspend fun revokeSession(userId: UUID, sessionId: UUID): Boolean = dbQuery {
+        val revoked = AuthSessionsTable.update({
+            (AuthSessionsTable.id eq sessionId) and (AuthSessionsTable.userId eq userId) and
+                AuthSessionsTable.revokedAt.isNull()
+        }) {
+            it[revokedAt] = dbNow().toJava()
+        } > 0
+        if (revoked) RefreshTokensTable.deleteWhere { RefreshTokensTable.sessionId eq sessionId }
+        revoked
+    }
+
+    /** "Sign out of all other devices", and what a password change does. [keep] null ends them all. */
+    suspend fun revokeOtherSessions(userId: UUID, keep: UUID?): Int = dbQuery {
+        val others = AuthSessionsTable.selectAll()
+            .where {
+                (AuthSessionsTable.userId eq userId) and AuthSessionsTable.revokedAt.isNull() and
+                    (if (keep != null) AuthSessionsTable.id neq keep else Op.TRUE)
+            }
+            .map { it[AuthSessionsTable.id] }
+        if (others.isNotEmpty()) {
+            AuthSessionsTable.update({ AuthSessionsTable.id inList others }) { it[revokedAt] = dbNow().toJava() }
+            RefreshTokensTable.deleteWhere { RefreshTokensTable.sessionId inList others }
+        }
+        // Tokens from before sessions existed belong to no session, so are never "this device".
+        RefreshTokensTable.deleteWhere {
+            (RefreshTokensTable.userId eq userId) and RefreshTokensTable.sessionId.isNull()
+        }
+        others.size
+    }
 }
+
+/** What a client says about itself, cleaned up for storage. */
+data class DeviceLabel(val name: String? = null, val platform: String? = null) {
+    companion object {
+        val UNKNOWN = DeviceLabel()
+    }
+}
+
+data class StoredSession(
+    val id: UUID,
+    val deviceName: String?,
+    val platform: String?,
+    val createdAt: Instant,
+    val lastUsedAt: Instant,
+)
 
 /** One-time codes for the forgot-password flow. Codes are stored hashed. */
 /**

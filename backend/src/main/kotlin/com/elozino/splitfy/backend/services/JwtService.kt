@@ -28,13 +28,15 @@ class JwtService(private val config: AppConfig.JwtConfig) {
         .withAudience(config.audience)
         .build()
 
-    fun createAccessToken(userId: UUID, email: String): String {
+    /** [sessionId] lets the API tell which device is calling (the "this device" marker, keeping it on a password change). */
+    fun createAccessToken(userId: UUID, email: String, sessionId: UUID? = null): String {
         val now = System.currentTimeMillis()
         return JWT.create()
             .withIssuer(config.issuer)
             .withAudience(config.audience)
             .withSubject(userId.toString())
             .withClaim(CLAIM_EMAIL, email)
+            .apply { sessionId?.let { withClaim(CLAIM_SESSION, it.toString()) } }
             .withJWTId(UUID.randomUUID().toString())
             .withIssuedAt(Date(now))
             .withExpiresAt(Date(now + config.accessTokenTtl.inWholeMilliseconds))
@@ -43,6 +45,7 @@ class JwtService(private val config: AppConfig.JwtConfig) {
 
     companion object {
         const val CLAIM_EMAIL = "email"
+        const val CLAIM_SESSION = "sid"
         const val AUTH_JWT = "auth-jwt"
     }
 }

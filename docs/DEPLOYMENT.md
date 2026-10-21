@@ -76,6 +76,7 @@ platform's secret store, never in the repository or the image.
 | `JWT_ISSUER` | `https://api.splitfy.app` | |
 | `JWT_AUDIENCE` | `splitfy-mobile` | |
 | `RESEND_API_KEY` | `re_…` | Secret. See `docs/SERVER_README.md`. |
+| `TOTP_ENCRYPTION_KEY` | 32+ random characters | Secret. `openssl rand -base64 32`. Encrypts authenticator-app secrets; changing or losing it turns off two-step verification for everyone enrolled. |
 | `EMAIL_FROM` | `splitfy <no-reply@splitfy.app>` | Domain verified in Resend. |
 | `PUBLIC_BASE_URL` | `https://splitfy.app` | Host that serves invite links; see [Domains](#domains-and-tls). |
 | `ANDROID_CERT_SHA256` | `AA:BB:…` | Play **app signing** certificate fingerprint (Play Console → App integrity). |
@@ -291,7 +292,7 @@ whether you want Git-push simplicity or full control, and who will be on call.
 
 - [ ] Hosting platform and a managed PostgreSQL with PITR, for staging and production.
 - [ ] DNS for `api.splitfy.app` and `splitfy.app`, with `/i/*` and `/.well-known/*` on `splitfy.app` routed to the API.
-- [ ] Production secrets: `JWT_SECRET`, database credentials, `RESEND_API_KEY` (and a verified sending domain).
+- [ ] Production secrets: `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`, database credentials, `RESEND_API_KEY` (and a verified sending domain).
 - [ ] GHCR access for the host (make the package public, or a read-only token).
 - [ ] Sentry organisation with three projects (API, Android, iOS) and their DSNs.
 - [ ] Optional: `METRICS_TOKEN` and somewhere to scrape `/metrics`.
