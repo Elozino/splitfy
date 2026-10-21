@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.faq
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
 import com.elozino.splitfy.screens.expenses.add.label
 
@@ -104,7 +106,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 import com.elozino.splitfy.screens.account.legal.LegalCopy
@@ -124,9 +125,9 @@ fun FAQScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }, containerColor = Color.White
+        }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             val categories = LegalCopy.faqCategories
@@ -142,7 +143,7 @@ fun FAQScreen(
                         onClick = { viewModel.selectFaqCategory(cat) },
                         label = { Text(cat) },
                         shape = RoundedCornerShape(100.dp),
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryLight)
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = AppTheme.colors.brand)
                     )
                 }
             }
@@ -161,16 +162,16 @@ fun FAQScreen(
                             Icon(
                                 if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                                 contentDescription = null,
-                                tint = primaryLight
+                                tint = AppTheme.colors.brand
                             )
                         }
                         if (expanded) {
                             Text(
-                                a, color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp)
+                                a, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp)
                             )
                         }
                     }
-                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }

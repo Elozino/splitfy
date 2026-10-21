@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.add_payment_method
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.personal_info.FieldError
 import com.elozino.splitfy.screens.account.personal_info.InfoField
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
@@ -105,7 +107,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -128,9 +129,9 @@ fun AddPaymentMethodScreen(
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
-            }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
         )
-    }, containerColor = Color.White, bottomBar = {
+    }, containerColor = MaterialTheme.colorScheme.background, bottomBar = {
         Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
             Button(
                 onClick = {
@@ -141,11 +142,11 @@ fun AddPaymentMethodScreen(
                     state.cardHolder.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
                 Text(
                     text = if (state.isSaving) "Saving…" else "Save",
-                    color = Color.Black,
+                    color = AppTheme.colors.onBrand,
                     fontWeight = FontWeight.Bold
                 )
             }

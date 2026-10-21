@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.transactions.history
 
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.layout.PaddingValues
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
@@ -29,7 +30,6 @@ import coil3.compose.AsyncImage
 import com.elozino.splitfy.ui.generated.resources.UiRes
 import com.elozino.splitfy.Transaction
 import com.elozino.splitfy.TransactionType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import com.elozino.splitfy.screens.expenses.add.label
@@ -89,7 +89,7 @@ fun TransactionHistoryScreen(
                         ) {
                             Text(
                                 text = "No transactions yet",
-                                color = Color.Gray,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 16.sp
                             )
                         }
@@ -148,11 +148,11 @@ private fun TransactionFilters(
                     Text(label) 
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = primaryLight,
-                    selectedLabelColor = Color.Black
+                    selectedContainerColor = AppTheme.colors.brand,
+                    selectedLabelColor = AppTheme.colors.onBrand
                 ),
                 shape = RoundedCornerShape(100.dp),
-                border = if (selectedType == type) null else FilterChipDefaults.filterChipBorder(enabled = true, selected = false, borderColor = primaryLight)
+                border = if (selectedType == type) null else FilterChipDefaults.filterChipBorder(enabled = true, selected = false, borderColor = AppTheme.colors.brand)
             )
         }
     }
@@ -173,7 +173,7 @@ private fun TransactionList(
         item {
             Text(
                 text = "Today",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -188,7 +188,7 @@ private fun TransactionList(
                     onClick = onLoadMore,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Load more", color = primaryLight, fontWeight = FontWeight.Bold)
+                    Text("Load more", color = AppTheme.colors.brand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -210,7 +210,7 @@ private fun TransactionItem(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color.LightGray.copy(alpha = 0.2f)),
+                .background(AppTheme.colors.field),
             contentAlignment = Alignment.Center
         ) {
             if (transaction.brandIcon != null) {
@@ -233,9 +233,9 @@ private fun TransactionItem(
                     contentDescription = null,
                     modifier = Modifier.size(24.dp),
                     tint = when (transaction.type) {
-                        TransactionType.PAY, TransactionType.EXPENSE, TransactionType.WITHDRAW -> Color.Red
-                        TransactionType.REQUEST, TransactionType.TOPUP -> Color.Green
-                        else -> Color.Gray
+                        TransactionType.PAY, TransactionType.EXPENSE, TransactionType.WITHDRAW -> AppTheme.colors.negative
+                        TransactionType.REQUEST, TransactionType.TOPUP -> AppTheme.colors.positive
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
             }
@@ -245,14 +245,14 @@ private fun TransactionItem(
         
         Column(modifier = Modifier.weight(1f)) {
             Text(transaction.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(transaction.subtitle, color = Color.Gray, fontSize = 12.sp)
+            Text(transaction.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
         
         Text(
             text = transaction.amount,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            color = if (transaction.amount.startsWith("-")) Color.Red else Color.Green
+            color = if (transaction.amount.startsWith("-")) AppTheme.colors.negative else AppTheme.colors.positive
         )
     }
 }
@@ -274,7 +274,7 @@ private fun TransactionDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = primaryLight
+                    containerColor = AppTheme.colors.brand
                 )
             )
         }
@@ -288,7 +288,7 @@ private fun TransactionDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.4f)
-                    .background(primaryLight)
+                    .background(AppTheme.colors.brand)
                     .padding(top = padding.calculateTopPadding()),
                 contentAlignment = Alignment.Center
             ) {
@@ -305,7 +305,7 @@ private fun TransactionDetailScreen(
                             )
                         } else {
                              // Avatar placeholder
-                             Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(Color.LightGray))
+                             Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
                          }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -313,18 +313,18 @@ private fun TransactionDetailScreen(
                         text = transaction.amount.replace("- ", "-").replace("+ ", "+"),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = AppTheme.colors.onBrand
                     )
                     Text(
                         text = transaction.title,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = AppTheme.colors.onBrand
                     )
                     Text(
                         text = transaction.notes ?: transaction.title,
                         fontSize = 12.sp,
-                        color = Color.Black.copy(alpha = 0.7f)
+                        color = AppTheme.colors.onBrand.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -333,7 +333,7 @@ private fun TransactionDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.6f)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(24.dp)
             ) {
                 DetailRow("You have ${transaction.type.name.lowercase()}", transaction.amount.replace("- ", "").replace("+ ", ""))
@@ -343,7 +343,7 @@ private fun TransactionDetailScreen(
                 DetailRow("Reference ID", "H375K7D${transaction.id}")
                 
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Notes", color = Color.Gray, fontSize = 12.sp)
+                Text("Notes", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 Text(transaction.notes ?: "", fontSize = 14.sp)
                 
                 Spacer(modifier = Modifier.weight(1f))
@@ -352,9 +352,9 @@ private fun TransactionDetailScreen(
                     onClick = onViewReceipt,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("View Receipt", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("View Receipt", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -367,7 +367,7 @@ private fun DetailRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = Color.Gray, fontSize = 14.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }
@@ -415,8 +415,8 @@ private fun ReceiptScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)),
-                color = Color.White
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                color = MaterialTheme.colorScheme.background
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -428,7 +428,7 @@ private fun ReceiptScreen(
                             imageVector = Icons.Default.Category,
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
-                            tint = primaryLight
+                            tint = AppTheme.colors.brand
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("splitfy", fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -436,7 +436,7 @@ private fun ReceiptScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    Text("Amount paid", color = Color.Gray, fontSize = 12.sp)
+                    Text("Amount paid", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Text(
                         text = transaction.amount.replace("- ", "").replace("+ ", "") + " USD",
                         fontSize = 24.sp,
@@ -444,7 +444,7 @@ private fun ReceiptScreen(
                     )
                     
                     Spacer(modifier = Modifier.height(24.dp))
-                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     DetailRow("You have paid", transaction.amount.replace("- ", "").replace("+ ", ""))
@@ -456,7 +456,7 @@ private fun ReceiptScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Text("Notes", color = Color.Gray, fontSize = 12.sp)
+                        Text("Notes", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         Text(transaction.notes ?: "", fontSize = 14.sp)
                     }
                     
@@ -466,10 +466,10 @@ private fun ReceiptScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(60.dp)
-                            .background(Color.LightGray.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                            .background(AppTheme.colors.field, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("splitfy: Safe & Trusted Transaction.", color = Color.Gray, fontSize = 12.sp)
+                        Text("splitfy: Safe & Trusted Transaction.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
             }
@@ -488,9 +488,9 @@ private fun ReceiptScreen(
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
-                Text("Download Receipt", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Download Receipt", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -539,7 +539,7 @@ private fun ShareOption(name: String, icon: androidx.compose.ui.graphics.vector.
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(Color.LightGray.copy(alpha = 0.1f)),
+                .background(AppTheme.colors.field),
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, contentDescription = name, modifier = Modifier.size(24.dp))
