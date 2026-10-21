@@ -34,6 +34,10 @@ import com.elozino.splitfy.screens.account.payment_methods.PaymentMethodsScreen
 import com.elozino.splitfy.screens.account.personal_info.PersonalInfoScreen
 import com.elozino.splitfy.screens.account.privacy.PrivacyPolicyScreen
 import com.elozino.splitfy.screens.account.security_settings.SecuritySettingsScreen
+import com.elozino.splitfy.screens.account.security_settings.ChangePasswordScreen
+import com.elozino.splitfy.screens.account.security_settings.DevicesScreen
+import com.elozino.splitfy.screens.account.security_settings.TwoFactorSetupScreen
+import com.elozino.splitfy.screens.auth.two_factor.TwoFactorSignInScreen
 import com.elozino.splitfy.screens.account.terms.TermsOfServiceScreen
 import com.elozino.splitfy.screens.account.upgrade_plan.UpgradePlanScreen
 import com.elozino.splitfy.screens.account.upgrade_success.UpgradeSuccessScreen
@@ -132,7 +136,7 @@ fun NavSetup() {
     val pushGroupId by com.elozino.splitfy.push.PushNotifications.pendingGroupId.collectAsStateWithLifecycle()
     // Not while the sign-in or email-verification flow is still on screen.
     val pushCanNavigate = isAuthenticated && currentDestination != null &&
-        listOf(Route.Onboarding::class, Route.Auth::class, Route.Login::class, Route.Signup::class, Route.VerifyEmail::class)
+        listOf(Route.Onboarding::class, Route.Auth::class, Route.Login::class, Route.Signup::class, Route.VerifyEmail::class, Route.TwoFactorSignIn::class)
             .none { currentDestination.hasRoute(it) }
     LaunchedEffect(pushGroupId, pushCanNavigate) {
         val groupId = pushGroupId ?: return@LaunchedEffect
@@ -202,6 +206,17 @@ fun NavSetup() {
                         navController.navigate(Route.Home) {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
+                    },
+                    onTwoFactorRequired = { navController.navigate(Route.TwoFactorSignIn) })
+            }
+            composable<Route.TwoFactorSignIn> {
+                TwoFactorSignInScreen(
+                    viewModel = authViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onSignedIn = {
+                        navController.navigate(Route.Home) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
                     })
             }
             composable<Route.Signup> {
@@ -233,7 +248,8 @@ fun NavSetup() {
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToSignup = { navController.navigate(Route.Signup) },
                     onNavigateToForgotPassword = { navController.navigate(Route.ForgotPassword) },
-                    onLoginSuccess = { navController.navigate(Route.Home) })
+                    onLoginSuccess = { navController.navigate(Route.Home) },
+                    onTwoFactorRequired = { navController.navigate(Route.TwoFactorSignIn) })
             }
             composable<Route.ForgotPassword> {
                 ForgotPasswordScreen(
@@ -399,7 +415,21 @@ fun NavSetup() {
                 NotificationSettingsScreen(onNavigateBack = { navController.popBackStack() })
             }
             composable<Route.SecuritySettings> {
-                SecuritySettingsScreen(onNavigateBack = { navController.popBackStack() })
+                SecuritySettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToChangePassword = { passwordSet -> navController.navigate(Route.ChangePassword(passwordSet)) },
+                    onNavigateToDevices = { navController.navigate(Route.Devices) },
+                    onNavigateToTwoFactorSetup = { navController.navigate(Route.TwoFactorSetup) })
+            }
+            composable<Route.ChangePassword> { backStackEntry ->
+                val route: Route.ChangePassword = backStackEntry.toRoute()
+                ChangePasswordScreen(passwordSet = route.passwordSet, onNavigateBack = { navController.popBackStack() })
+            }
+            composable<Route.Devices> {
+                DevicesScreen(onNavigateBack = { navController.popBackStack() })
+            }
+            composable<Route.TwoFactorSetup> {
+                TwoFactorSetupScreen(onNavigateBack = { navController.popBackStack() })
             }
             composable<Route.BillingSubscriptions> {
                 BillingSubscriptionsScreen(onNavigateBack = { navController.popBackStack() })

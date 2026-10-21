@@ -144,6 +144,8 @@ dependencies {
     implementation(projects.app.shared)
 
     implementation(libs.androidx.activity.compose)
+    // MainActivity is a FragmentActivity so BiometricPrompt (app lock) can attach to it.
+    implementation(libs.androidx.fragment)
     implementation(libs.compose.runtime)
     implementation(libs.compose.ui)
     implementation(libs.compose.uiToolingPreview)

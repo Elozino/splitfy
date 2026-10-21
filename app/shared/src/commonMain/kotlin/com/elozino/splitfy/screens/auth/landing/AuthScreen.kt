@@ -57,6 +57,7 @@ fun AuthScreen(
     onNavigateToRegister: () -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
     onSignedIn: () -> Unit = {},
+    onTwoFactorRequired: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val socialSignIn = rememberSocialSignIn(koinInject<SocialSignInConfig>())
@@ -65,6 +66,9 @@ fun AuthScreen(
     // Driven by the server accepting the token, not by the tap.
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated) onSignedIn()
+    }
+    LaunchedEffect(state.twoFactorChallenge) {
+        if (state.twoFactorChallenge != null) onTwoFactorRequired()
     }
 
     Scaffold(

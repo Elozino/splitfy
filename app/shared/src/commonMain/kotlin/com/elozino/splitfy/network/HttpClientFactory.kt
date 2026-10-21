@@ -4,6 +4,8 @@ import com.elozino.splitfy.api.ApiRoutes
 import com.elozino.splitfy.api.dto.RefreshTokenRequest
 import com.elozino.splitfy.api.dto.TokenPair
 import com.elozino.splitfy.SessionManager
+import com.elozino.splitfy.security.DeviceIdentity
+import com.elozino.splitfy.security.toHeaderValue
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.auth.Auth
@@ -39,6 +41,8 @@ class HttpClientFactory(
     private val engine: HttpClientEngine,
     private val config: ApiConfig,
     private val sessionManager: SessionManager,
+    /** Names this device in the account's session list; null sends nothing. */
+    private val device: DeviceIdentity? = null,
 ) {
 
     fun create(): HttpClient = HttpClient(engine) {
@@ -120,6 +124,10 @@ class HttpClientFactory(
             url(config.baseUrl)
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Accept, ContentType.Application.Json.toString())
+            device?.let {
+                it.name.toHeaderValue().takeIf(String::isNotEmpty)?.let { name -> header(ApiRoutes.Headers.DEVICE_NAME, name) }
+                header(ApiRoutes.Headers.DEVICE_PLATFORM, it.platform.name)
+            }
         }
     }
 
