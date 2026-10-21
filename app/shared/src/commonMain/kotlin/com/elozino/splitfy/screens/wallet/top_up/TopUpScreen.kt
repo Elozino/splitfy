@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.domain.model.PaymentMethod
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import org.koin.compose.viewmodel.koinViewModel
 import com.elozino.splitfy.screens.wallet.shared.WalletOperation
 import com.elozino.splitfy.screens.wallet.shared.WalletOperationFlow

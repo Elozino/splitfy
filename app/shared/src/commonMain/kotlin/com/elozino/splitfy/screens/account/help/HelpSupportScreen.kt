@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.help
 
+import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.screens.account.legal.rememberSupportMailer
 
 import androidx.compose.foundation.clickable
@@ -44,9 +45,9 @@ fun HelpSupportScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }, containerColor = Color.White
+        }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         val sendMail = rememberSupportMailer()
         // Only entries that lead somewhere. Add store-rating and website links once
@@ -67,7 +68,7 @@ fun HelpSupportScreen(
                 ) {
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

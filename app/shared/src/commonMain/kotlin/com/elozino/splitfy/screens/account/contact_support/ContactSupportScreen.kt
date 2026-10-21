@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.contact_support
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elozino.splitfy.screens.account.legal.SupportContact
 import com.elozino.splitfy.screens.account.legal.rememberSupportMailer
-import com.elozino.splitfy.ui.theme.primaryLight
 
 /**
  * Every option opens the user's mail app addressed to [SupportContact.EMAIL] with
@@ -55,9 +56,9 @@ fun ContactSupportScreen(onNavigateBack: () -> Unit) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }, containerColor = Color.White
+        }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         val options = listOf(
             SupportOption(Icons.Default.Email, "Email support", "Questions about using splitfy", "splitfy support request"),
@@ -72,11 +73,11 @@ fun ContactSupportScreen(onNavigateBack: () -> Unit) {
                         .padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(option.icon, contentDescription = null, tint = primaryLight)
+                    Icon(option.icon, contentDescription = null, tint = AppTheme.colors.brand)
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(option.title, fontWeight = FontWeight.Bold)
-                        Text(option.detail, color = Color.Gray, fontSize = 13.sp)
+                        Text(option.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     }
                 }
             }
@@ -84,7 +85,7 @@ fun ContactSupportScreen(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.padding(top = 16.dp))
             Text(
                 if (mailAppMissing) "No mail app is set up on this device. Write to us at:" else "Or write to us at:",
-                color = if (mailAppMissing) Color.Red else Color.Gray,
+                color = if (mailAppMissing) AppTheme.colors.negative else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
             )
             SelectionContainer {
@@ -92,7 +93,7 @@ fun ContactSupportScreen(onNavigateBack: () -> Unit) {
             }
             Text(
                 "We usually reply within two working days.",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 16.dp),
             )
