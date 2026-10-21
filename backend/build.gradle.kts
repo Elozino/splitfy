@@ -72,6 +72,9 @@ dependencies {
 
     // Observability
     implementation(libs.logback.classic)
+    implementation(ktorLibs.server.metrics.micrometer)
+    implementation(libs.micrometer.prometheus)
+    implementation(libs.sentry)
 
     testImplementation(kotlin("test"))
     // Ktor's OpenAPI model, used to validate the spec we serve. It only decodes from

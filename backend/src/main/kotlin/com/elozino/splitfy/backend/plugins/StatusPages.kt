@@ -31,6 +31,7 @@ fun Application.configureStatusPages() {
         exception<AppException> { call, cause ->
             if (cause.status.value >= HttpStatusCode.InternalServerError.value) {
                 logger.error("Handled server error: {}", cause.message, cause)
+                reportError(cause, call.callId)
             } else {
                 logger.debug("Rejected request: {} {}", cause.code, cause.message)
             }
@@ -91,7 +92,9 @@ fun Application.configureStatusPages() {
         }
 
         exception<Throwable> { call, cause ->
-            logger.error("Unhandled exception on {}", call.request.local.uri, cause)
+            // The path, not the URI: query strings can carry an email address.
+            logger.error("Unhandled exception on {}", call.redactedPath(), cause)
+            reportError(cause, call.callId)
             call.respond(
                 HttpStatusCode.InternalServerError,
                 ApiErrorResponse(

@@ -20,6 +20,7 @@ import com.elozino.splitfy.network.ApiCaller
 import com.elozino.splitfy.onSuccess
 import com.elozino.splitfy.SessionManager
 import io.ktor.client.HttpClient
+import io.ktor.client.request.delete
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 
@@ -27,6 +28,8 @@ class AuthRepositoryImpl(
     private val client: HttpClient,
     private val caller: ApiCaller,
     private val session: SessionManager,
+    /** Runs before sign-out while requests can still authenticate (unregistering push). */
+    private val beforeLogout: suspend () -> Unit = {},
 ) : AuthRepository {
 
     override suspend fun register(
@@ -83,6 +86,7 @@ class AuthRepositoryImpl(
      * "sign out" while offline must still end up signed out on the device.
      */
     override suspend fun logout(): DataResult<Unit> {
+        runCatching { beforeLogout() }
         val refreshToken = session.currentTokens()?.refreshToken
         val result = if (refreshToken != null) {
             caller.execute<MessageResponse> {
@@ -94,4 +98,8 @@ class AuthRepositoryImpl(
         session.signOut()
         return result
     }
+
+    override suspend fun deleteAccount(): DataResult<Unit> =
+        // The server has already revoked every session, so there is nothing to log out of.
+        caller.execute<Unit> { client.delete(ApiRoutes.Users.ME) }.onSuccess { session.signOut() }
 }

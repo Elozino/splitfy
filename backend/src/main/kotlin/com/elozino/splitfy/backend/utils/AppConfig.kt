@@ -24,6 +24,8 @@ data class AppConfig(
     val email: EmailConfig = EmailConfig(),
     val oauth: OAuthConfig = OAuthConfig(),
     val links: LinksConfig = LinksConfig(),
+    val observability: ObservabilityConfig = ObservabilityConfig(),
+    val push: PushConfig = PushConfig(),
     val storage: StorageConfig = StorageConfig(),
 ) {
     enum class Environment {
@@ -83,6 +85,35 @@ data class AppConfig(
         /** `TEAMID.bundle.id` entries allowed to open links on iOS. */
         val appleAppIds: Set<String> = emptySet(),
     )
+
+    data class ObservabilityConfig(
+        /** Sentry DSN. Blank turns error reporting off entirely. */
+        val sentryDsn: String = "",
+        /** Build identifier (image tag or git SHA) attached to error reports. */
+        val release: String = "",
+        /**
+         * Bearer token that `/metrics` demands. Blank means the endpoint answers 404,
+         * so a fresh deployment never publishes its internals by accident.
+         */
+        val metricsToken: String = "",
+    )
+
+    data class PushConfig(
+        /** A Firebase service-account key, as JSON. Wins over [fcmServiceAccountPath]. */
+        val fcmServiceAccountJson: String = "",
+        /** Or the path of that key file. Both blank means push is logged, not sent. */
+        val fcmServiceAccountPath: String = "",
+        /** Off unless configured, so tests and one-off tools never start the scheduler. */
+        val remindersEnabled: Boolean = false,
+        /** A debt has to be this old before its first reminder. */
+        val reminderAfterDays: Int = 3,
+        /** And then at most one reminder per group this often. */
+        val reminderEveryDays: Int = 7,
+        /** When the daily run starts, in UTC. */
+        val reminderHourUtc: Int = 9,
+    ) {
+        val isFcmConfigured: Boolean get() = fcmServiceAccountJson.isNotBlank() || fcmServiceAccountPath.isNotBlank()
+    }
 
     /**
      * S3-compatible object storage (AWS S3, Cloudflare R2) for receipts and cover
@@ -184,6 +215,28 @@ data class AppConfig(
                     androidCertSha256 = config.propertyOrNull("links.androidCertSha256")?.getString().csv(),
                     appleAppIds = config.propertyOrNull("links.appleAppIds")?.getString().csv(),
                 ),
+                observability = ObservabilityConfig(
+                    sentryDsn = config.propertyOrNull("observability.sentryDsn")?.getString().orEmpty().trim(),
+                    release = config.propertyOrNull("observability.release")?.getString().orEmpty().trim(),
+                    metricsToken = config.propertyOrNull("observability.metricsToken")?.getString().orEmpty().trim()
+                        .also { token ->
+                            require(token.isEmpty() || token.length >= MIN_METRICS_TOKEN_LENGTH) {
+                                "observability.metricsToken must be at least $MIN_METRICS_TOKEN_LENGTH characters"
+                            }
+                        },
+                ),
+                push = PushConfig(
+                    fcmServiceAccountJson = config.propertyOrNull("push.fcmServiceAccountJson")?.getString().orEmpty(),
+                    fcmServiceAccountPath = config.propertyOrNull("push.fcmServiceAccountPath")?.getString().orEmpty(),
+                    remindersEnabled = config.propertyOrNull("push.remindersEnabled")?.getString()
+                        ?.toBooleanStrict() ?: PushConfig().remindersEnabled,
+                    reminderAfterDays = config.propertyOrNull("push.reminderAfterDays")?.getString()?.toInt()
+                        ?: PushConfig().reminderAfterDays,
+                    reminderEveryDays = config.propertyOrNull("push.reminderEveryDays")?.getString()?.toInt()
+                        ?: PushConfig().reminderEveryDays,
+                    reminderHourUtc = (config.propertyOrNull("push.reminderHourUtc")?.getString()?.toInt()
+                        ?: PushConfig().reminderHourUtc).also { require(it in 0..23) { "push.reminderHourUtc must be 0-23" } },
+                ),
                 storage = StorageConfig(
                     endpoint = config.propertyOrNull("storage.endpoint")?.getString().orEmpty().trim().trimEnd('/'),
                     bucket = config.propertyOrNull("storage.bucket")?.getString().orEmpty().trim(),
@@ -206,5 +259,6 @@ data class AppConfig(
         const val INSECURE_DEV_SECRET = "local-development-secret-do-not-use-in-production"
         const val INSECURE_DEV_DATABASE_PASSWORD = "splitfy"
         private const val MIN_JWT_SECRET_LENGTH = 32
+        private const val MIN_METRICS_TOKEN_LENGTH = 24
     }
 }

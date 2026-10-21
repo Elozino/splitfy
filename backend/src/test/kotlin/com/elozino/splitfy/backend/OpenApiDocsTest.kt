@@ -124,7 +124,7 @@ class OpenApiDocsTest {
 
         assertEquals("splitfy API", doc.info.title)
         assertEquals(documentedPaths(), doc.paths.keys)
-        assertEquals(44, doc.components?.schemas?.size)
+        assertEquals(48, doc.components?.schemas?.size)
         assertTrue(doc.tags.orEmpty().isNotEmpty(), "Expected the tag list to survive the conversion")
     }
 
@@ -204,7 +204,8 @@ class OpenApiDocsTest {
         return paths.filterTo(mutableSetOf()) {
             it.startsWith("${ApiRoutes.API_PREFIX}/") ||
                 it == ApiRoutes.System.HEALTH ||
-                it == ApiRoutes.System.READY
+                it == ApiRoutes.System.READY ||
+                it == ApiRoutes.System.METRICS
         }
     }
 

@@ -114,6 +114,23 @@ paths:
         "200": { description: Ready to serve traffic }
         "503": { description: A dependency is unavailable }
 
+  /metrics:
+    get:
+      tags: [System]
+      summary: Prometheus metrics — off unless METRICS_TOKEN is set
+      description: |
+        Answers 404 while METRICS_TOKEN is unset. Once set, the scraper must send
+        `Authorization: Bearer <METRICS_TOKEN>`; this is not a user access token.
+      security: []
+      responses:
+        "200":
+          description: Prometheus text exposition format
+          content:
+            text/plain:
+              schema: { type: string }
+        "401": { description: Missing or wrong metrics token }
+        "404": { description: Metrics are disabled on this deployment }
+
   /api/v1/auth/register:
     post:
       tags: [Auth]
@@ -400,6 +417,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/User" }
+    delete:
+      tags: [Users]
+      summary: Delete the signed-in user's account
+      description: |
+        Anonymises the account: the name becomes "Deleted user", the email is freed,
+        and the password, linked Google/Apple identities, sessions, notifications and
+        payment methods are removed. Past expenses and settlements stay in their
+        groups so other members' history and balances do not change. Groups the user
+        owned pass to the longest-standing remaining member. Refused with 409 while
+        the user has a non-zero balance in any group (the message names the groups)
+        or a non-zero wallet balance.
+      responses:
+        "204": { description: Account deleted; every session is signed out }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
 
   /api/v1/users/search:
     get:
@@ -1068,6 +1100,71 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/NotificationsResponse" }
 
+  /api/v1/notifications/preferences:
+    get:
+      tags: [Notifications]
+      summary: Which events are pushed to the caller's devices
+      description: |
+        Every switch defaults to on. They gate push notifications only: the in-app
+        list keeps everything. Security and account messages are always pushed.
+      responses:
+        "200":
+          description: Current preferences
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPreferences" }
+    patch:
+      tags: [Notifications]
+      summary: Change push preferences
+      description: Omitted fields keep their current value.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateNotificationPreferencesRequest" }
+      responses:
+        "200":
+          description: The preferences after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPreferences" }
+
+  /api/v1/devices:
+    post:
+      tags: [Notifications]
+      summary: Register this device's push token
+      description: |
+        Idempotent. The token is an FCM registration token (Android, and iOS through
+        the Firebase SDK). Registering a token that belonged to another account moves
+        it to the caller, so a shared phone only notifies whoever is signed in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterDeviceRequest" }
+      responses:
+        "204":
+          description: Registered
+        "400":
+          description: Empty or oversized token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiErrorResponse" }
+
+  /api/v1/devices/unregister:
+    post:
+      tags: [Notifications]
+      summary: Stop pushing to this device
+      description: Idempotent; called on sign-out. Only the token's owner can remove it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UnregisterDeviceRequest" }
+      responses:
+        "204":
+          description: Unregistered (or was not registered)
+
   /api/v1/contacts:
     get:
       tags: [Contacts]
@@ -1265,6 +1362,35 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AppNotification" }
         unreadCount: { type: integer }
+
+    NotificationPreferences:
+      type: object
+      properties:
+        newExpenses: { type: boolean, description: An expense was added to one of your groups }
+        settlements: { type: boolean, description: A payment to or from you was recorded, confirmed or cancelled }
+        groupActivity: { type: boolean, description: Someone joined a group through your invite }
+        paymentReminders: { type: boolean, description: Daily nudge about money you have owed for a while }
+
+    UpdateNotificationPreferencesRequest:
+      type: object
+      properties:
+        newExpenses: { type: boolean }
+        settlements: { type: boolean }
+        groupActivity: { type: boolean }
+        paymentReminders: { type: boolean }
+
+    RegisterDeviceRequest:
+      type: object
+      required: [token, platform]
+      properties:
+        token: { type: string, maxLength: 512 }
+        platform: { type: string, enum: [ANDROID, IOS] }
+
+    UnregisterDeviceRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
 
     ContactsResponse:
       type: object

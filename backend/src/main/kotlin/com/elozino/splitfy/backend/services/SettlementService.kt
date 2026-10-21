@@ -2,9 +2,12 @@ package com.elozino.splitfy.backend.services
 
 import com.elozino.splitfy.api.ApiErrorCode
 import com.elozino.splitfy.api.dto.CreateSettlementRequest
+import com.elozino.splitfy.api.dto.NotificationCategory
+import com.elozino.splitfy.api.dto.PushData
 import com.elozino.splitfy.api.FieldError
 import com.elozino.splitfy.backend.repositories.NewSettlement
 import com.elozino.splitfy.backend.repositories.SettlementRepository
+import com.elozino.splitfy.backend.repositories.UserRepository
 import com.elozino.splitfy.backend.utils.AppException
 import com.elozino.splitfy.domain.model.Group
 import com.elozino.splitfy.domain.model.Settlement
@@ -16,6 +19,8 @@ import kotlin.time.Clock
 class SettlementService(
     private val settlements: SettlementRepository,
     private val groupService: GroupService,
+    private val notifications: NotificationService,
+    private val users: UserRepository,
 ) {
 
     suspend fun create(groupId: UUID, request: CreateSettlementRequest, callerId: UUID): Settlement {
@@ -47,7 +52,7 @@ class SettlementService(
             throw AppException.Forbidden("You can only record settlements you are part of")
         }
 
-        return settlements.create(
+        val created = settlements.create(
             NewSettlement(
                 groupId = groupId,
                 fromUserId = UUID.fromString(request.fromUserId.value),
@@ -59,6 +64,14 @@ class SettlementService(
                 clientRequestId = request.clientRequestId,
             )
         )
+        val actor = nameOf(callerId)
+        val amount = created.amount.display()
+        if (created.fromUserId.value == callerId.toString()) {
+            tell(created.toUserId, group, "$actor paid you $amount", "Confirm it in ${group.name} once it arrives.")
+        } else {
+            tell(created.fromUserId, group, "$actor recorded your payment", "$amount in ${group.name}, received.")
+        }
+        return created
     }
 
     suspend fun list(groupId: UUID, callerId: UUID): List<Settlement> {
@@ -78,8 +91,15 @@ class SettlementService(
         if (settlement.toUserId.value != callerId.toString()) {
             throw AppException.Forbidden("Only the recipient can confirm this payment")
         }
-        return settlements.updateStatus(settlementId, SettlementStatus.CONFIRMED)
+        val confirmed = settlements.updateStatus(settlementId, SettlementStatus.CONFIRMED)
             ?: throw AppException.NotFound("Settlement")
+        val group = groupService.get(groupId, callerId)
+        tell(
+            confirmed.fromUserId, group,
+            "${nameOf(callerId)} confirmed your payment",
+            "${confirmed.amount.display()} in ${group.name} is settled.",
+        )
+        return confirmed
     }
 
     suspend fun cancel(groupId: UUID, settlementId: UUID, callerId: UUID): Settlement {
@@ -91,8 +111,28 @@ class SettlementService(
         if (callerId.toString() !in parties) {
             throw AppException.Forbidden("Only the payer or the recipient can cancel this payment")
         }
-        return settlements.updateStatus(settlementId, SettlementStatus.CANCELLED)
+        val cancelled = settlements.updateStatus(settlementId, SettlementStatus.CANCELLED)
             ?: throw AppException.NotFound("Settlement")
+        val other = if (cancelled.fromUserId.value == callerId.toString()) cancelled.toUserId else cancelled.fromUserId
+        val group = groupService.get(groupId, callerId)
+        tell(
+            other, group,
+            "${nameOf(callerId)} cancelled a payment",
+            "${cancelled.amount.display()} in ${group.name} was cancelled.",
+        )
+        return cancelled
+    }
+
+    private suspend fun nameOf(userId: UUID): String = users.findById(userId)?.displayName ?: "Someone"
+
+    private suspend fun tell(recipient: UserId, group: Group, title: String, message: String) {
+        notifications.notify(
+            userId = UUID.fromString(recipient.value),
+            category = NotificationCategory.PAYMENT,
+            title = title,
+            message = message,
+            data = mapOf(PushData.GROUP_ID to group.id.value, PushData.TYPE to "settlement"),
+        )
     }
 
     private suspend fun load(groupId: UUID, settlementId: UUID, callerId: UUID): Settlement {

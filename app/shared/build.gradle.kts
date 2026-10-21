@@ -81,6 +81,10 @@ kotlin {
             implementation(libs.androidx.credentials)
             implementation(libs.androidx.credentials.play.services)
             implementation(libs.googleid)
+            // Crash reporting. Android only for now: on iOS the Kotlin side would
+            // need Sentry's Cocoa framework at link time, so the Swift host starts
+            // Sentry Cocoa itself (see iOSApp.swift).
+            implementation(libs.sentry.kmp)
         }
 
         iosMain.dependencies {

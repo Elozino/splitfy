@@ -2,10 +2,12 @@ package com.elozino.splitfy.backend
 
 import org.koin.core.module.Module
 import com.elozino.splitfy.backend.di.serverModule
+import com.elozino.splitfy.backend.plugins.configureErrorReporting
 import com.elozino.splitfy.backend.plugins.configureHttp
 import com.elozino.splitfy.backend.plugins.configureObservability
 import com.elozino.splitfy.backend.plugins.configureRateLimiting
 import com.elozino.splitfy.backend.plugins.configureRouting
+import com.elozino.splitfy.backend.plugins.configureScheduling
 import com.elozino.splitfy.backend.plugins.configureSecurity
 import com.elozino.splitfy.backend.plugins.configureStatusPages
 import com.elozino.splitfy.backend.schema.DatabaseFactory
@@ -48,10 +50,12 @@ fun Application.configureApp(overrides: List<Module>) {
         database.close()
     }
 
+    configureErrorReporting(config)
     configureHttp(config)
-    configureObservability()
+    val metrics = configureObservability()
     configureSecurity()
     configureRateLimiting()
     configureStatusPages()
-    configureRouting(connection, config)
+    configureRouting(connection, config, metrics)
+    configureScheduling(config.push)
 }

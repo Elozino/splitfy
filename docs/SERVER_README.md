@@ -26,12 +26,23 @@ while an insecure default is still in place (noted below).
 | `OTP_MINUTES` | `10` | Lifetime of a password-reset code. |
 | `RESEND_API_KEY` | empty | **Required in production.** Without it, reset codes are only logged. |
 | `EMAIL_FROM` | `splitfy <no-reply@splitfy.app>` | Must be on a domain verified in Resend. |
+| `FCM_SERVICE_ACCOUNT_JSON` | empty | Firebase service-account key (the JSON itself). Optional: without it pushes are only logged. See `docs/PUSH_NOTIFICATIONS.md`. |
+| `FCM_SERVICE_ACCOUNT_PATH` | empty | Or a path to that key file. |
+| `PAYMENT_REMINDERS_ENABLED` | `true` | Daily reminder for debts older than `PAYMENT_REMINDER_AFTER_DAYS` (`3`), at most every `PAYMENT_REMINDER_EVERY_DAYS` (`7`) per group, run at `PAYMENT_REMINDER_HOUR_UTC` (`9`). |
 | `FEATURE_WALLET` | `false` | Wallet, top-up, withdrawal, payment methods and transfers. Leave off until a payment provider is integrated. |
 | `STORAGE_ENDPOINT` | empty | S3 API endpoint, e.g. `https://<account>.r2.cloudflarestorage.com` or `https://s3.eu-west-1.amazonaws.com`. Uploads are off unless endpoint, bucket and both keys are set. |
 | `STORAGE_BUCKET` | empty | |
 | `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` | empty | Credentials allowed to read and write objects in the bucket. |
 | `STORAGE_REGION` | `auto` | `auto` for R2; the bucket's region for AWS. |
 | `STORAGE_PUBLIC_BASE_URL` | empty | Optional public host for **cover photos only**. Receipts always use signed links. |
+| `SENTRY_DSN` | empty | Sentry error reporting; empty turns it off. Events are scrubbed of emails, tokens and request data. |
+| `APP_VERSION` | empty | Release name attached to Sentry events; the image sets it to the git tag. |
+| `METRICS_TOKEN` | empty | Enables Prometheus `/metrics`, which then requires `Authorization: Bearer <token>`. At least 24 characters. |
+| `LOG_FORMAT` | `text` (`json` in the Docker image) | `json` writes one JSON object per line for a log collector. |
+| `SHUTDOWN_GRACE_MS` / `SHUTDOWN_TIMEOUT_MS` | `5000` / `20000` | On SIGTERM `/ready` returns 503 at once; requests drain within these bounds. |
+
+Production deployment — databases, migrations as a deploy step, domains, hosting
+options — is covered in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Email (Resend)
 

@@ -105,10 +105,25 @@ import com.elozino.splitfy.domain.model.PaymentMethodType
 import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
+import com.elozino.splitfy.screens.account.shared.AccountViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SecuritySettingsScreen(onNavigateBack: () -> Unit) {
+fun SecuritySettingsScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: AccountViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    if (state.isDeleteAccountDialogVisible) {
+        DeleteAccountDialog(
+            isDeleting = state.isDeletingAccount,
+            error = state.deleteAccountError,
+            onConfirm = viewModel::deleteAccount,
+            onDismiss = { viewModel.setDeleteAccountDialogVisible(false) },
+        )
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -153,17 +168,69 @@ fun SecuritySettingsScreen(onNavigateBack: () -> Unit) {
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    "Deactivate Account",
-                    color = Color.Red,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { })
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
                     "Delete Account",
                     color = Color.Red,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { })
+                    modifier = Modifier
+                        .clickable { viewModel.setDeleteAccountDialogVisible(true) }
+                        .padding(vertical = 8.dp),
+                )
+                Text(
+                    "Permanently removes your profile and sign-in details. You need to be settled up in every group first.",
+                    color = Color.Gray,
+                    fontSize = 13.sp,
+                )
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
+}
+
+/**
+ * Deletion cannot be undone, so it takes an explicit second step. A refusal from the
+ * server (an unsettled group, usually) is shown inside the dialog, naming the groups.
+ */
+@Composable
+private fun DeleteAccountDialog(
+    isDeleting: Boolean,
+    error: String?,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = { if (!isDeleting) onDismiss() },
+        title = { Text("Delete your account?", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Your name, email, phone number, photo, password and linked Google or Apple " +
+                        "sign-ins will be deleted and you will be signed out on every device. " +
+                        "This cannot be undone.",
+                )
+                Text(
+                    "Expenses you were part of stay in their groups so everyone else's balances " +
+                        "still add up; they will show you as \"Deleted user\".",
+                    color = Color.Gray,
+                    fontSize = 13.sp,
+                )
+                error?.let { Text(it, color = Color.Red, fontSize = 13.sp) }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = !isDeleting,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+            ) {
+                if (isDeleting) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                } else {
+                    Text("Delete account")
+                }
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss, enabled = !isDeleting) { Text("Cancel") }
+        },
+    )
 }

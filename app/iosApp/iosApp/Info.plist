@@ -11,6 +11,12 @@
 	<!-- Read by platformGoogleClientId() in SocialSignIn.ios.kt. -->
 	<key>GoogleIosClientId</key>
 	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
+	<!-- Read by startCrashReporting() in iOSApp.swift. Empty = reporting off. -->
+	<key>SentryDsn</key>
+	<string>$(SENTRY_DSN)</string>
+	<!-- Lets FCM wake the app for silent data and badge updates. -->
+	<key>UIBackgroundModes</key>
+	<array><string>remote-notification</string></array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
