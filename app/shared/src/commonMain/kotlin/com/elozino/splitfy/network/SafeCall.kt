@@ -36,6 +36,9 @@ class ApiCaller(private val sessionManager: SessionManager) {
     } catch (cancellation: CancellationException) {
         // Never swallow cancellation: it would keep a dead screen's spinner running.
         throw cancellation
+    } catch (refresh: RefreshUnavailableException) {
+        DataError.Api(ApiErrorCode.INTERNAL_ERROR, "We couldn't reach splitfy right now. Please try again.")
+            .let { DataResult.Failure(it) }
     } catch (timeout: SocketTimeoutException) {
         DataResult.Failure(DataError.Timeout)
     } catch (timeout: ConnectTimeoutException) {
