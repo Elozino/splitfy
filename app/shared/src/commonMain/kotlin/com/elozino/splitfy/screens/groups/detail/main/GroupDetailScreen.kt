@@ -1,6 +1,7 @@
 package com.elozino.splitfy.screens.groups.detail.main
 
 import com.elozino.splitfy.components.UserAvatar
+import com.elozino.splitfy.screens.groups.detail.shared.GroupActions
 import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.shimmer
@@ -160,36 +161,11 @@ fun GroupDetailScreen(
         containerColor = Color.White,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            Surface(
-                color = Color.White,
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onNavigateToSettleUp,
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        shape = RoundedCornerShape(100.dp),
-                        border = BorderStroke(1.dp, primaryLight)
-                    ) {
-                        Text("Settle up", color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
-                    Button(
-                        onClick = onNavigateToAddExpense,
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        shape = RoundedCornerShape(100.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
-                    ) {
-                        Text("Add expense", color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
+            GroupActionsBar(
+                actions = state.actions,
+                onAddExpense = onNavigateToAddExpense,
+                onSettleUp = onNavigateToSettleUp,
+            )
         }
     ) { padding ->
         RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
@@ -295,6 +271,62 @@ fun GroupDetailScreen(
             onConfirm = viewModel::addMember,
             onDismiss = { viewModel.setAddMemberDialogVisible(false) },
         )
+    }
+}
+
+/**
+ * The bottom actions, from where the group's money stands. Once everyone is square
+ * there is nothing to settle, so the bar celebrates instead, while ongoing groups
+ * (a flat's bills) keep a quiet way to add the next expense.
+ */
+@Composable
+private fun GroupActionsBar(
+    actions: GroupActions,
+    onAddExpense: () -> Unit,
+    onSettleUp: () -> Unit,
+) {
+    if (actions == GroupActions.None) return
+    Surface(
+        color = Color.White,
+        tonalElevation = 8.dp,
+        shadowElevation = 8.dp
+    ) {
+        val barModifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+        when (actions) {
+            GroupActions.SettledUp -> Column(barModifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Everyone's settled up 🎉", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Nobody owes anything in this group.", color = Color.Gray, fontSize = 13.sp)
+                TextButton(onClick = onAddExpense) {
+                    Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add an expense", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            }
+            else -> Row(barModifier, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                if (actions == GroupActions.AddAndSettle) {
+                    OutlinedButton(
+                        onClick = onSettleUp,
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        shape = RoundedCornerShape(100.dp),
+                        border = BorderStroke(1.dp, primaryLight)
+                    ) {
+                        Text("Settle up", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Button(
+                    onClick = onAddExpense,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    shape = RoundedCornerShape(100.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                ) {
+                    Text("Add expense", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
     }
 }
 
