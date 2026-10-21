@@ -61,6 +61,15 @@ data class GroupDetailState(
 
     val hasMore: Boolean get() = nextCursor != null
 
+    /** Which actions the bottom bar offers, from where the group's money stands. */
+    val actions: GroupActions
+        get() = when {
+            group == null -> GroupActions.None
+            expenses.isEmpty() -> GroupActions.AddOnly
+            suggestedTransfers.isEmpty() -> GroupActions.SettledUp
+            else -> GroupActions.AddAndSettle
+        }
+
     /** Nothing to show yet: the screen draws placeholders rather than zeroes. */
     val isFirstLoad: Boolean get() = isLoading && group == null
     fun yourBalance(userId: String?): Money? =
@@ -78,3 +87,16 @@ data class GroupDetailState(
             .fold(Money.zero(currency)) { acc, expense -> acc + expense.total }
 }
 
+enum class GroupActions {
+    /** Still loading, or the group couldn't be loaded: no actions yet. */
+    None,
+
+    /** No expenses yet, so there is nothing to settle. */
+    AddOnly,
+
+    /** Someone owes someone. */
+    AddAndSettle,
+
+    /** Expenses exist and nobody owes anything: celebrate, keep a way to add more. */
+    SettledUp,
+}
