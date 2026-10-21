@@ -1,6 +1,8 @@
 package com.elozino.splitfy.screens.auth.login
 
 import androidx.compose.foundation.clickable
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -83,7 +85,7 @@ fun LoginScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -102,7 +104,7 @@ fun LoginScreen(
                     text = "Welcome back",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -116,7 +118,7 @@ fun LoginScreen(
             Text(
                 text = "Please enter your email & password to sign in.",
                 fontSize = 16.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -132,7 +134,7 @@ fun LoginScreen(
 
             state.fieldErrors["email"]?.let { message ->
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(text = message, fontSize = 13.sp, color = Color(0xFFD32F2F))
+                Text(text = message, fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -149,7 +151,7 @@ fun LoginScreen(
                         Icon(
                             imageVector = if (state.isLoginPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = null,
-                            tint = Color.Black
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -158,12 +160,12 @@ fun LoginScreen(
 
             state.fieldErrors["password"]?.let { message ->
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(text = message, fontSize = 13.sp, color = Color(0xFFD32F2F))
+                Text(text = message, fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
             }
 
             state.errorMessage?.let { message ->
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(text = message, fontSize = 14.sp, color = Color(0xFFD32F2F))
+                Text(text = message, fontSize = 14.sp, color = MaterialTheme.colorScheme.error)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -178,15 +180,15 @@ fun LoginScreen(
                         checked = state.rememberLogin,
                         onCheckedChange = viewModel::onRememberLoginChange,
                         colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFFFEBB1B),
-                            uncheckedColor = Color(0xFFFEBB1B)
+                            checkedColor = AppTheme.colors.brand,
+                            uncheckedColor = AppTheme.colors.brand
                         )
                     )
                     Text(
                         text = "Remember me",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 
@@ -194,7 +196,7 @@ fun LoginScreen(
                     text = "Forgot password?",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFFEBB1B),
+                    color = AppTheme.colors.brand,
                     modifier = Modifier.clickable { onNavigateToForgotPassword() }
                 )
             }
@@ -211,7 +213,7 @@ fun LoginScreen(
 
             val signUpText = buildAnnotatedString {
                 append("Don't have an account? ")
-                withStyle(style = SpanStyle(color = Color(0xFFFEBB1B), fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = AppTheme.colors.brand, fontWeight = FontWeight.Bold)) {
                     append("Sign up")
                 }
             }

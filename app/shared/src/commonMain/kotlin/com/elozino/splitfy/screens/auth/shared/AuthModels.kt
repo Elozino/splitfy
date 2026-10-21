@@ -1,7 +1,9 @@
 package com.elozino.splitfy.screens.auth.shared
 
-import androidx.compose.ui.graphics.Color
 import com.elozino.splitfy.api.dto.OAuthProvider
+
+/** How a landing button is painted; resolved to theme colours where it is drawn. */
+enum class AuthButtonStyle { Surface, Brand, Outlined }
 
 enum class AuthType {
     Google,
@@ -13,15 +15,15 @@ data class AuthOption(
     val title: String,
     val type: AuthType,
     val iconUri: String,
-    val backgroundColor: Color,
+    val style: AuthButtonStyle,
     val isPrimary: Boolean = false
 )
 
 val authOptions = listOf(
-    AuthOption("Continue with Google", AuthType.Google, "drawable/ic_google.svg", Color.White),
-    AuthOption("Continue with Apple", AuthType.Apple, "drawable/ic_apple.svg", Color.White),
-    AuthOption("Sign up", AuthType.Email, "drawable/ic_email.svg", Color(0xFFFEBB1B), isPrimary = true),
-    AuthOption("Log in", AuthType.Email, "drawable/ic_email.svg", Color.Transparent, isPrimary = false),
+    AuthOption("Continue with Google", AuthType.Google, "drawable/ic_google.svg", AuthButtonStyle.Surface),
+    AuthOption("Continue with Apple", AuthType.Apple, "drawable/ic_apple.svg", AuthButtonStyle.Surface),
+    AuthOption("Sign up", AuthType.Email, "drawable/ic_email.svg", AuthButtonStyle.Brand, isPrimary = true),
+    AuthOption("Log in", AuthType.Email, "drawable/ic_email.svg", AuthButtonStyle.Outlined, isPrimary = false),
 )
 
 /** The landing-screen button for a provider the platform can offer. */
