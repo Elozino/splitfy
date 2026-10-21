@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.security_settings
 
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,7 +48,6 @@ import com.elozino.splitfy.api.dto.DeviceSession
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.SkeletonList
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlin.time.Clock
 import kotlin.time.Instant
 import org.koin.compose.viewmodel.koinViewModel
@@ -171,7 +171,7 @@ private fun SessionRow(session: DeviceSession, onSignOut: (() -> Unit)?) {
                 null -> Icons.Default.Smartphone
             },
             contentDescription = null,
-            tint = primaryLight,
+            tint = AppTheme.colors.brand,
             modifier = Modifier.size(28.dp),
         )
         Spacer(Modifier.width(16.dp))
@@ -180,7 +180,7 @@ private fun SessionRow(session: DeviceSession, onSignOut: (() -> Unit)?) {
             Text(
                 if (session.current) "Active now" else "Last active ${relativeTime(session.lastUsedAt)}",
                 fontSize = 13.sp,
-                color = if (session.current) primaryLight else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (session.current) AppTheme.colors.brand else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 "Signed in ${relativeTime(session.createdAt)}",

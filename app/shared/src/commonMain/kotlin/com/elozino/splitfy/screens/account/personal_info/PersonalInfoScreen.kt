@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.personal_info
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,7 +56,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.components.UserAvatar
-import com.elozino.splitfy.ui.theme.primaryLight
 import com.preat.peekaboo.image.picker.ResizeOptions
 import com.preat.peekaboo.image.picker.SelectionMode
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
@@ -97,11 +98,11 @@ fun PersonalInfoScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
@@ -109,11 +110,11 @@ fun PersonalInfoScreen(
                     enabled = !state.isSaving && state.user != null,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
                     Text(
                         text = if (state.isSaving) "Saving…" else "Save",
-                        color = Color.Black,
+                        color = AppTheme.colors.onBrand,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -131,12 +132,12 @@ fun PersonalInfoScreen(
                     ) {
                         UserAvatar(state.avatarUrl, state.fullName.ifBlank { state.email }, size = 100.dp)
                         if (state.isUploadingAvatar) {
-                            CircularProgressIndicator(color = primaryLight, modifier = Modifier.align(Alignment.Center))
+                            CircularProgressIndicator(color = AppTheme.colors.brand, modifier = Modifier.align(Alignment.Center))
                         }
                         if (state.uploadsEnabled) {
                             Box(
                                 modifier = Modifier.align(Alignment.BottomEnd).size(28.dp)
-                                    .background(primaryLight, CircleShape).border(2.dp, Color.White, CircleShape),
+                                    .background(AppTheme.colors.brand, CircleShape).border(2.dp, MaterialTheme.colorScheme.background, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(14.dp))
@@ -145,7 +146,7 @@ fun PersonalInfoScreen(
                     }
                     if (state.uploadsEnabled && state.avatarUrl != null) {
                         TextButton(onClick = viewModel::removeAvatar, enabled = !state.isUploadingAvatar) {
-                            Text("Remove photo", color = Color.Gray, fontSize = 13.sp)
+                            Text("Remove photo", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                         }
                     }
                 }
@@ -160,13 +161,13 @@ fun PersonalInfoScreen(
                     Text("Email", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                            .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+                            .background(AppTheme.colors.field, RoundedCornerShape(12.dp))
                             .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(state.email, modifier = Modifier.weight(1f), color = Color.DarkGray)
                         TextButton(onClick = viewModel::startEmailChange, enabled = state.user != null) {
-                            Text("Change", color = Color.Black, fontWeight = FontWeight.Bold)
+                            Text("Change", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -176,7 +177,7 @@ fun PersonalInfoScreen(
 
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
                     Text("Default currency", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text("New groups start in this currency.", color = Color.Gray, fontSize = 12.sp)
+                    Text("New groups start in this currency.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     FlowRow(
                         modifier = Modifier.padding(top = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -186,7 +187,7 @@ fun PersonalInfoScreen(
                                 selected = currency == state.currency,
                                 onClick = { viewModel.onCurrencyChange(currency) },
                                 label = { Text(currency.code) },
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryLight),
+                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = AppTheme.colors.brand, selectedLabelColor = AppTheme.colors.onBrand),
                             )
                         }
                     }
@@ -213,7 +214,7 @@ private fun EmailChangeDialog(state: PersonalInfoState, viewModel: PersonalInfoV
                     Text("Enter the 6-digit code we sent to ${state.pendingEmail}.", fontSize = 14.sp)
                     DialogField(state.code, "Code", KeyboardType.NumberPassword, viewModel::onCodeChange)
                     TextButton(onClick = viewModel::submitNewEmail, enabled = !state.isEmailChangeBusy) {
-                        Text("Send a new code", color = Color.Gray, fontSize = 13.sp)
+                        Text("Send a new code", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     }
                 } else {
                     Text(
@@ -231,16 +232,16 @@ private fun EmailChangeDialog(state: PersonalInfoState, viewModel: PersonalInfoV
                 enabled = !state.isEmailChangeBusy,
             ) {
                 if (state.isEmailChangeBusy) {
-                    CircularProgressIndicator(color = primaryLight, modifier = Modifier.size(20.dp))
+                    CircularProgressIndicator(color = AppTheme.colors.brand, modifier = Modifier.size(20.dp))
                 } else {
-                    Text(if (enteringCode) "Confirm" else "Send code", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(if (enteringCode) "Confirm" else "Send code", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = viewModel::dismissEmailChange) { Text("Cancel", color = Color.Gray) }
+            TextButton(onClick = viewModel::dismissEmailChange) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
     )
 }
 
@@ -249,14 +250,14 @@ private fun DialogField(value: String, placeholder: String, keyboardType: Keyboa
     TextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(placeholder, color = Color.Gray) },
+        placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         shape = RoundedCornerShape(12.dp),
         colors = TextFieldDefaults.colors(
-            unfocusedContainerColor = Color(0xFFF5F5F5),
-            focusedContainerColor = Color(0xFFF5F5F5),
+            unfocusedContainerColor = AppTheme.colors.field,
+            focusedContainerColor = AppTheme.colors.field,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent
         )
@@ -266,7 +267,7 @@ private fun DialogField(value: String, placeholder: String, keyboardType: Keyboa
 @Composable
 internal fun FieldError(message: String) {
     Text(
-        text = message, color = Color(0xFFD32F2F), fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp)
+        text = message, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp)
     )
 }
 
@@ -286,8 +287,8 @@ internal fun InfoField(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = Color(0xFFF5F5F5),
-                focusedContainerColor = Color(0xFFF5F5F5),
+                unfocusedContainerColor = AppTheme.colors.field,
+                focusedContainerColor = AppTheme.colors.field,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             )

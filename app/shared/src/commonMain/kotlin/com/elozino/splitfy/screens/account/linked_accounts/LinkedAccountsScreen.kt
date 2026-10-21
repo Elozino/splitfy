@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.linked_accounts
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,7 +47,6 @@ import com.elozino.splitfy.social.SocialSignInConfig
 import com.elozino.splitfy.social.rememberSocialSignIn
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.generated.resources.UiRes
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -77,28 +78,28 @@ fun LinkedAccountsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         val loadError = state.loadError
         when {
             state.isLoading && state.linked == null -> Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) {
-                CircularProgressIndicator(color = primaryLight)
+                CircularProgressIndicator(color = AppTheme.colors.brand)
             }
             loadError != null -> LoadErrorState(loadError, onRetry = viewModel::load, modifier = Modifier.padding(padding))
             else -> Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
                 Text(
                     "Sign in to splitfy with these accounts as well as your email.",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                 )
                 Spacer(Modifier.height(16.dp))
                 val providers = state.providers(socialSignIn.providers)
                 if (providers.isEmpty()) {
-                    Text("No sign-in providers are available on this device.", color = Color.Gray, fontSize = 14.sp)
+                    Text("No sign-in providers are available on this device.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 }
                 providers.forEach { provider ->
                     ProviderRow(
@@ -113,14 +114,14 @@ fun LinkedAccountsScreen(
                         },
                         onUnlink = { viewModel.askToUnlink(provider) },
                     )
-                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
                 if (state.linked?.hasPassword == false) {
                     Spacer(Modifier.height(16.dp))
                     Text(
                         "Your account has no password, so you can't disconnect your only linked account. " +
                             "Use \"Forgot password\" on the sign-in screen to set one.",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                     )
                 }
@@ -141,11 +142,11 @@ fun LinkedAccountsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.unlink(provider) }, enabled = state.canUnlink(provider)) {
-                    Text("Disconnect", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
+                    Text("Disconnect", color = AppTheme.colors.negative, fontWeight = FontWeight.Bold)
                 }
             },
-            dismissButton = { TextButton(onClick = viewModel::dismissUnlink) { Text("Cancel", color = Color.Gray) } },
-            containerColor = Color.White,
+            dismissButton = { TextButton(onClick = viewModel::dismissUnlink) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+            containerColor = MaterialTheme.colorScheme.surface,
         )
     }
 }
@@ -173,15 +174,15 @@ private fun ProviderRow(
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(provider.displayName, fontWeight = FontWeight.Bold)
-            Text(linkedEmail ?: "Not connected", color = Color.Gray, fontSize = 12.sp)
+            Text(linkedEmail ?: "Not connected", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
         when {
-            isBusy -> CircularProgressIndicator(color = primaryLight, modifier = Modifier.size(24.dp))
+            isBusy -> CircularProgressIndicator(color = AppTheme.colors.brand, modifier = Modifier.size(24.dp))
             linkedEmail != null -> TextButton(onClick = onUnlink, enabled = enabled) {
-                Text("Disconnect", color = Color.Gray, fontWeight = FontWeight.Bold)
+                Text("Disconnect", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
             }
             canLink -> TextButton(onClick = onLink, enabled = enabled) {
-                Text("Connect", color = primaryLight, fontWeight = FontWeight.Bold)
+                Text("Connect", color = AppTheme.colors.brand, fontWeight = FontWeight.Bold)
             }
         }
     }

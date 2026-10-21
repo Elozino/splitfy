@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.data_analytics
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.sharing.rememberShareFile
-import com.elozino.splitfy.ui.theme.primaryLight
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,11 +74,11 @@ fun DataAnalyticsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Row(
@@ -87,16 +88,16 @@ fun DataAnalyticsScreen(
             ) {
                 Text("Download My Data", fontWeight = FontWeight.Bold)
                 if (state.isExporting) {
-                    CircularProgressIndicator(color = primaryLight, modifier = Modifier.size(20.dp))
+                    CircularProgressIndicator(color = AppTheme.colors.brand, modifier = Modifier.size(20.dp))
                 } else {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Text(
                 "A JSON file with your profile, groups, the expenses and payments you're part of, and your " +
                     "notifications. Save it or send it wherever you like.",
                 fontSize = 12.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
@@ -112,7 +113,7 @@ fun DataAnalyticsScreen(
                     Switch(
                         checked = state.crashReportsEnabled,
                         onCheckedChange = viewModel::setCrashReportsEnabled,
-                        colors = SwitchDefaults.colors(checkedTrackColor = primaryLight),
+                        colors = SwitchDefaults.colors(checkedTrackColor = AppTheme.colors.brand),
                     )
                 }
                 Text(
@@ -120,7 +121,7 @@ fun DataAnalyticsScreen(
                         "fix it. Applies to this device" +
                         if (state.crashReportsApplyOnRestart) ", from the next time you open the app." else ".",
                     fontSize = 12.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }

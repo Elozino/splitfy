@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.security_settings
 
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -70,7 +71,6 @@ import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.SkeletonList
 import com.elozino.splitfy.ui.components.SkeletonListItem
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -178,7 +178,7 @@ fun SecuritySettingsScreen(
                             trailing = {
                                 Text(
                                     if (overview.twoFactorEnabled) "Turn off" else "Set up",
-                                    color = if (overview.twoFactorEnabled) MaterialTheme.colorScheme.error else primaryLight,
+                                    color = if (overview.twoFactorEnabled) MaterialTheme.colorScheme.error else AppTheme.colors.brand,
                                     fontWeight = FontWeight.SemiBold,
                                 )
                             },
@@ -217,7 +217,7 @@ fun SecuritySettingsScreen(
                                                 }
                                             }
                                         },
-                                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = primaryLight),
+                                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = AppTheme.colors.brand),
                                     )
                                 },
                             )
@@ -284,7 +284,7 @@ private fun SettingRow(
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = primaryLight, modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = null, tint = AppTheme.colors.brand, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
             Text(title, fontWeight = FontWeight.Medium)
@@ -302,14 +302,14 @@ private fun LockAfterRow(minutes: Int, onSelect: (Int) -> Unit) {
         modifier = Modifier.fillMaxWidth().clickable { expanded = true }.padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Default.Timer, contentDescription = null, tint = primaryLight, modifier = Modifier.size(24.dp))
+        Icon(Icons.Default.Timer, contentDescription = null, tint = AppTheme.colors.brand, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
             Text("Lock after", fontWeight = FontWeight.Medium)
             Text("Time in the background before App lock asks again", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column {
-            Text(lockAfterLabel(minutes), color = primaryLight, fontWeight = FontWeight.SemiBold)
+            Text(lockAfterLabel(minutes), color = AppTheme.colors.brand, fontWeight = FontWeight.SemiBold)
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 com.elozino.splitfy.security.AppLockSettings.TIMEOUT_CHOICES.forEach { choice ->
                     DropdownMenuItem(
@@ -374,7 +374,7 @@ private fun DisableTwoFactorDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
             ) {
                 if (state.isDisabling) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onError, strokeWidth = 2.dp)
                 } else {
                     Text("Turn off")
                 }
@@ -410,20 +410,20 @@ private fun DeleteAccountDialog(
                 Text(
                     "Expenses you were part of stay in their groups so everyone else's balances " +
                         "still add up; they will show you as \"Deleted user\".",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                 )
-                error?.let { Text(it, color = Color.Red, fontSize = 13.sp) }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
             }
         },
         confirmButton = {
             Button(
                 onClick = onConfirm,
                 enabled = !isDeleting,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
             ) {
                 if (isDeleting) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onError, strokeWidth = 2.dp)
                 } else {
                     Text("Delete account")
                 }

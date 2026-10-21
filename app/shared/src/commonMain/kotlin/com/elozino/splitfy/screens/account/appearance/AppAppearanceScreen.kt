@@ -108,7 +108,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 

@@ -143,7 +143,7 @@ fun FAQScreen(
                         onClick = { viewModel.selectFaqCategory(cat) },
                         label = { Text(cat) },
                         shape = RoundedCornerShape(100.dp),
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = AppTheme.colors.brand)
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = AppTheme.colors.brand, selectedLabelColor = AppTheme.colors.onBrand)
                     )
                 }
             }

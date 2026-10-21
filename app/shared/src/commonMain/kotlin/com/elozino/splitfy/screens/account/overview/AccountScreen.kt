@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.overview
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.ui.components.SkeletonText
 import com.elozino.splitfy.ui.components.SkeletonCircle
@@ -107,7 +109,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -139,16 +140,16 @@ fun AccountScreen(
                         imageVector = Icons.Default.Category,
                         contentDescription = "Logo",
                         modifier = Modifier.padding(start = 16.dp).size(28.dp),
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }, actions = {
                     // The QR code exists to be scanned for a payment.
                     if (FeatureFlags.WALLET) IconButton(onClick = { viewModel.setQrDialogVisible(true) }) {
                         Icon(Icons.Default.QrCode, contentDescription = "My QR Code")
                     }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
-        }, containerColor = Color.White
+        }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(
@@ -181,11 +182,11 @@ fun AccountScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp
                             )
-                            Text(state.email, color = Color.Gray, fontSize = 14.sp)
+                            Text(state.email, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                             if (!state.balance.isZero) {
                                 Text(
                                     text = "Balance ${state.balance.toPlainString()} ${state.balance.currency.code}",
-                                    color = Color(0xFF2E7D32),
+                                    color = AppTheme.colors.positive,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -194,7 +195,7 @@ fun AccountScreen(
                     }
                     IconButton(onClick = onNavigateToPersonalInfo) {
                         Icon(
-                            Icons.Default.Edit, contentDescription = "Edit Profile", tint = primaryLight
+                            Icons.Default.Edit, contentDescription = "Edit Profile", tint = AppTheme.colors.brand
                         )
                     }
                 }
@@ -204,7 +205,7 @@ fun AccountScreen(
                 if (onNavigateToUpgrade != null) Surface(
                     modifier = Modifier.fillMaxWidth().clickable { onNavigateToUpgrade() },
                     shape = RoundedCornerShape(24.dp),
-                    color = primaryLight
+                    color = AppTheme.colors.brand
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically
@@ -223,7 +224,7 @@ fun AccountScreen(
                             Text(
                                 "Get full access with splitfy premium plans",
                                 fontSize = 11.sp,
-                                color = Color.Black.copy(alpha = 0.7f)
+                                color = AppTheme.colors.onBrand.copy(alpha = 0.7f)
                             )
                         }
                         Icon(
@@ -262,20 +263,20 @@ fun AccountScreen(
                 ) {
                     if (state.isSigningOut) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.Red
+                            modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = AppTheme.colors.negative
                         )
                     } else {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
                             contentDescription = null,
-                            tint = Color.Red,
+                            tint = AppTheme.colors.negative,
                             modifier = Modifier.size(24.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
                         if (state.isSigningOut) "Logging out…" else "Logout",
-                        color = Color.Red,
+                        color = AppTheme.colors.negative,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
@@ -309,11 +310,11 @@ private fun AccountRow(item: AccountMenuItem) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(40.dp).background(Color(0xFFF5F5F5), CircleShape),
+            modifier = Modifier.size(40.dp).background(AppTheme.colors.field, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                item.icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.Black
+                item.icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
@@ -321,7 +322,7 @@ private fun AccountRow(item: AccountMenuItem) {
             item.title, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 16.sp
         )
         Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray
+            Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -339,9 +340,9 @@ fun MyQrCodeDialog(onDismiss: () -> Unit) {
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
-                Text("Close", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Close", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
             }
         }, title = {
             Text(
@@ -356,7 +357,7 @@ fun MyQrCodeDialog(onDismiss: () -> Unit) {
             ) {
                 Box(
                     modifier = Modifier.size(200.dp).background(Color.White)
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(16.dp)).padding(16.dp),
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp)).padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -371,10 +372,10 @@ fun MyQrCodeDialog(onDismiss: () -> Unit) {
                     "QR Code Personal: scan user for quick wallet payments.",
                     textAlign = TextAlign.Center,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }, containerColor = Color.White, shape = RoundedCornerShape(24.dp)
+        }, containerColor = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(24.dp)
     )
 }
 
@@ -385,7 +386,7 @@ fun LogoutDialog(isLoggingOut: Boolean = false, onDismiss: () -> Unit, onLogout:
             Text(
                 "Logout",
                 fontWeight = FontWeight.Bold,
-                color = Color.Red,
+                color = AppTheme.colors.negative,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -399,14 +400,14 @@ fun LogoutDialog(isLoggingOut: Boolean = false, onDismiss: () -> Unit, onLogout:
                 enabled = !isLoggingOut,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
                 if (isLoggingOut) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.Black
+                        modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = AppTheme.colors.onBrand
                     )
                 } else {
-                    Text("Yes, Logout", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Yes, Logout", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }, dismissButton = {
@@ -415,10 +416,10 @@ fun LogoutDialog(isLoggingOut: Boolean = false, onDismiss: () -> Unit, onLogout:
                 enabled = !isLoggingOut,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, primaryLight)
+                border = BorderStroke(1.dp, AppTheme.colors.brand)
             ) {
-                Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             }
-        }, containerColor = Color.White, shape = RoundedCornerShape(24.dp)
+        }, containerColor = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(24.dp)
     )
 }
