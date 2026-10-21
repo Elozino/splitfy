@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.home.main
 
+import com.elozino.splitfy.ui.components.LoadErrorState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.FeatureFlags
+import com.elozino.splitfy.ui.components.SkeletonBlock
+import com.elozino.splitfy.ui.components.SkeletonList
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.elozino.splitfy.api.dto.GroupSummary
 import com.elozino.splitfy.domain.model.LedgerEntry
 import com.elozino.splitfy.screens.home.main.HomeState
@@ -131,6 +136,7 @@ fun HomeScreen(
                 )
                 GroupsSection(
                     state = state,
+                    onRetry = viewModel::load,
                     modifier = Modifier.weight(1f),
                     onViewAllClick = onNavigateToGroups,
                     onGroupClick = onNavigateToGroupDetail,
@@ -291,8 +297,8 @@ fun ActivitySection(
         }
 
         if (state.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFFFEBB1B))
+            SkeletonList(count = 4, contentPadding = PaddingValues(vertical = 16.dp)) { index ->
+                SkeletonListItem(avatarSize = null, titleFraction = 0.5f + (index % 3) * 0.08f)
             }
             return@Column
         }
@@ -385,7 +391,21 @@ fun PositionHeader(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center) {
+            // Until the first load, show the shape of the number rather than "0.00 ·
+            // You're all settled up", which reads as a real (and wrong) answer.
+            if (state.isLoading && state.groups.isEmpty()) {
+                SkeletonBlock(Modifier.width(220.dp).height(56.dp).padding(vertical = 4.dp), onAccent = true)
+                Spacer(modifier = Modifier.height(10.dp))
+                SkeletonBlock(Modifier.width(140.dp).height(14.dp), RoundedCornerShape(6.dp), onAccent = true)
+            } else if (state.loadFailed) {
+                Text(text = "—", fontSize = 56.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(
+                    text = "Couldn't load your balance",
+                    fontSize = 14.sp,
+                    color = Color.Black.copy(alpha = 0.8f),
+                    fontWeight = FontWeight.Medium
+                )
+            } else Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.Center) {
                 Text(
                     text = net.abs().toPlainString(),
                     fontSize = 56.sp,
@@ -400,9 +420,8 @@ fun PositionHeader(
                     color = Color.Black
                 )
             }
-            Text(
+            if (!(state.isLoading && state.groups.isEmpty()) && !state.loadFailed) Text(
                 text = when {
-                    state.isLoading && state.groups.isEmpty() -> " "
                     net.isPositive -> "You are owed overall"
                     net.isNegative -> "You owe overall"
                     else -> "You're all settled up"
@@ -446,6 +465,7 @@ fun GroupsSection(
     state: HomeState,
     modifier: Modifier = Modifier,
     onViewAllClick: () -> Unit,
+    onRetry: () -> Unit,
     onGroupClick: (String) -> Unit,
     onNewGroupClick: () -> Unit,
 ) {
@@ -473,9 +493,15 @@ fun GroupsSection(
         }
 
         if (state.isLoading && state.groups.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFFFEBB1B))
+            SkeletonList(count = 4, contentPadding = PaddingValues(vertical = 16.dp)) { index ->
+                SkeletonListItem(avatarSize = null, titleFraction = 0.42f + (index % 3) * 0.1f)
             }
+            return@Column
+        }
+
+        val loadError = state.errorMessage
+        if (state.loadFailed && loadError != null) {
+            LoadErrorState(loadError, onRetry = onRetry)
             return@Column
         }
 

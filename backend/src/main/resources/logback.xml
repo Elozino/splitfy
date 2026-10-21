@@ -1,20 +1,42 @@
 <configuration>
+    <!-- The appender LOG_FORMAT leaves unused draws a warning that would otherwise
+         dump logback's whole status log on every boot. -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
+
     <!--
-      One line per event, with the request's trace id so a user-reported failure
-      maps to exactly one request. Structured JSON is the next step if/when logs
-      are shipped to a central collector.
+      Two formats, chosen with LOG_FORMAT:
+
+        text (default)  one human-readable line per event, for local work
+        json            one JSON object per line with the MDC (traceId) as fields,
+                        for a platform log drain or collector
+
+      Either way an event carries the request's trace id, so a user-reported
+      failure maps to exactly one request. What gets logged is kept free of
+      personal data at the source: the access log is method, path (invite tokens
+      masked, never the query string), status and duration.
     -->
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="text" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-no-trace}] %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="INFO">
-        <appender-ref ref="STDOUT"/>
+    <appender name="json" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.JsonEncoder">
+            <withFormattedMessage>true</withFormattedMessage>
+            <withMessage>false</withMessage>
+            <withArguments>false</withArguments>
+            <withSequenceNumber>false</withSequenceNumber>
+            <withNanoseconds>false</withNanoseconds>
+            <withContext>false</withContext>
+        </encoder>
+    </appender>
+
+    <root level="${LOG_LEVEL:-INFO}">
+        <appender-ref ref="${LOG_FORMAT:-text}"/>
     </root>
 
-    <logger name="com.elozino.splitfy" level="DEBUG"/>
+    <logger name="com.elozino.splitfy" level="${APP_LOG_LEVEL:-DEBUG}"/>
     <logger name="io.netty" level="WARN"/>
     <logger name="com.zaxxer.hikari" level="WARN"/>
     <logger name="org.flywaydb" level="INFO"/>

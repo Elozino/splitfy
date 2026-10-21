@@ -1,5 +1,8 @@
 package com.elozino.splitfy.screens.groups.create.participants
 
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
+import com.elozino.splitfy.ui.components.SkeletonBlock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -175,11 +178,12 @@ fun SelectParticipantsScreen(
 
                 if (state.isLoadingContacts) {
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = primaryLight)
+                        // Contact rows end in a checkbox, so a small square stands in for it.
+                        SkeletonList(count = 6, contentPadding = PaddingValues(vertical = 8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                SkeletonListItem(modifier = Modifier.weight(1f), avatarSize = 48.dp, trailing = false)
+                                SkeletonBlock(Modifier.size(22.dp), RoundedCornerShape(6.dp))
+                            }
                         }
                     }
                 }

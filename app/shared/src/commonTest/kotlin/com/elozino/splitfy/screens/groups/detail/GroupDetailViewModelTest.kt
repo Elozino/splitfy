@@ -3,6 +3,7 @@ package com.elozino.splitfy.screens.groups.detail
 import com.elozino.splitfy.DataError
 import com.elozino.splitfy.DataResult
 import com.elozino.splitfy.SessionManager
+import com.elozino.splitfy.userMessage
 import com.elozino.splitfy.api.ApiErrorCode
 import com.elozino.splitfy.api.dto.CreateExpenseRequest
 import com.elozino.splitfy.api.dto.CreateGroupRequest
@@ -234,13 +235,46 @@ class GroupDetailViewModelTest {
         assertEquals("Receipt was not found", vm.state.value.errorMessage)
     }
 
+    @Test
+    fun `a failed first load is reported as a failure and a retry clears it`() = runTest(dispatcher) {
+        groups.getResult = DataResult.Failure(DataError.Offline)
+        val vm = viewModel(owner)
+        advanceUntilIdle()
+
+        assertEquals(DataError.Offline.userMessage(), vm.state.value.loadError)
+        // The snackbar consuming the message must not hide the failure state.
+        vm.consumeError()
+        assertEquals(DataError.Offline.userMessage(), vm.state.value.loadError)
+
+        groups.getResult = null
+        vm.load()
+        advanceUntilIdle()
+
+        assertNull(vm.state.value.loadError)
+        assertEquals("Flat", vm.state.value.group?.name)
+    }
+
+    @Test
+    fun `a failed refresh keeps the loaded group instead of showing a failure`() = runTest(dispatcher) {
+        val vm = viewModel(owner)
+        advanceUntilIdle()
+
+        groups.getResult = DataResult.Failure(DataError.Offline)
+        vm.load()
+        advanceUntilIdle()
+
+        assertNull(vm.state.value.loadError)
+        assertEquals("Flat", vm.state.value.group?.name)
+    }
+
     private inner class FakeGroups(private var current: Group) : GroupRepository {
         val addedEmails = mutableListOf<String>()
         var addResult: DataResult<Group>? = null
         var removeResult: DataResult<Group>? = null
         val updates = mutableListOf<UpdateGroupRequest>()
+        var getResult: DataResult<Group>? = null
 
-        override suspend fun get(groupId: String) = DataResult.Success(current)
+        override suspend fun get(groupId: String): DataResult<Group> = getResult ?: DataResult.Success(current)
         override suspend fun balances(groupId: String) =
             DataResult.Success(GroupBalancesResponse(groupId, current.currency, emptyList(), emptyList()))
 

@@ -1,5 +1,12 @@
 package com.elozino.splitfy.screens.activity.list
 
+import com.elozino.splitfy.ui.components.LoadErrorState
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import com.elozino.splitfy.ui.components.SkeletonText
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
+import com.elozino.splitfy.ui.components.SkeletonBlock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -139,9 +146,28 @@ fun ActivityScreen(
                 .map { (day, entries) -> ActivitySection(day, entries.map { it.toItem(state.currentUserId) }) }
 
             if (state.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFFFEBB1B))
+                // A day heading, then rows ending in an action pill, as the real list.
+                SkeletonList(count = 6, spacing = 22.dp) { index ->
+                    if (index == 0) {
+                        SkeletonText(0.3f, height = 12.dp)
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SkeletonListItem(
+                                modifier = Modifier.weight(1f),
+                                avatarSize = null,
+                                titleFraction = 0.45f + (index % 3) * 0.1f,
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            SkeletonBlock(Modifier.width(64.dp).height(32.dp), RoundedCornerShape(20.dp))
+                        }
+                    }
                 }
+                return@Column
+            }
+
+            val loadError = state.errorMessage
+            if (loadError != null && state.entries.isEmpty()) {
+                LoadErrorState(loadError, onRetry = viewModel::load)
                 return@Column
             }
 

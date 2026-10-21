@@ -1,5 +1,8 @@
 package com.elozino.splitfy.screens.groups.list
 
+import com.elozino.splitfy.ui.components.LoadErrorState
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,6 +45,7 @@ fun GroupsScreen(
         groups = state.groups.map { it.toItem() },
         isLoading = state.isLoading,
         errorMessage = state.errorMessage,
+        onRetry = viewModel::load,
         onCreateGroupClick = onNavigateToNewGroup,
         onGroupClick = { item -> onNavigateToGroupDetail(item.id) }
     )
@@ -63,6 +67,7 @@ private fun GroupsListScreen(
     groups: List<GroupItemData>,
     isLoading: Boolean,
     errorMessage: String?,
+    onRetry: () -> Unit,
     onCreateGroupClick: () -> Unit,
     onGroupClick: (GroupItemData) -> Unit
 ) {
@@ -108,16 +113,31 @@ private fun GroupsListScreen(
         }
     ) { padding ->
         if (isLoading && groups.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(
+            // Card-shaped placeholders, so the real cards replace them in place.
+            SkeletonList(
+                modifier = Modifier.padding(
                     top = padding.calculateTopPadding(),
                     start = padding.calculateStartPadding(LayoutDirection.Ltr),
                     end = padding.calculateEndPadding(LayoutDirection.Ltr)
                 ),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = primaryLight)
+                count = 5,
+                contentPadding = PaddingValues(16.dp),
+                spacing = 12.dp,
+            ) { index ->
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    SkeletonListItem(
+                        modifier = Modifier.padding(16.dp),
+                        titleFraction = 0.45f + (index % 3) * 0.1f,
+                        subtitleFraction = 0.3f,
+                    )
+                }
             }
+        } else if (groups.isEmpty() && errorMessage != null) {
+            LoadErrorState(errorMessage, onRetry = onRetry, modifier = Modifier.padding(padding))
         } else if (groups.isEmpty()) {
             EmptyGroupsState(onCreateGroupClick, padding)
         } else {

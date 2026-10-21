@@ -1,5 +1,10 @@
 package com.elozino.splitfy.screens.settlements
 
+import com.elozino.splitfy.ui.components.LoadErrorState
+import com.elozino.splitfy.ui.components.SkeletonText
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
+import com.elozino.splitfy.ui.components.SkeletonBlock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -97,12 +102,24 @@ fun SettleUpScreen(
         containerColor = Color.White,
     ) { padding ->
         when {
-            state.isLoading && state.group == null -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = primaryLight)
+            state.isLoading && state.group == null -> SkeletonList(
+                modifier = Modifier.padding(padding),
+                count = 5,
+                spacing = 18.dp,
+            ) { index ->
+                if (index == 0) {
+                    SkeletonText(0.35f, height = 16.dp)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        SkeletonListItem(modifier = Modifier.weight(1f), avatarSize = 40.dp, trailing = false)
+                        Spacer(Modifier.width(12.dp))
+                        SkeletonBlock(Modifier.width(110.dp).height(36.dp), RoundedCornerShape(100.dp))
+                    }
+                }
             }
+
+            state.loadError != null && state.group == null ->
+                LoadErrorState(state.loadError!!, onRetry = viewModel::load, modifier = Modifier.padding(padding))
 
             state.isAllSettled -> AllSettled(Modifier.padding(padding))
 

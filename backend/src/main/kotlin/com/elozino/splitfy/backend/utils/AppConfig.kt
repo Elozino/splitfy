@@ -24,6 +24,7 @@ data class AppConfig(
     val email: EmailConfig = EmailConfig(),
     val oauth: OAuthConfig = OAuthConfig(),
     val links: LinksConfig = LinksConfig(),
+    val observability: ObservabilityConfig = ObservabilityConfig(),
     val push: PushConfig = PushConfig(),
     val storage: StorageConfig = StorageConfig(),
 ) {
@@ -83,6 +84,18 @@ data class AppConfig(
         val androidCertSha256: Set<String> = emptySet(),
         /** `TEAMID.bundle.id` entries allowed to open links on iOS. */
         val appleAppIds: Set<String> = emptySet(),
+    )
+
+    data class ObservabilityConfig(
+        /** Sentry DSN. Blank turns error reporting off entirely. */
+        val sentryDsn: String = "",
+        /** Build identifier (image tag or git SHA) attached to error reports. */
+        val release: String = "",
+        /**
+         * Bearer token that `/metrics` demands. Blank means the endpoint answers 404,
+         * so a fresh deployment never publishes its internals by accident.
+         */
+        val metricsToken: String = "",
     )
 
     data class PushConfig(
@@ -202,6 +215,16 @@ data class AppConfig(
                     androidCertSha256 = config.propertyOrNull("links.androidCertSha256")?.getString().csv(),
                     appleAppIds = config.propertyOrNull("links.appleAppIds")?.getString().csv(),
                 ),
+                observability = ObservabilityConfig(
+                    sentryDsn = config.propertyOrNull("observability.sentryDsn")?.getString().orEmpty().trim(),
+                    release = config.propertyOrNull("observability.release")?.getString().orEmpty().trim(),
+                    metricsToken = config.propertyOrNull("observability.metricsToken")?.getString().orEmpty().trim()
+                        .also { token ->
+                            require(token.isEmpty() || token.length >= MIN_METRICS_TOKEN_LENGTH) {
+                                "observability.metricsToken must be at least $MIN_METRICS_TOKEN_LENGTH characters"
+                            }
+                        },
+                ),
                 push = PushConfig(
                     fcmServiceAccountJson = config.propertyOrNull("push.fcmServiceAccountJson")?.getString().orEmpty(),
                     fcmServiceAccountPath = config.propertyOrNull("push.fcmServiceAccountPath")?.getString().orEmpty(),
@@ -236,5 +259,6 @@ data class AppConfig(
         const val INSECURE_DEV_SECRET = "local-development-secret-do-not-use-in-production"
         const val INSECURE_DEV_DATABASE_PASSWORD = "splitfy"
         private const val MIN_JWT_SECRET_LENGTH = 32
+        private const val MIN_METRICS_TOKEN_LENGTH = 24
     }
 }

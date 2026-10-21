@@ -1,6 +1,6 @@
 # Keep the build context to sources and the Gradle build definition. The client
 # modules stay in — settings.gradle.kts declares them, and Gradle wants their build
-# files present even though `:server:buildFatJar` never compiles them.
+# files present even though `:backend:buildFatJar` never compiles them.
 .git
 .github
 .idea
@@ -13,3 +13,6 @@ local.properties
 *.keystore
 .env
 .env.*
+app/androidApp/keystore.properties
+app/androidApp/config.local.properties
+app/iosApp/Configuration/Local.xcconfig

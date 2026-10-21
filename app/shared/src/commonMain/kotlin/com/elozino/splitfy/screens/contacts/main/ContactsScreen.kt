@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.contacts.main
 
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
 import com.elozino.splitfy.FeatureFlags
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
@@ -222,13 +224,12 @@ private fun ContactListScreen(
                         }
                     }
 
-                    if (isLoading) {
+                    // Placeholders only before anything is on screen; a refresh of a
+                    // visible list updates in place rather than flashing rows.
+                    if (isLoading && visible.isEmpty()) {
                         item {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(color = primaryLight)
+                            SkeletonList(count = 6, contentPadding = PaddingValues(vertical = 8.dp)) {
+                                SkeletonListItem(avatarSize = 48.dp, trailing = false)
                             }
                         }
                     }

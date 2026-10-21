@@ -22,7 +22,7 @@ class NotificationViewModel(
 
     fun load() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isLoading = true, errorMessage = null) }
             apply(notificationRepository.list())
         }
     }

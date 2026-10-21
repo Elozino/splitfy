@@ -27,6 +27,8 @@ object UsersTable : Table("users") {
     val emailVerifiedAt = timestamp("email_verified_at").nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
+    /** Set when the account was deleted; the row stays as an anonymous tombstone. */
+    val deletedAt = timestamp("deleted_at").nullable()
 
     override val primaryKey = PrimaryKey(id)
 

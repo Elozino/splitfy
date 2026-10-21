@@ -31,6 +31,7 @@ services:
         condition: service_healthy
     environment:
       APP_ENV: LOCAL
+      LOG_FORMAT: text
       PORT: 8080
       DATABASE_URL: jdbc:postgresql://postgres:5432/splitfy
       DATABASE_USER: splitfy

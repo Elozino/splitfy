@@ -20,6 +20,7 @@ import com.elozino.splitfy.network.ApiCaller
 import com.elozino.splitfy.onSuccess
 import com.elozino.splitfy.SessionManager
 import io.ktor.client.HttpClient
+import io.ktor.client.request.delete
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 
@@ -97,4 +98,8 @@ class AuthRepositoryImpl(
         session.signOut()
         return result
     }
+
+    override suspend fun deleteAccount(): DataResult<Unit> =
+        // The server has already revoked every session, so there is nothing to log out of.
+        caller.execute<Unit> { client.delete(ApiRoutes.Users.ME) }.onSuccess { session.signOut() }
 }
