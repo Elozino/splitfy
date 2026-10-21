@@ -37,9 +37,14 @@ class HomeViewModel(
         load()
     }
 
-    fun load() {
+    fun load() = fetch(isRefresh = false)
+
+    /** Pull-to-refresh: reloads while what's on screen stays put, so no placeholders flash. */
+    fun refresh() = fetch(isRefresh = true)
+
+    private fun fetch(isRefresh: Boolean) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            _state.update { it.copy(isLoading = !isRefresh, isRefreshing = isRefresh, errorMessage = null) }
 
             // Five independent reads: fetching them in parallel means the dashboard
             // renders in one round trip's time rather than five.
@@ -61,6 +66,7 @@ class HomeViewModel(
                 val user = (profileResult as? DataResult.Success)?.data
                 current.copy(
                     isLoading = false,
+                    isRefreshing = false,
                     user = user ?: current.user,
                     currency = user?.defaultCurrency ?: current.currency,
                     groups = (groupsResult as? DataResult.Success)?.data ?: current.groups,

@@ -8,6 +8,8 @@ import com.elozino.splitfy.domain.model.UserId
 
 data class ActivityState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val filter: ActivityFilter = ActivityFilter.ALL,
     val entries: List<DebtEntry> = emptyList(),
     val totalYouOwe: Money = Money.zero(CurrencyCode.NGN),

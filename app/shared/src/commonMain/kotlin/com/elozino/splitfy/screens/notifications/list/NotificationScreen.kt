@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.notifications.list
 
+import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
@@ -60,59 +61,61 @@ fun NotificationScreen(
             )
         }
     ) { padding ->
-        // Grouped by day, newest first, straight from the API.
-        val notifications = state.items
-            .groupBy { it.createdAt.toString().take(10) }
-            .map { (day, items) -> NotificationSection(day, items.map { it.toItem() }) }
+        RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
+            // Grouped by day, newest first, straight from the API.
+            val notifications = state.items
+                .groupBy { it.createdAt.toString().take(10) }
+                .map { (day, items) -> NotificationSection(day, items.map { it.toItem() }) }
 
-        if (state.isLoading) {
-            SkeletonList(modifier = Modifier.padding(padding), count = 6) { index ->
-                SkeletonListItem(
-                    avatarSize = 44.dp,
-                    titleFraction = 0.5f + (index % 3) * 0.1f,
-                    subtitleFraction = 0.75f,
-                    trailing = false,
-                )
-            }
-            return@Scaffold
-        }
-
-        val loadError = state.errorMessage
-        if (loadError != null && state.items.isEmpty()) {
-            LoadErrorState(loadError, onRetry = viewModel::load, modifier = Modifier.padding(padding))
-            return@Scaffold
-        }
-
-        if (state.isEmpty) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("You're all caught up", color = Color.Gray, fontSize = 16.sp)
-            }
-            return@Scaffold
-        }
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            notifications.forEach { section ->
-                item {
-                    Text(
-                        text = section.title,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-                        color = Color.Gray,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+            if (state.isLoading) {
+                SkeletonList(modifier = Modifier.padding(padding), count = 6) { index ->
+                    SkeletonListItem(
+                        avatarSize = 44.dp,
+                        titleFraction = 0.5f + (index % 3) * 0.1f,
+                        subtitleFraction = 0.75f,
+                        trailing = false,
                     )
                 }
-                items(section.items) { notification ->
-                    NotificationItem(
-                        data = notification,
-                        onClick = { viewModel.markRead(notification.id) }
-                    )
+                return@RefreshableBox
+            }
+
+            val loadError = state.errorMessage
+            if (loadError != null && state.items.isEmpty()) {
+                LoadErrorState(loadError, onRetry = viewModel::load, modifier = Modifier.padding(padding))
+                return@RefreshableBox
+            }
+
+            if (state.isEmpty) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("You're all caught up", color = Color.Gray, fontSize = 16.sp)
+                }
+                return@RefreshableBox
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                notifications.forEach { section ->
+                    item {
+                        Text(
+                            text = section.title,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                            color = Color.Gray,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    items(section.items) { notification ->
+                        NotificationItem(
+                            data = notification,
+                            onClick = { viewModel.markRead(notification.id) }
+                        )
+                    }
                 }
             }
         }

@@ -19,6 +19,8 @@ data class NotificationItemData(
 
 data class NotificationState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val items: List<AppNotification> = emptyList(),
     val unreadCount: Int = 0,
     val errorMessage: String? = null,

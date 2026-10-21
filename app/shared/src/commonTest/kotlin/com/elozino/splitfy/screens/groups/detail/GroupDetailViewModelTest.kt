@@ -40,7 +40,9 @@ import kotlin.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -267,14 +269,37 @@ class GroupDetailViewModelTest {
         assertEquals("Flat", vm.state.value.group?.name)
     }
 
+    @Test
+    fun `pull to refresh keeps the content on screen and reloads it`() = runTest(dispatcher) {
+        val vm = viewModel(owner)
+        advanceUntilIdle()
+
+        val gate = CompletableDeferred<Unit>().also { groups.gate = it }
+        vm.refresh()
+        runCurrent()
+        // While refreshing, the group stays visible and no placeholders are asked for.
+        assertTrue(vm.state.value.isRefreshing)
+        assertFalse(vm.state.value.isLoading)
+        assertEquals("Flat", vm.state.value.group?.name)
+
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertFalse(vm.state.value.isRefreshing)
+    }
+
     private inner class FakeGroups(private var current: Group) : GroupRepository {
         val addedEmails = mutableListOf<String>()
         var addResult: DataResult<Group>? = null
         var removeResult: DataResult<Group>? = null
         val updates = mutableListOf<UpdateGroupRequest>()
         var getResult: DataResult<Group>? = null
+        /** When set, `get` waits on it, so a test can look at the in-flight state. */
+        var gate: CompletableDeferred<Unit>? = null
 
-        override suspend fun get(groupId: String): DataResult<Group> = getResult ?: DataResult.Success(current)
+        override suspend fun get(groupId: String): DataResult<Group> {
+            gate?.await()
+            return getResult ?: DataResult.Success(current)
+        }
         override suspend fun balances(groupId: String) =
             DataResult.Success(GroupBalancesResponse(groupId, current.currency, emptyList(), emptyList()))
 

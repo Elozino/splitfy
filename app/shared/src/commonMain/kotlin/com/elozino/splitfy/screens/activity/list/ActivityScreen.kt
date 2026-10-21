@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.activity.list
 
+import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
@@ -101,119 +102,121 @@ fun ActivityScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Tab Row
-            Row(
+        RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                tabs.forEachIndexed { index, (filter, title) ->
-                    val isSelected = selectedTabIndex == index
-                    Button(
-                        onClick = { viewModel.onFilterChange(filter) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isSelected) Color(0xFFFEBB1B) else Color.Transparent,
-                            contentColor = if (isSelected) Color.Black else Color.Gray
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(0.dp),
-                        elevation = null
-                    ) {
-                        Text(
-                            text = title,
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
-            // Grouped by day, newest first; every line comes from the ledger.
-            val needle = query.trim()
-            val activities = state.entries
-                .filter { entry ->
-                    needle.isEmpty() || listOf(entry.fromName, entry.toName, entry.groupName)
-                        .any { it.contains(needle, ignoreCase = true) }
-                }
-                .groupBy { it.lastActivityAt.toString().take(10) }
-                .map { (day, entries) -> ActivitySection(day, entries.map { it.toItem(state.currentUserId) }) }
-
-            if (state.isLoading) {
-                // A day heading, then rows ending in an action pill, as the real list.
-                SkeletonList(count = 6, spacing = 22.dp) { index ->
-                    if (index == 0) {
-                        SkeletonText(0.3f, height = 12.dp)
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            SkeletonListItem(
-                                modifier = Modifier.weight(1f),
-                                avatarSize = null,
-                                titleFraction = 0.45f + (index % 3) * 0.1f,
+                // Tab Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    tabs.forEachIndexed { index, (filter, title) ->
+                        val isSelected = selectedTabIndex == index
+                        Button(
+                            onClick = { viewModel.onFilterChange(filter) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSelected) Color(0xFFFEBB1B) else Color.Transparent,
+                                contentColor = if (isSelected) Color.Black else Color.Gray
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(0.dp),
+                            elevation = null
+                        ) {
+                            Text(
+                                text = title,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             )
-                            Spacer(Modifier.width(12.dp))
-                            SkeletonBlock(Modifier.width(64.dp).height(32.dp), RoundedCornerShape(20.dp))
                         }
                     }
                 }
-                return@Column
-            }
 
-            val loadError = state.errorMessage
-            if (loadError != null && state.entries.isEmpty()) {
-                LoadErrorState(loadError, onRetry = viewModel::load)
-                return@Column
-            }
-
-            if (state.isEmpty) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Nothing outstanding 🎉", color = Color.Gray, fontSize = 16.sp)
-                }
-                return@Column
-            }
-
-            if (activities.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Nothing matches \"$needle\"", color = Color.Gray, fontSize = 16.sp)
-                }
-                return@Column
-            }
-
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                activities.forEach { section ->
-                    item {
-                        Text(
-                            text = section.date,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                            color = Color.Gray,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                // Grouped by day, newest first; every line comes from the ledger.
+                val needle = query.trim()
+                val activities = state.entries
+                    .filter { entry ->
+                        needle.isEmpty() || listOf(entry.fromName, entry.toName, entry.groupName)
+                            .any { it.contains(needle, ignoreCase = true) }
                     }
-                    items(section.items) { item ->
-                        ActivityItem(
-                            data = item,
-                            onActionClick = {
-                                when {
-                                    item.isCompleted -> Unit
-                                    // Without a wallet, both directions settle by recording a payment.
-                                    onNavigateToPay == null || onNavigateToRequest == null ->
-                                        onNavigateToSettleUp(item.groupId)
-                                    item.actionLabel == "Pay" -> onNavigateToPay()
-                                    else -> onNavigateToRequest()
-                                }
+                    .groupBy { it.lastActivityAt.toString().take(10) }
+                    .map { (day, entries) -> ActivitySection(day, entries.map { it.toItem(state.currentUserId) }) }
+
+                if (state.isLoading) {
+                    // A day heading, then rows ending in an action pill, as the real list.
+                    SkeletonList(count = 6, spacing = 22.dp) { index ->
+                        if (index == 0) {
+                            SkeletonText(0.3f, height = 12.dp)
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                SkeletonListItem(
+                                    modifier = Modifier.weight(1f),
+                                    avatarSize = null,
+                                    titleFraction = 0.45f + (index % 3) * 0.1f,
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                SkeletonBlock(Modifier.width(64.dp).height(32.dp), RoundedCornerShape(20.dp))
                             }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 24.dp),
-                            color = Color.LightGray.copy(alpha = 0.3f)
-                        )
+                        }
+                    }
+                    return@Column
+                }
+
+                val loadError = state.errorMessage
+                if (loadError != null && state.entries.isEmpty()) {
+                    LoadErrorState(loadError, onRetry = viewModel::load)
+                    return@Column
+                }
+
+                if (state.isEmpty) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Nothing outstanding 🎉", color = Color.Gray, fontSize = 16.sp)
+                    }
+                    return@Column
+                }
+
+                if (activities.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Nothing matches \"$needle\"", color = Color.Gray, fontSize = 16.sp)
+                    }
+                    return@Column
+                }
+
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    activities.forEach { section ->
+                        item {
+                            Text(
+                                text = section.date,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                                color = Color.Gray,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        items(section.items) { item ->
+                            ActivityItem(
+                                data = item,
+                                onActionClick = {
+                                    when {
+                                        item.isCompleted -> Unit
+                                        // Without a wallet, both directions settle by recording a payment.
+                                        onNavigateToPay == null || onNavigateToRequest == null ->
+                                            onNavigateToSettleUp(item.groupId)
+                                        item.actionLabel == "Pay" -> onNavigateToPay()
+                                        else -> onNavigateToRequest()
+                                    }
+                                }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 24.dp),
+                                color = Color.LightGray.copy(alpha = 0.3f)
+                            )
+                        }
                     }
                 }
             }

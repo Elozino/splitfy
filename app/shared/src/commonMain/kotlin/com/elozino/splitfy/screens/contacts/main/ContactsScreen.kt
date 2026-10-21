@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.contacts.main
 
+import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
 import com.elozino.splitfy.FeatureFlags
@@ -47,6 +48,8 @@ fun ContactScreen(
             contacts = state.contacts.map { it.toData() },
             favorites = state.favorites.map { it.toData() },
             isLoading = state.isLoading,
+            isRefreshing = state.isRefreshing,
+            onRefresh = viewModel::refresh,
             errorMessage = state.errorMessage,
             selectedTab = state.selectedTab,
             onTabSelected = viewModel::onTabSelected,
@@ -124,6 +127,8 @@ private fun ContactListScreen(
     contacts: List<ContactData>,
     favorites: List<ContactData>,
     isLoading: Boolean,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     errorMessage: String?,
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
@@ -159,115 +164,117 @@ private fun ContactListScreen(
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(
-                top = padding.calculateTopPadding(),
-                start = padding.calculateStartPadding(LayoutDirection.Ltr),
-                end = padding.calculateEndPadding(LayoutDirection.Ltr)
-            )
-        ) {
-            // Search Bar Placeholder (Screen 74)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF5F5F5))
-                    .clickable { onSearchClick() }
-                    .padding(16.dp)
+        RefreshableBox(isRefreshing = isRefreshing, onRefresh = onRefresh, indicatorPadding = padding) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(
+                    top = padding.calculateTopPadding(),
+                    start = padding.calculateStartPadding(LayoutDirection.Ltr),
+                    end = padding.calculateEndPadding(LayoutDirection.Ltr)
+                )
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("Search contact", color = Color.Gray)
-                }
-            }
-
-            // Tabs
-            Surface(
-                modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(8.dp),
-                color = Color(0xFFF5F5F5)
-            ) {
-                Row {
-                    tabs.forEachIndexed { index, title ->
-                        val isSelected = selectedTab == index
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) primaryLight else Color.Transparent)
-                                .clickable { onTabSelected(index) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = title,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.Black else Color.Gray,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-            }
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                // Search Bar Placeholder (Screen 74)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFF5F5F5))
+                        .clickable { onSearchClick() }
+                        .padding(16.dp)
                 ) {
-                    errorMessage?.let { message ->
-                        item {
-                            Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Search contact", color = Color.Gray)
                     }
+                }
 
-                    // Placeholders only before anything is on screen; a refresh of a
-                    // visible list updates in place rather than flashing rows.
-                    if (isLoading && visible.isEmpty()) {
-                        item {
-                            SkeletonList(count = 6, contentPadding = PaddingValues(vertical = 8.dp)) {
-                                SkeletonListItem(avatarSize = 48.dp, trailing = false)
+                // Tabs
+                Surface(
+                    modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFF5F5F5)
+                ) {
+                    Row {
+                        tabs.forEachIndexed { index, title ->
+                            val isSelected = selectedTab == index
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) primaryLight else Color.Transparent)
+                                    .clickable { onTabSelected(index) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = title,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.Black else Color.Gray,
+                                    fontSize = 14.sp
+                                )
                             }
                         }
                     }
+                }
 
-                    if (!isLoading && visible.isEmpty()) {
-                        item {
-                            Text(
-                                text = "No contacts yet. People you share a group with appear here.",
-                                color = Color.Gray,
-                                fontSize = 14.sp
+                Box(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        errorMessage?.let { message ->
+                            item {
+                                Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+                            }
+                        }
+
+                        // Placeholders only before anything is on screen; a refresh of a
+                        // visible list updates in place rather than flashing rows.
+                        if (isLoading && visible.isEmpty()) {
+                            item {
+                                SkeletonList(count = 6, contentPadding = PaddingValues(vertical = 8.dp)) {
+                                    SkeletonListItem(avatarSize = 48.dp, trailing = false)
+                                }
+                            }
+                        }
+
+                        if (!isLoading && visible.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No contacts yet. People you share a group with appear here.",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+
+                        items(visible, key = { it.id }) { contact ->
+                            ContactListItem(
+                                contact = contact,
+                                onClick = { onContactClick(contact) },
+                                onToggleFavorite = { onToggleFavorite(contact) }
                             )
                         }
                     }
-
-                    items(visible, key = { it.id }) { contact ->
-                        ContactListItem(
-                            contact = contact,
-                            onClick = { onContactClick(contact) },
-                            onToggleFavorite = { onToggleFavorite(contact) }
-                        )
-                    }
-                }
                 
-                // Alphabet index (Screen 75)
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = 8.dp, top = 24.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toList().forEach { char ->
-                        Text(
-                            text = char.toString(),
-                            fontSize = 10.sp,
-                            color = Color.Gray,
-                            fontWeight = FontWeight.Medium
-                        )
+                    // Alphabet index (Screen 75)
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 8.dp, top = 24.dp, bottom = 24.dp),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toList().forEach { char ->
+                            Text(
+                                text = char.toString(),
+                                fontSize = 10.sp,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }
