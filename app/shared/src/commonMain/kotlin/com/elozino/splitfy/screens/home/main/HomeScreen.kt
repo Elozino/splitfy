@@ -65,7 +65,7 @@ fun HomeScreen(
                         text = "splitfy",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = AppTheme.colors.onBrand
                     )
                 },
                 navigationIcon = {
@@ -73,7 +73,7 @@ fun HomeScreen(
                         imageVector = Icons.Default.Category,
                         contentDescription = "Logo",
                         modifier = Modifier.padding(start = 16.dp).size(28.dp),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = AppTheme.colors.onBrand
                     )
                 },
                 actions = {
@@ -89,7 +89,7 @@ fun HomeScreen(
                                 imageVector = Icons.Outlined.Notifications,
                                 contentDescription = "Notifications",
                                 modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
+                                tint = AppTheme.colors.onBrand
                             )
                         }
                     }
@@ -180,14 +180,14 @@ fun BalanceHeader(
                     text = state.walletBalance.toPlainString(),
                     fontSize = 56.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppTheme.colors.onBrand
                 )
                 Text(
                     text = state.walletBalance.currency.code,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 8.dp, start = 6.dp),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppTheme.colors.onBrand
                 )
             }
 
@@ -246,7 +246,7 @@ fun ActionItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
                 imageVector = icon,
                 contentDescription = label,
                 modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurface
+                tint = AppTheme.colors.onBrand
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -255,7 +255,7 @@ fun ActionItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface
+            color = AppTheme.colors.onBrand
         )
     }
 }
@@ -403,7 +403,7 @@ fun PositionHeader(
                 Spacer(modifier = Modifier.height(10.dp))
                 SkeletonBlock(Modifier.width(140.dp).height(14.dp), RoundedCornerShape(6.dp), onAccent = true)
             } else if (state.loadFailed) {
-                Text(text = "—", fontSize = 56.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text(text = "—", fontSize = 56.sp, fontWeight = FontWeight.Bold, color = AppTheme.colors.onBrand)
                 Text(
                     text = "Couldn't load your balance",
                     fontSize = 14.sp,
@@ -415,14 +415,14 @@ fun PositionHeader(
                     text = net.abs().toPlainString(),
                     fontSize = 56.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppTheme.colors.onBrand
                 )
                 Text(
                     text = net.currency.code,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 8.dp, start = 6.dp),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = AppTheme.colors.onBrand
                 )
             }
             if (!(state.isLoading && state.groups.isEmpty()) && !state.loadFailed) Text(
@@ -537,7 +537,7 @@ fun GroupsSection(
                     onClick = onNewGroupClick,
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand),
                 ) {
-                    Text("Create a group", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                    Text("Create a group", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
             return@Column
