@@ -56,6 +56,9 @@ import com.elozino.splitfy.backend.services.UserService
 import com.elozino.splitfy.backend.services.WalletService
 import com.elozino.splitfy.backend.utils.AppConfig
 import com.elozino.splitfy.backend.utils.PasswordHasher
+import com.elozino.splitfy.backend.utils.SecretCipher
+import com.elozino.splitfy.backend.repositories.TwoFactorRepository
+import com.elozino.splitfy.backend.services.TwoFactorService
 import org.koin.dsl.module
 
 /**
@@ -116,7 +119,9 @@ fun serverModule(config: AppConfig) = module {
     single { PaymentReminderRepository() }
 
     // Services
-    single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { AuthService(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { TwoFactorRepository() }
+    single { TwoFactorService(get(), get(), get(), SecretCipher(config.security.totpEncryptionKey)) }
     single { UserService(get(), get()) }
     single { EmailChangeService(get(), get(), get(), get(), get()) }
     single { DataExportService(get(), get()) }

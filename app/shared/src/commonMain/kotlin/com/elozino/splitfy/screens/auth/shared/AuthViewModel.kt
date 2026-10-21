@@ -10,6 +10,7 @@ import com.elozino.splitfy.api.dto.LoginRequest
 import com.elozino.splitfy.DataError
 import com.elozino.splitfy.DataResult
 import com.elozino.splitfy.repositories.AuthRepository
+import com.elozino.splitfy.repositories.SignInResult
 import com.elozino.splitfy.SessionManager
 import com.elozino.splitfy.userMessage
 import com.elozino.splitfy.validation.Validators
@@ -95,7 +96,7 @@ class AuthViewModel(
             _state.update { it.copy(fieldErrors = localErrors.associate { e -> e.field to e.message }) }
             return
         }
-        submit { authRepository.login(current.email.trim(), current.password) }
+        submitSignIn { authRepository.login(current.email.trim(), current.password) }
     }
 
     fun signUp() {
@@ -197,13 +198,53 @@ class AuthViewModel(
         when (result) {
             SocialSignInResult.Cancelled -> Unit
             is SocialSignInResult.Failure -> _state.update { it.copy(errorMessage = result.message) }
-            is SocialSignInResult.Success -> submit {
+            is SocialSignInResult.Success -> submitSignIn {
                 authRepository.signInWithProvider(
                     provider,
                     OAuthSignInRequest(result.idToken, result.nonce, result.displayName),
                 )
             }
         }
+    }
+
+    fun onTwoFactorCodeChange(value: String) = _state.update {
+        val limit = if (it.useRecoveryCode) RECOVERY_CODE_MAX_LENGTH else TOTP_LENGTH
+        val cleaned = if (it.useRecoveryCode) value.take(limit) else value.filter(Char::isDigit).take(limit)
+        it.copy(twoFactorCode = cleaned, errorMessage = null)
+    }
+
+    /** Switches between the authenticator's six digits and a recovery code. */
+    fun toggleRecoveryCode() = _state.update {
+        it.copy(useRecoveryCode = !it.useRecoveryCode, twoFactorCode = "", errorMessage = null)
+    }
+
+    /** Sends the code for the pending challenge; a wrong one is cleared for another try. */
+    fun verifyTwoFactor() {
+        val current = _state.value
+        val challenge = current.twoFactorChallenge ?: return
+        if (current.isSubmitting || !current.canSubmitTwoFactor) return
+        viewModelScope.launch {
+            _state.update { it.copy(isSubmitting = true, errorMessage = null) }
+            when (val result = authRepository.verifyTwoFactor(challenge, current.twoFactorCode.trim())) {
+                is DataResult.Success -> _state.update {
+                    it.copy(
+                        isSubmitting = false,
+                        isAuthenticated = true,
+                        twoFactorChallenge = null,
+                        twoFactorCode = "",
+                    )
+                }
+                is DataResult.Failure -> {
+                    handleFailure(result.error)
+                    _state.update { it.copy(twoFactorCode = "") }
+                }
+            }
+        }
+    }
+
+    /** Back out of the code step; the challenge is simply left to expire. */
+    fun cancelTwoFactor() = _state.update {
+        it.copy(twoFactorChallenge = null, twoFactorCode = "", useRecoveryCode = false, errorMessage = null)
     }
 
     fun logout() {
@@ -224,6 +265,30 @@ class AuthViewModel(
         }
     }
 
+    /** Like [submit], but a 2FA challenge parks the flow on the code step instead of finishing it. */
+    private fun submitSignIn(action: suspend () -> DataResult<SignInResult>) {
+        viewModelScope.launch {
+            _state.update { it.copy(isSubmitting = true, errorMessage = null, fieldErrors = emptyMap()) }
+            when (val result = action()) {
+                is DataResult.Success -> when (val outcome = result.data) {
+                    is SignInResult.SignedIn -> _state.update {
+                        it.copy(isSubmitting = false, isAuthenticated = true, password = "")
+                    }
+                    is SignInResult.TwoFactorRequired -> _state.update {
+                        it.copy(
+                            isSubmitting = false,
+                            password = "",
+                            twoFactorChallenge = outcome.challengeToken,
+                            twoFactorCode = "",
+                            useRecoveryCode = false,
+                        )
+                    }
+                }
+                is DataResult.Failure -> handleFailure(result.error)
+            }
+        }
+    }
+
     private fun handleFailure(error: DataError) {
         _state.update { current ->
             when (error) {
@@ -235,5 +300,10 @@ class AuthViewModel(
             }
         }
     }
-}
 
+    private companion object {
+        const val TOTP_LENGTH = 6
+        /** "xxxxx-xxxxx", with a little room for stray spaces. */
+        const val RECOVERY_CODE_MAX_LENGTH = 14
+    }
+}

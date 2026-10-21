@@ -29,6 +29,10 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     @Serializable
     object VerifyEmail : Route("verify_email", true)
 
+    /** The authenticator-code step of a sign-in. Unprotected: there is no session yet. */
+    @Serializable
+    object TwoFactorSignIn : Route("two_factor_sign_in", false)
+
     @Serializable
     object Home : Route("home", true)
 
@@ -106,6 +110,16 @@ sealed class Route(val name: String, val isProtected: Boolean) {
 
     @Serializable
     object SecuritySettings : Route("security_settings", true)
+
+    /** [hasPassword] false turns "Change password" into "Set a password" (no current password). */
+    @Serializable
+    data class ChangePassword(val hasPassword: Boolean) : Route("change_password", true)
+
+    @Serializable
+    object Devices : Route("devices", true)
+
+    @Serializable
+    object TwoFactorSetup : Route("two_factor_setup", true)
 
     @Serializable
     object BillingSubscriptions : Route("billing_subscriptions", true)

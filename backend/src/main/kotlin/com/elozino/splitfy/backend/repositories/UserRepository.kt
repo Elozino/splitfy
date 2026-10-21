@@ -17,6 +17,8 @@ import kotlin.time.Clock
 data class UserRecord(
     val user: User,
     val passwordHash: String,
+    /** False while [passwordHash] is a random value nobody knows (Google/Apple sign-up). */
+    val hasPassword: Boolean = true,
 )
 
 /**
@@ -73,6 +75,13 @@ class UserRepository(private val avatarDisplayUrl: (String) -> String? = { null 
             .where { UsersTable.id eq id }
             .singleOrNull()
             ?.toUser(avatarDisplayUrl)
+    }
+
+    suspend fun findRecordById(id: UUID): UserRecord? = dbQuery {
+        UsersTable.selectAll()
+            .where { (UsersTable.id eq id) and UsersTable.deletedAt.isNull() }
+            .singleOrNull()
+            ?.toUserRecord()
     }
 
     suspend fun findAllByIds(ids: Collection<UUID>): List<User> {
@@ -189,4 +198,5 @@ internal fun ResultRow.toUser(avatarUrl: (String) -> String? = { null }) = User(
 internal fun ResultRow.toUserRecord(avatarUrl: (String) -> String? = { null }) = UserRecord(
     user = toUser(avatarUrl),
     passwordHash = this[UsersTable.passwordHash],
+    hasPassword = this[UsersTable.hasPassword],
 )

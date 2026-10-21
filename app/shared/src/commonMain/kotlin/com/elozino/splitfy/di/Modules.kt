@@ -29,6 +29,14 @@ import com.elozino.splitfy.repositories.UserRepositoryImpl
 import com.elozino.splitfy.repositories.WalletRepository
 import com.elozino.splitfy.repositories.WalletRepositoryImpl
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
+import com.elozino.splitfy.screens.account.security_settings.ChangePasswordViewModel
+import com.elozino.splitfy.screens.account.security_settings.DevicesViewModel
+import com.elozino.splitfy.screens.account.security_settings.SecurityViewModel
+import com.elozino.splitfy.screens.account.security_settings.TwoFactorSetupViewModel
+import com.elozino.splitfy.repositories.SecurityRepository
+import com.elozino.splitfy.repositories.SecurityRepositoryImpl
+import com.elozino.splitfy.security.AppLockController
+import com.elozino.splitfy.security.AppLockSettings
 import com.elozino.splitfy.screens.activity.list.ActivityViewModel
 import com.elozino.splitfy.screens.auth.shared.AuthViewModel
 import com.elozino.splitfy.screens.contacts.main.ContactsViewModel
@@ -78,6 +86,7 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
             engine = createHttpClientEngine(),
             config = get(),
             sessionManager = get(),
+            device = runCatching { com.elozino.splitfy.security.currentDeviceIdentity() }.getOrNull(),
         ).create()
     }
 
@@ -102,6 +111,9 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
         com.elozino.splitfy.repositories.AccountRepositoryImpl(get(), get())
     }
     single { platformImageCompressor() }
+    single<SecurityRepository> { SecurityRepositoryImpl(get(), get()) }
+    single { AppLockSettings(get()) }
+    single { AppLockController(get(), get()) }
 
     // Swap for the payment provider's SDK before taking real payments.
     single<CardTokenizer> { DevCardTokenizer() }
@@ -128,6 +140,10 @@ val viewModelModule: Module = module {
     factory { com.elozino.splitfy.screens.account.notification_settings.NotificationSettingsViewModel(get()) }
     factory { ContactsViewModel(get(), get()) }
     factory { AccountViewModel(get(), get(), get(), get(), get()) }
+    factory { SecurityViewModel(get(), get()) }
+    factory { (hasPassword: Boolean) -> ChangePasswordViewModel(hasPassword, get()) }
+    factory { DevicesViewModel(get()) }
+    factory { TwoFactorSetupViewModel(get()) }
     factory {
         com.elozino.splitfy.screens.account.personal_info.PersonalInfoViewModel(
             get(), get(), get(), com.elozino.splitfy.uploads.platformAvatarCropper(), get(),

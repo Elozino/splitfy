@@ -12,6 +12,8 @@ import java.util.UUID
 data class UserPrincipal(
     val userId: UUID,
     val email: String,
+    /** The device session the access token was issued to; null for tokens minted before sessions existed. */
+    val sessionId: UUID? = null,
 )
 
 /** Reads the principal or fails with 401 — routes never handle a null caller. */

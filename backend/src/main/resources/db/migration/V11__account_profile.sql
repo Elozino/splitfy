@@ -4,12 +4,16 @@
 ALTER TABLE users ADD COLUMN has_password BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- Backfill: an identity linked within a minute of the account's creation means the
--- account was created by that sign-in. (An unverified account later claimed through
--- Google keeps TRUE; its owner can still reset the password by email.)
+-- account was created by that sign-in, unless the owner has since completed a
+-- password reset, which gave them a password they know. (An unverified account later
+-- claimed through Google keeps TRUE; its owner can still reset the password by email.)
 UPDATE users u SET has_password = FALSE
 WHERE EXISTS (
     SELECT 1 FROM user_identities i
-    WHERE i.user_id = u.id AND i.created_at < u.created_at + INTERVAL '1 minute'
+    WHERE i.user_id = u.id AND i.created_at <= u.created_at + INTERVAL '1 minute'
+)
+AND NOT EXISTS (
+    SELECT 1 FROM password_resets r WHERE r.user_id = u.id AND r.consumed_at IS NOT NULL
 );
 
 -- Profile photos belong to a user, not a group.

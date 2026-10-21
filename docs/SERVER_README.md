@@ -25,6 +25,7 @@ while an insecure default is still in place (noted below).
 | `BCRYPT_COST` | `12` | |
 | `OTP_MINUTES` | `10` | Lifetime of a password-reset code. |
 | `RESEND_API_KEY` | empty | **Required in production.** Without it, reset codes are only logged. |
+| `TOTP_ENCRYPTION_KEY` | derived from `JWT_SECRET` | **Required in production**, at least 32 characters. Encrypts authenticator-app secrets at rest. |
 | `EMAIL_FROM` | `splitfy <no-reply@splitfy.app>` | Must be on a domain verified in Resend. |
 | `FCM_SERVICE_ACCOUNT_JSON` | empty | Firebase service-account key (the JSON itself). Optional: without it pushes are only logged. See `docs/PUSH_NOTIFICATIONS.md`. |
 | `FCM_SERVICE_ACCOUNT_PATH` | empty | Or a path to that key file. |

@@ -46,6 +46,8 @@ object RefreshTokensTable : Table("refresh_tokens") {
     /** Only the SHA-256 of the token is stored: a database leak cannot mint sessions. */
     val tokenHash = varchar("token_hash", 64)
     val deviceId = varchar("device_id", 128).nullable()
+    /** The device this token belongs to; every rotation stays in the same session. */
+    val sessionId = uuid("session_id").references(AuthSessionsTable.id, onDelete = ReferenceOption.CASCADE).nullable()
     val expiresAt = timestamp("expires_at")
     val revokedAt = timestamp("revoked_at").nullable()
     val createdAt = timestamp("created_at")

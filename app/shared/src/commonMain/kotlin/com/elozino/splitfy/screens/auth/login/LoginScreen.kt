@@ -56,9 +56,14 @@ fun LoginScreen(
     onNavigateToSignup: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
     onLoginSuccess: () -> Unit = {},
+    onTwoFactorRequired: () -> Unit = {},
     viewModel: AuthViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(state.twoFactorChallenge) {
+        if (state.twoFactorChallenge != null) onTwoFactorRequired()
+    }
     val email = state.email
     val password = state.password
 

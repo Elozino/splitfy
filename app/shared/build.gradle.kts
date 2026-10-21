@@ -37,6 +37,8 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.compose.materialIconsExtended)
             implementation(libs.compose.ui)
+            // Back press is swallowed while App lock covers the screen.
+            implementation(libs.compose.ui.backhandler)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
@@ -71,6 +73,9 @@ kotlin {
             // Camera / image picking
             implementation(libs.peekaboo.ui)
             implementation(libs.peekaboo.image.picker)
+
+            // QR code for authenticator-app enrolment
+            implementation(libs.qrose)
         }
 
         androidMain.dependencies {
@@ -85,6 +90,9 @@ kotlin {
             // need Sentry's Cocoa framework at link time, so the Swift host starts
             // Sentry Cocoa itself (see iOSApp.swift).
             implementation(libs.sentry.kmp)
+            // App lock: BiometricPrompt, which needs a FragmentActivity host.
+            implementation(libs.androidx.biometric)
+            implementation(libs.androidx.fragment)
         }
 
         iosMain.dependencies {

@@ -12,6 +12,18 @@ import com.elozino.splitfy.api.dto.OAuthSignInRequest
 import com.elozino.splitfy.api.dto.RefreshTokenRequest
 import com.elozino.splitfy.api.dto.RegisterRequest
 import com.elozino.splitfy.backend.services.IdentityTokenVerifier
+import com.elozino.splitfy.api.dto.SecurityOverview
+import com.elozino.splitfy.api.dto.SignInResponse
+import com.elozino.splitfy.api.dto.TwoFactorEnableRequest
+import com.elozino.splitfy.api.dto.TwoFactorSetupResponse
+import com.elozino.splitfy.api.dto.TwoFactorVerifyRequest
+import com.elozino.splitfy.backend.utils.Base32
+import com.elozino.splitfy.backend.utils.Totp
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import com.elozino.splitfy.backend.services.SocialAuthService
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -179,6 +191,45 @@ class SocialSignInTest {
             setBody(RefreshTokenRequest(squatter.tokens.refreshToken))
         }
         assertEquals(HttpStatusCode.Unauthorized, refresh.status)
+    }
+
+    @Test
+    fun `a Google account has no usable password until it sets one`() = testApplication {
+        useTestConfig(database, overrides = overrides)
+        val client = jsonClient()
+        val ada = client.google(idToken()).body<AuthResponse>()
+
+        val overview = client.get(ApiRoutes.Security.BASE) { bearerAuth(ada.tokens.accessToken) }.body<SecurityOverview>()
+
+        assertFalse(overview.hasPassword)
+    }
+
+    @Test
+    fun `Google sign-in asks for the authenticator code when 2FA is on`() = testApplication {
+        useTestConfig(database, overrides = overrides)
+        val client = jsonClient()
+        val ada = client.google(idToken()).body<AuthResponse>()
+        val setup = client.post(ApiRoutes.Security.TWO_FACTOR_SETUP) { bearerAuth(ada.tokens.accessToken) }
+            .body<TwoFactorSetupResponse>()
+        val secret = Base32.decode(setup.secret)
+        val step = Totp.step(System.currentTimeMillis() / 1000)
+        val enabled = client.post(ApiRoutes.Security.TWO_FACTOR_ENABLE) {
+            bearerAuth(ada.tokens.accessToken)
+            contentType(ContentType.Application.Json)
+            setBody(TwoFactorEnableRequest(Totp.code(secret, step)))
+        }
+        assertEquals(HttpStatusCode.OK, enabled.status, enabled.bodyAsText())
+
+        val second = client.google(idToken()).body<SignInResponse>()
+
+        assertNull(second.tokens, "Google alone must not be enough once 2FA is on")
+        // The next step's code: the one above is spent, and the window allows one step ahead.
+        val verified = client.post(ApiRoutes.Auth.TWO_FACTOR_VERIFY) {
+            contentType(ContentType.Application.Json)
+            setBody(TwoFactorVerifyRequest(second.twoFactor!!.challengeToken, Totp.code(secret, step + 1)))
+        }
+        assertEquals(HttpStatusCode.OK, verified.status, verified.bodyAsText())
+        assertEquals("ada@example.com", verified.body<AuthResponse>().user.email)
     }
 
     @Test

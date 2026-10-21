@@ -60,6 +60,10 @@ class DatabaseSchemaTest {
         com.elozino.splitfy.backend.schema.JobRunsTable,
         com.elozino.splitfy.backend.schema.PaymentRemindersTable,
         com.elozino.splitfy.backend.schema.UploadsTable,
+        com.elozino.splitfy.backend.schema.AuthSessionsTable,
+        com.elozino.splitfy.backend.schema.UserTotpTable,
+        com.elozino.splitfy.backend.schema.TotpRecoveryCodesTable,
+        com.elozino.splitfy.backend.schema.TwoFactorChallengesTable,
     )
 
     @BeforeTest
