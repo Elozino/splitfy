@@ -16,6 +16,8 @@ data class ContactData(
 
 data class ContactsState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val contacts: List<Contact> = emptyList(),
     val favorites: List<Contact> = emptyList(),
     val query: String = "",

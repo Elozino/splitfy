@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.home.main
 
+import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -97,51 +98,53 @@ fun HomeScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    top = padding.calculateTopPadding(),
-                    start = padding.calculateStartPadding(
-                        layoutDirection = LayoutDirection.Ltr
-                    ),
-                    end = padding.calculateEndPadding(
-                        layoutDirection = LayoutDirection.Ltr
+        RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        top = padding.calculateTopPadding(),
+                        start = padding.calculateStartPadding(
+                            layoutDirection = LayoutDirection.Ltr
+                        ),
+                        end = padding.calculateEndPadding(
+                            layoutDirection = LayoutDirection.Ltr
+                        )
                     )
-                )
-        ) {
-            if (state.user?.emailVerified == false) {
-                VerifyEmailBanner(onClick = onNavigateToVerifyEmail)
-            }
-            if (FeatureFlags.WALLET) {
-                BalanceHeader(
-                    state = state,
-                    onSendClick = onNavigateToPay,
-                    onRequestClick = onNavigateToRequest,
-                    onTopUpClick = onNavigateToTopUp,
-                    onWithdrawClick = onNavigateToWithdraw,
-                    onHistoryClick = onNavigateToTransactionHistory
-                )
-                ActivitySection(
-                    state = state,
-                    modifier = Modifier.weight(1f),
-                    onViewAllClick = onNavigateToActivity
-                )
-            } else {
-                PositionHeader(
-                    state = state,
-                    onNewGroupClick = onNavigateToNewGroup,
-                    onGroupsClick = onNavigateToGroups,
-                    onActivityClick = onNavigateToActivity,
-                )
-                GroupsSection(
-                    state = state,
-                    onRetry = viewModel::load,
-                    modifier = Modifier.weight(1f),
-                    onViewAllClick = onNavigateToGroups,
-                    onGroupClick = onNavigateToGroupDetail,
-                    onNewGroupClick = onNavigateToNewGroup,
-                )
+            ) {
+                if (state.user?.emailVerified == false) {
+                    VerifyEmailBanner(onClick = onNavigateToVerifyEmail)
+                }
+                if (FeatureFlags.WALLET) {
+                    BalanceHeader(
+                        state = state,
+                        onSendClick = onNavigateToPay,
+                        onRequestClick = onNavigateToRequest,
+                        onTopUpClick = onNavigateToTopUp,
+                        onWithdrawClick = onNavigateToWithdraw,
+                        onHistoryClick = onNavigateToTransactionHistory
+                    )
+                    ActivitySection(
+                        state = state,
+                        modifier = Modifier.weight(1f),
+                        onViewAllClick = onNavigateToActivity
+                    )
+                } else {
+                    PositionHeader(
+                        state = state,
+                        onNewGroupClick = onNavigateToNewGroup,
+                        onGroupsClick = onNavigateToGroups,
+                        onActivityClick = onNavigateToActivity,
+                    )
+                    GroupsSection(
+                        state = state,
+                        onRetry = viewModel::load,
+                        modifier = Modifier.weight(1f),
+                        onViewAllClick = onNavigateToGroups,
+                        onGroupClick = onNavigateToGroupDetail,
+                        onNewGroupClick = onNavigateToNewGroup,
+                    )
+                }
             }
         }
     }

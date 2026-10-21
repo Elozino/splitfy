@@ -25,6 +25,8 @@ data class PaymentDraft(
 
 data class SettleUpState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val group: Group? = null,
     val currentUserId: String? = null,
     val suggestedTransfers: List<SuggestedTransfer> = emptyList(),

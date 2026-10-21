@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.groups.list
 
+import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
@@ -44,6 +45,8 @@ fun GroupsScreen(
     GroupsListScreen(
         groups = state.groups.map { it.toItem() },
         isLoading = state.isLoading,
+        isRefreshing = state.isRefreshing,
+        onRefresh = viewModel::refresh,
         errorMessage = state.errorMessage,
         onRetry = viewModel::load,
         onCreateGroupClick = onNavigateToNewGroup,
@@ -66,6 +69,8 @@ private fun GroupSummary.toItem() = GroupItemData(
 private fun GroupsListScreen(
     groups: List<GroupItemData>,
     isLoading: Boolean,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     errorMessage: String?,
     onRetry: () -> Unit,
     onCreateGroupClick: () -> Unit,
@@ -112,68 +117,70 @@ private fun GroupsListScreen(
             }
         }
     ) { padding ->
-        if (isLoading && groups.isEmpty()) {
-            // Card-shaped placeholders, so the real cards replace them in place.
-            SkeletonList(
-                modifier = Modifier.padding(
-                    top = padding.calculateTopPadding(),
-                    start = padding.calculateStartPadding(LayoutDirection.Ltr),
-                    end = padding.calculateEndPadding(LayoutDirection.Ltr)
-                ),
-                count = 5,
-                contentPadding = PaddingValues(16.dp),
-                spacing = 12.dp,
-            ) { index ->
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    SkeletonListItem(
-                        modifier = Modifier.padding(16.dp),
-                        titleFraction = 0.45f + (index % 3) * 0.1f,
-                        subtitleFraction = 0.3f,
-                    )
-                }
-            }
-        } else if (groups.isEmpty() && errorMessage != null) {
-            LoadErrorState(errorMessage, onRetry = onRetry, modifier = Modifier.padding(padding))
-        } else if (groups.isEmpty()) {
-            EmptyGroupsState(onCreateGroupClick, padding)
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
+        RefreshableBox(isRefreshing = isRefreshing, onRefresh = onRefresh, indicatorPadding = padding) {
+            if (isLoading && groups.isEmpty()) {
+                // Card-shaped placeholders, so the real cards replace them in place.
+                SkeletonList(
+                    modifier = Modifier.padding(
                         top = padding.calculateTopPadding(),
                         start = padding.calculateStartPadding(LayoutDirection.Ltr),
                         end = padding.calculateEndPadding(LayoutDirection.Ltr)
                     ),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                errorMessage?.let { message ->
-                    item {
-                        Text(
-                            text = message,
-                            color = Color(0xFFD32F2F),
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                    count = 5,
+                    contentPadding = PaddingValues(16.dp),
+                    spacing = 12.dp,
+                ) { index ->
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        SkeletonListItem(
+                            modifier = Modifier.padding(16.dp),
+                            titleFraction = 0.45f + (index % 3) * 0.1f,
+                            subtitleFraction = 0.3f,
                         )
                     }
                 }
-                if (shown.isEmpty()) {
-                    item {
-                        Text(
-                            text = "No groups match \"${query.trim()}\"",
-                            color = Color.Gray,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(8.dp)
-                        )
+            } else if (groups.isEmpty() && errorMessage != null) {
+                LoadErrorState(errorMessage, onRetry = onRetry, modifier = Modifier.padding(padding))
+            } else if (groups.isEmpty()) {
+                EmptyGroupsState(onCreateGroupClick, padding)
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            top = padding.calculateTopPadding(),
+                            start = padding.calculateStartPadding(LayoutDirection.Ltr),
+                            end = padding.calculateEndPadding(LayoutDirection.Ltr)
+                        ),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    errorMessage?.let { message ->
+                        item {
+                            Text(
+                                text = message,
+                                color = Color(0xFFD32F2F),
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
                     }
-                }
-                items(shown, key = { it.id }) { group ->
-                    GroupItem(group, onClick = { onGroupClick(group) })
+                    if (shown.isEmpty()) {
+                        item {
+                            Text(
+                                text = "No groups match \"${query.trim()}\"",
+                                color = Color.Gray,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+                    items(shown, key = { it.id }) { group ->
+                        GroupItem(group, onClick = { onGroupClick(group) })
+                    }
                 }
             }
         }

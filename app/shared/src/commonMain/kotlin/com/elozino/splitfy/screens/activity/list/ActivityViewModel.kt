@@ -31,13 +31,19 @@ class ActivityViewModel(
         load()
     }
 
-    fun load() {
+    fun load() = fetch(isRefresh = false)
+
+    /** Pull-to-refresh: reloads while what's on screen stays put, so no placeholders flash. */
+    fun refresh() = fetch(isRefresh = true)
+
+    private fun fetch(isRefresh: Boolean) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            _state.update { it.copy(isLoading = !isRefresh, isRefreshing = isRefresh, errorMessage = null) }
             when (val result = activityRepository.activity(_state.value.filter)) {
                 is DataResult.Success -> _state.update {
                     it.copy(
                         isLoading = false,
+                        isRefreshing = false,
                         entries = result.data.entries,
                         totalYouOwe = result.data.totalYouOwe,
                         totalOwedToYou = result.data.totalOwedToYou,
@@ -45,7 +51,7 @@ class ActivityViewModel(
                     )
                 }
                 is DataResult.Failure -> _state.update {
-                    it.copy(isLoading = false, errorMessage = result.error.userMessage())
+                    it.copy(isLoading = false, isRefreshing = false, errorMessage = result.error.userMessage())
                 }
             }
         }

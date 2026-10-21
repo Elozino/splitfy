@@ -61,9 +61,14 @@ class GroupDetailViewModel(
         }
     }
 
-    fun load() {
+    fun load() = fetch(isRefresh = false)
+
+    /** Pull-to-refresh: reloads while what's on screen stays put, so no placeholders flash. */
+    fun refresh() = fetch(isRefresh = true)
+
+    private fun fetch(isRefresh: Boolean) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null, loadError = null) }
+            _state.update { it.copy(isLoading = !isRefresh, isRefreshing = isRefresh, errorMessage = null, loadError = null) }
 
             val group = async { groupRepository.get(groupId) }
             val expenses = async { expenseRepository.list(groupId) }
@@ -76,6 +81,7 @@ class GroupDetailViewModel(
             _state.update { current ->
                 current.copy(
                     isLoading = false,
+                    isRefreshing = false,
                     group = (groupResult as? DataResult.Success)?.data ?: current.group,
                     expenses = (expensesResult as? DataResult.Success)?.data?.items ?: current.expenses,
                     nextCursor = (expensesResult as? DataResult.Success)?.data?.nextCursor,

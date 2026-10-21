@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.settlements
 
+import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.SkeletonText
 import com.elozino.splitfy.ui.components.SkeletonListItem
@@ -101,84 +102,86 @@ fun SettleUpScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         containerColor = Color.White,
     ) { padding ->
-        when {
-            state.isLoading && state.group == null -> SkeletonList(
-                modifier = Modifier.padding(padding),
-                count = 5,
-                spacing = 18.dp,
-            ) { index ->
-                if (index == 0) {
-                    SkeletonText(0.35f, height = 16.dp)
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        SkeletonListItem(modifier = Modifier.weight(1f), avatarSize = 40.dp, trailing = false)
-                        Spacer(Modifier.width(12.dp))
-                        SkeletonBlock(Modifier.width(110.dp).height(36.dp), RoundedCornerShape(100.dp))
+        RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
+            when {
+                state.isLoading && state.group == null -> SkeletonList(
+                    modifier = Modifier.padding(padding),
+                    count = 5,
+                    spacing = 18.dp,
+                ) { index ->
+                    if (index == 0) {
+                        SkeletonText(0.35f, height = 16.dp)
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SkeletonListItem(modifier = Modifier.weight(1f), avatarSize = 40.dp, trailing = false)
+                            Spacer(Modifier.width(12.dp))
+                            SkeletonBlock(Modifier.width(110.dp).height(36.dp), RoundedCornerShape(100.dp))
+                        }
                     }
                 }
-            }
 
-            state.loadError != null && state.group == null ->
-                LoadErrorState(state.loadError!!, onRetry = viewModel::load, modifier = Modifier.padding(padding))
+                state.loadError != null && state.group == null ->
+                    LoadErrorState(state.loadError!!, onRetry = viewModel::load, modifier = Modifier.padding(padding))
 
-            state.isAllSettled -> AllSettled(Modifier.padding(padding))
+                state.isAllSettled -> AllSettled(Modifier.padding(padding))
 
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                section("Waiting for you to confirm", state.awaitingYourConfirmation) { settlement ->
-                    PendingRow(
-                        title = "${state.nameOf(settlement.fromUserId)} says they paid you",
-                        settlement = settlement,
-                        isBusy = settlement.id.value in state.busySettlementIds,
-                        primaryLabel = "Confirm",
-                        onPrimary = { viewModel.confirm(settlement) },
-                        secondaryLabel = "Not received",
-                        onSecondary = { viewModel.cancel(settlement) },
-                    )
-                }
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    section("Waiting for you to confirm", state.awaitingYourConfirmation) { settlement ->
+                        PendingRow(
+                            title = "${state.nameOf(settlement.fromUserId)} says they paid you",
+                            settlement = settlement,
+                            isBusy = settlement.id.value in state.busySettlementIds,
+                            primaryLabel = "Confirm",
+                            onPrimary = { viewModel.confirm(settlement) },
+                            secondaryLabel = "Not received",
+                            onSecondary = { viewModel.cancel(settlement) },
+                        )
+                    }
 
-                section("Your payments", state.yourTransfers) { transfer ->
-                    val youPay = transfer.from.value == state.currentUserId
-                    TransferRow(
-                        title = if (youPay) {
-                            "You owe ${state.nameOf(transfer.to)}"
-                        } else {
-                            "${state.nameOf(transfer.from)} owes you"
-                        },
-                        transfer = transfer,
-                        youPay = youPay,
-                        actionLabel = if (youPay) "Mark as paid" else "Record payment",
-                        onAction = { viewModel.startPayment(transfer) },
-                    )
-                }
+                    section("Your payments", state.yourTransfers) { transfer ->
+                        val youPay = transfer.from.value == state.currentUserId
+                        TransferRow(
+                            title = if (youPay) {
+                                "You owe ${state.nameOf(transfer.to)}"
+                            } else {
+                                "${state.nameOf(transfer.from)} owes you"
+                            },
+                            transfer = transfer,
+                            youPay = youPay,
+                            actionLabel = if (youPay) "Mark as paid" else "Record payment",
+                            onAction = { viewModel.startPayment(transfer) },
+                        )
+                    }
 
-                section("Waiting for them to confirm", state.awaitingTheirConfirmation) { settlement ->
-                    PendingRow(
-                        title = "You paid ${state.nameOf(settlement.toUserId)}",
-                        settlement = settlement,
-                        isBusy = settlement.id.value in state.busySettlementIds,
-                        secondaryLabel = "Cancel",
-                        onSecondary = { viewModel.cancel(settlement) },
-                    )
-                }
+                    section("Waiting for them to confirm", state.awaitingTheirConfirmation) { settlement ->
+                        PendingRow(
+                            title = "You paid ${state.nameOf(settlement.toUserId)}",
+                            settlement = settlement,
+                            isBusy = settlement.id.value in state.busySettlementIds,
+                            secondaryLabel = "Cancel",
+                            onSecondary = { viewModel.cancel(settlement) },
+                        )
+                    }
 
-                section("Between other members", state.otherTransfers) { transfer ->
-                    TransferRow(
-                        title = "${state.nameOf(transfer.from)} owes ${state.nameOf(transfer.to)}",
-                        transfer = transfer,
-                        youPay = false,
-                    )
-                }
+                    section("Between other members", state.otherTransfers) { transfer ->
+                        TransferRow(
+                            title = "${state.nameOf(transfer.from)} owes ${state.nameOf(transfer.to)}",
+                            transfer = transfer,
+                            youPay = false,
+                        )
+                    }
 
-                section("History", state.history) { settlement ->
-                    HistoryRow(
-                        title = "${state.nameOf(settlement.fromUserId)} paid " +
-                            state.nameOf(settlement.toUserId, startsSentence = false),
-                        settlement = settlement,
-                    )
+                    section("History", state.history) { settlement ->
+                        HistoryRow(
+                            title = "${state.nameOf(settlement.fromUserId)} paid " +
+                                state.nameOf(settlement.toUserId, startsSentence = false),
+                            settlement = settlement,
+                        )
+                    }
                 }
             }
         }
