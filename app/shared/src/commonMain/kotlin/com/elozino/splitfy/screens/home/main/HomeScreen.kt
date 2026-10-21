@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.home.main
 
+import com.elozino.splitfy.preferences.statusBarBackground
 import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.material3.MaterialTheme
@@ -94,6 +95,7 @@ fun HomeScreen(
                         }
                     }
                 },
+                modifier = Modifier.statusBarBackground(AppTheme.colors.brand),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = AppTheme.colors.brand
                 )

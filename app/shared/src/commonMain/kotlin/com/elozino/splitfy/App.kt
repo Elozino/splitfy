@@ -4,7 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import org.koin.compose.koinInject
 import com.elozino.splitfy.ui.theme.isAppInDarkTheme
+import com.elozino.splitfy.preferences.LocalStatusBarAppearance
+import com.elozino.splitfy.preferences.StatusBarAppearance
 import com.elozino.splitfy.preferences.SystemBarsEffect
+import com.elozino.splitfy.preferences.statusBarIconsDark
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import com.elozino.splitfy.preferences.ThemePreferences
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,9 +40,12 @@ fun App() {
 
         val themeMode by koinInject<ThemePreferences>().mode.collectAsState()
         AppTheme(mode = themeMode) {
-            SystemBarsEffect(darkTheme = isAppInDarkTheme)
-            AppLockGate {
-                NavSetup()
+            val statusBar = remember { StatusBarAppearance() }
+            CompositionLocalProvider(LocalStatusBarAppearance provides statusBar) {
+                SystemBarsEffect(darkTheme = isAppInDarkTheme, darkStatusBarIcons = statusBarIconsDark(statusBar))
+                AppLockGate {
+                    NavSetup()
+                }
             }
         }
     }
