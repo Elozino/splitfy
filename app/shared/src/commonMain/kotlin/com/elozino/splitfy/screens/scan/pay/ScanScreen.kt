@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.scan.pay
 
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,7 +33,6 @@ import com.elozino.splitfy.PermissionStatus
 import com.elozino.splitfy.PermissionType
 import com.elozino.splitfy.rememberPermissionLauncher
 import com.elozino.splitfy.ui.theme.onSurfaceDark
-import com.elozino.splitfy.ui.theme.primaryLight
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
 import com.preat.peekaboo.image.picker.SelectionMode
 import com.preat.peekaboo.ui.camera.PeekabooCamera
@@ -232,7 +232,7 @@ private fun ScanQRCodeScreen(
                                 .fillMaxWidth()
                                 .height(56.dp),
                             shape = RoundedCornerShape(100.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                         ) {
                             Text(
                                 text = "Grant Permission",
@@ -242,7 +242,7 @@ private fun ScanQRCodeScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         TextButton(onClick = { openAppSettings() }) {
-                            Text("Open Settings", color = primaryLight)
+                            Text("Open Settings", color = AppTheme.colors.brand)
                         }
                     }
                 }
@@ -266,7 +266,7 @@ private fun ScanQRCodeScreen(
                 Box(
                     modifier = Modifier
                         .size(280.dp)
-                        .border(2.dp, primaryLight, RoundedCornerShape(24.dp)),
+                        .border(2.dp, AppTheme.colors.brand, RoundedCornerShape(24.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     // Corner guides
@@ -293,7 +293,7 @@ private fun ScanQRCodeScreen(
                             .navigationBarsPadding()
                             .padding(bottom = 16.dp)
                             .size(70.dp)
-                            .border(4.dp, primaryLight, CircleShape)
+                            .border(4.dp, AppTheme.colors.brand, CircleShape)
                             .padding(4.dp)
                             .clip(CircleShape)
                             .background(Color.White)
@@ -325,7 +325,7 @@ private fun RecipientPickerSheet(
     onDismiss: () -> Unit,
     onPick: (Contact) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Text("Who are you paying?", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Spacer(modifier = Modifier.height(16.dp))
@@ -333,7 +333,7 @@ private fun RecipientPickerSheet(
             if (contacts.isEmpty()) {
                 Text(
                     "No contacts yet — join a group to pay someone.",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             }
@@ -346,11 +346,11 @@ private fun RecipientPickerSheet(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+                    Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(contact.displayName, fontWeight = FontWeight.Bold)
-                        Text(contact.email, color = Color.Gray, fontSize = 12.sp)
+                        Text(contact.email, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
             }
@@ -382,10 +382,10 @@ private fun ProfileScanScreen(
             modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray))
+            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
             Spacer(modifier = Modifier.height(16.dp))
             Text(recipient?.displayName.orEmpty(), fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Text(recipient?.email.orEmpty(), color = Color.Gray, fontSize = 14.sp)
+            Text(recipient?.email.orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             recipient?.netBalance?.takeIf { !it.isZero }?.let { balance ->
                 Text(
                     text = if (balance.isPositive) {
@@ -393,7 +393,7 @@ private fun ProfileScanScreen(
                     } else {
                         "you owe ${'$'}{balance.abs().toPlainString()}"
                     },
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
@@ -401,7 +401,7 @@ private fun ProfileScanScreen(
             Spacer(modifier = Modifier.height(32.dp))
             Text(
                 text = "${'$'}{recipient?.sharedGroupCount ?: 0} shared group(s)",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
             
@@ -412,17 +412,17 @@ private fun ProfileScanScreen(
                     onClick = {},
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Request", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Request", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onPayClick,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Pay", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Pay", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -446,13 +446,13 @@ private fun ScanAmountScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryLight)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppTheme.colors.brand)
             )
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize()) {
             Box(
-                modifier = Modifier.fillMaxWidth().weight(0.4f).background(primaryLight),
+                modifier = Modifier.fillMaxWidth().weight(0.4f).background(AppTheme.colors.brand),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -460,7 +460,7 @@ private fun ScanAmountScreen(
                         Text(amount, fontSize = 48.sp, fontWeight = FontWeight.Bold)
                         Text("$", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
                     }
-                    Text("Available balance: $9,567.50", fontSize = 14.sp, color = Color.Black.copy(alpha = 0.7f))
+                    Text("Available balance: $9,567.50", fontSize = 14.sp, color = AppTheme.colors.onBrand.copy(alpha = 0.7f))
                 }
             }
             
@@ -472,9 +472,9 @@ private fun ScanAmountScreen(
                     onClick = onContinue,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Continue", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Continue", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -513,42 +513,42 @@ private fun ScanConfirmationScreen(
         }
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-            Text("Recipient", color = Color.Gray, fontSize = 14.sp)
+            Text("Recipient", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(recipient?.displayName.orEmpty(), fontWeight = FontWeight.Bold)
-                    Text(recipient?.email.orEmpty(), color = Color.Gray, fontSize = 12.sp)
+                    Text(recipient?.email.orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Amount to Pay", color = Color.Gray, fontSize = 14.sp)
+            Text("Amount to Pay", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color.LightGray.copy(alpha = 0.1f),
+                color = AppTheme.colors.field,
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(amount, modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
             
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Add Notes", color = Color.Gray, fontSize = 14.sp)
+            Text("Add Notes", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth().height(120.dp),
-                color = Color.LightGray.copy(alpha = 0.1f),
+                color = AppTheme.colors.field,
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Scan to pay", modifier = Modifier.padding(16.dp), color = Color.Gray)
+                Text("Scan to pay", modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             errorMessage?.let { message ->
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+                Text(message, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -558,20 +558,20 @@ private fun ScanConfirmationScreen(
                     onClick = onCancel,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onConfirm,
                     enabled = !isSubmitting && recipient != null,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
                     Text(
                         text = if (isSubmitting) "Paying…" else "Pay Now",
-                        color = Color.Black,
+                        color = AppTheme.colors.onBrand,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -586,13 +586,13 @@ private fun ScanSuccessScreen(
     transfer: com.elozino.splitfy.domain.model.Transfer?,
     onDone: () -> Unit,
 ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 IconButton(onClick = onDone) { Icon(Icons.Default.Close, contentDescription = "Close") }
             }
             Spacer(modifier = Modifier.height(32.dp))
-            Box(modifier = Modifier.size(80.dp).background(primaryLight, CircleShape), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(80.dp).background(AppTheme.colors.brand, CircleShape), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(40.dp))
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -601,11 +601,11 @@ private fun ScanSuccessScreen(
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             )
-            Text("Payment sent", color = Color.Gray)
+            Text("Payment sent", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(transfer?.toName.orEmpty(), fontWeight = FontWeight.Medium, fontSize = 14.sp)
             
             Spacer(modifier = Modifier.height(32.dp))
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(24.dp))
             
             SuccessRow("You have paid", transfer?.amount?.toPlainString() ?: amount)
@@ -616,7 +616,7 @@ private fun ScanSuccessScreen(
             transfer?.note?.let { note ->
                 Spacer(modifier = Modifier.height(24.dp))
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("Notes", color = Color.Gray, fontSize = 12.sp)
+                    Text("Notes", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Text(note, fontSize = 14.sp)
                 }
             }
@@ -628,17 +628,17 @@ private fun ScanSuccessScreen(
                     onClick = {},
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Download Receipt", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text("Download Receipt", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
                 Button(
                     onClick = onDone,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Share Receipt", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text("Share Receipt", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
         }
@@ -648,7 +648,7 @@ private fun ScanSuccessScreen(
 @Composable
 private fun SuccessRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = Color.Gray, fontSize = 14.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }

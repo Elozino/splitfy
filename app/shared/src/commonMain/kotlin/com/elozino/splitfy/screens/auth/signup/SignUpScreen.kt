@@ -1,6 +1,8 @@
 package com.elozino.splitfy.screens.auth.signup
 
 import androidx.compose.foundation.clickable
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -84,7 +86,7 @@ fun SignUpScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -103,7 +105,7 @@ fun SignUpScreen(
                     text = "Create an account",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -117,7 +119,7 @@ fun SignUpScreen(
             Text(
                 text = "Join splitfy today and start splitting bills with ease.",
                 fontSize = 16.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 24.sp
             )
 
@@ -157,7 +159,7 @@ fun SignUpScreen(
                         Icon(
                             imageVector = if (state.isSignUpPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = null,
-                            tint = Color.Black
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -181,7 +183,7 @@ fun SignUpScreen(
 
             val loginText = buildAnnotatedString {
                 append("Already have an account? ")
-                withStyle(style = SpanStyle(color = Color(0xFFFEBB1B), fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = AppTheme.colors.brand, fontWeight = FontWeight.Bold)) {
                     append("Log in")
                 }
             }

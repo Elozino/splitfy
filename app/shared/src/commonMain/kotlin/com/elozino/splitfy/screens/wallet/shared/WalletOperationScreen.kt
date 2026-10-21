@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.wallet.shared
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
 import androidx.compose.foundation.background
@@ -55,7 +57,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.domain.model.PaymentMethod
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -128,7 +129,7 @@ private fun AmountStep(
     val overdrawn = state.exceedsBalance(operation)
 
     Scaffold(
-        topBar = { FlowTopBar(title, onNavigateBack, containerColor = primaryLight) }
+        topBar = { FlowTopBar(title, onNavigateBack, containerColor = AppTheme.colors.brand, contentColor = AppTheme.colors.onBrand) }
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())
@@ -137,7 +138,7 @@ private fun AmountStep(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.4f)
-                    .background(primaryLight)
+                    .background(AppTheme.colors.brand)
                     .padding(top = padding.calculateTopPadding()),
                 contentAlignment = Alignment.Center
             ) {
@@ -147,27 +148,27 @@ private fun AmountStep(
                             text = state.amountInput.ifEmpty { "0" },
                             fontSize = 48.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            color = AppTheme.colors.onBrand
                         )
                         Text(
                             text = state.currency.code,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(start = 6.dp),
-                            color = Color.Black
+                            color = AppTheme.colors.onBrand
                         )
                     }
                     Text(
                         text = "Available balance: ${state.balance.toPlainString()}",
                         fontSize = 14.sp,
-                        color = Color.Black.copy(alpha = 0.7f)
+                        color = AppTheme.colors.onBrand.copy(alpha = 0.7f)
                     )
                     if (overdrawn) {
                         Text(
                             text = "That's more than your balance",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFB71C1C)
+                            color = AppTheme.colors.negative
                         )
                     }
                 }
@@ -177,7 +178,7 @@ private fun AmountStep(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.6f)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(horizontal = 24.dp, vertical = 24.dp)
             ) {
                 Button(
@@ -186,11 +187,11 @@ private fun AmountStep(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = primaryLight,
-                        disabledContainerColor = primaryLight.copy(alpha = 0.5f)
+                        containerColor = AppTheme.colors.brand,
+                        disabledContainerColor = AppTheme.colors.brand.copy(alpha = 0.5f)
                     )
                 ) {
-                    Text("Continue", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Continue", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -211,7 +212,7 @@ private fun MethodStep(
 ) {
     Scaffold(
         topBar = { FlowTopBar(title, onNavigateBack) },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Column(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
                 Button(
@@ -220,11 +221,11 @@ private fun MethodStep(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = primaryLight,
-                        disabledContainerColor = primaryLight.copy(alpha = 0.5f)
+                        containerColor = AppTheme.colors.brand,
+                        disabledContainerColor = AppTheme.colors.brand.copy(alpha = 0.5f)
                     )
                 ) {
-                    Text("Continue", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Continue", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
         }
@@ -246,7 +247,7 @@ private fun MethodStep(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     "Add a card or bank account from Account → Payment methods.",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             }
@@ -275,30 +276,30 @@ private fun MethodItem(method: PaymentMethod, isSelected: Boolean, onClick: () -
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         border = if (isSelected) {
-            BorderStroke(2.dp, primaryLight)
+            BorderStroke(2.dp, AppTheme.colors.brand)
         } else {
-            BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         },
-        color = Color.White
+        color = MaterialTheme.colorScheme.background
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = method.type.icon(),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = Color.Black
+                tint = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(method.maskedLabel, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 if (method.isDefault) {
-                    Text("Default", color = Color.Gray, fontSize = 12.sp)
+                    Text("Default", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
             RadioButton(
                 selected = isSelected,
                 onClick = onClick,
-                colors = RadioButtonDefaults.colors(selectedColor = primaryLight)
+                colors = RadioButtonDefaults.colors(selectedColor = AppTheme.colors.brand)
             )
         }
     }
@@ -320,7 +321,7 @@ private fun ConfirmStep(
 ) {
     Scaffold(
         topBar = { FlowTopBar("Confirm $title", onNavigateBack) },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
@@ -333,11 +334,11 @@ private fun ConfirmStep(
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(state.selectedMethod?.maskedLabel.orEmpty(), color = Color.Gray, fontSize = 14.sp)
+            Text(state.selectedMethod?.maskedLabel.orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
 
             state.errorMessage?.let { message ->
                 Spacer(modifier = Modifier.height(24.dp))
-                Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+                Text(message, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -347,11 +348,11 @@ private fun ConfirmStep(
                 enabled = !state.isSubmitting,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
                 Text(
                     text = if (state.isSubmitting) "Working…" else "Confirm",
-                    color = Color.Black,
+                    color = AppTheme.colors.onBrand,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -363,12 +364,12 @@ private fun ConfirmStep(
 @Composable
 private fun SuccessStep(title: String, state: WalletState, onDone: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().background(Color.White).padding(24.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Box(
-            modifier = Modifier.size(96.dp).background(primaryLight, CircleShape),
+            modifier = Modifier.size(96.dp).background(AppTheme.colors.brand, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(48.dp))
@@ -378,7 +379,7 @@ private fun SuccessStep(title: String, state: WalletState, onDone: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "New balance: ${state.balance.toPlainString()} ${state.currency.code}",
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp
         )
         Spacer(modifier = Modifier.height(32.dp))
@@ -386,9 +387,9 @@ private fun SuccessStep(title: String, state: WalletState, onDone: () -> Unit) {
             onClick = onDone,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(100.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
         ) {
-            Text("Done", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("Done", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
     }
 }
@@ -398,7 +399,8 @@ private fun SuccessStep(title: String, state: WalletState, onDone: () -> Unit) {
 private fun FlowTopBar(
     title: String,
     onNavigateBack: () -> Unit,
-    containerColor: Color = Color.White,
+    containerColor: Color = MaterialTheme.colorScheme.background,
+    contentColor: Color = MaterialTheme.colorScheme.onBackground,
 ) {
     CenterAlignedTopAppBar(
         title = { Text(title, fontWeight = FontWeight.Bold) },
@@ -409,8 +411,8 @@ private fun FlowTopBar(
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = containerColor,
-            titleContentColor = Color.Black,
-            navigationIconContentColor = Color.Black
+            titleContentColor = contentColor,
+            navigationIconContentColor = contentColor
         )
     )
 }
@@ -437,10 +439,10 @@ private fun NumericKeypad(onDigit: (String) -> Unit, onBackspace: () -> Unit) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Backspace,
                                 contentDescription = "Delete",
-                                tint = Color.Black
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         } else {
-                            Text(key, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                            Text(key, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }

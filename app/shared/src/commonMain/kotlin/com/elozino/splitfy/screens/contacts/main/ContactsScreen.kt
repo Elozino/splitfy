@@ -2,6 +2,8 @@ package com.elozino.splitfy.screens.contacts.main
 
 import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.ui.components.RefreshableBox
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
 import com.elozino.splitfy.FeatureFlags
@@ -29,7 +31,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.Contact
-import com.elozino.splitfy.ui.theme.primaryLight
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -151,15 +152,15 @@ private fun ContactListScreen(
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddContactClick,
-                containerColor = primaryLight,
-                contentColor = Color.Black,
+                containerColor = AppTheme.colors.brand,
+                contentColor = MaterialTheme.colorScheme.onSurface,
                 shape = CircleShape,
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Contact")
@@ -180,14 +181,14 @@ private fun ContactListScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 16.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF5F5F5))
+                        .background(AppTheme.colors.field)
                         .clickable { onSearchClick() }
                         .padding(16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Search contact", color = Color.Gray)
+                        Text("Search contact", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -195,7 +196,7 @@ private fun ContactListScreen(
                 Surface(
                     modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFF5F5F5)
+                    color = AppTheme.colors.field
                 ) {
                     Row {
                         tabs.forEachIndexed { index, title ->
@@ -205,14 +206,14 @@ private fun ContactListScreen(
                                     .weight(1f)
                                     .fillMaxHeight()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) primaryLight else Color.Transparent)
+                                    .background(if (isSelected) AppTheme.colors.brand else Color.Transparent)
                                     .clickable { onTabSelected(index) },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = title,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) Color.Black else Color.Gray,
+                                    color = if (isSelected) AppTheme.colors.onBrand else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 14.sp
                                 )
                             }
@@ -228,7 +229,7 @@ private fun ContactListScreen(
                     ) {
                         errorMessage?.let { message ->
                             item {
-                                Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+                                Text(message, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
                             }
                         }
 
@@ -246,7 +247,7 @@ private fun ContactListScreen(
                             item {
                                 Text(
                                     text = "No contacts yet. People you share a group with appear here.",
-                                    color = Color.Gray,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 14.sp
                                 )
                             }
@@ -273,7 +274,7 @@ private fun ContactListScreen(
                             Text(
                                 text = char.toString(),
                                 fontSize = 10.sp,
-                                color = Color.Gray,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -303,13 +304,13 @@ private fun ContactListItem(
             Text(
                 text = contact.balanceLabel ?: contact.email,
                 fontSize = 12.sp,
-                color = if (contact.balanceLabel != null) Color(0xFF2E7D32) else Color.Gray
+                color = if (contact.balanceLabel != null) AppTheme.colors.positive else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Icon(
             imageVector = if (contact.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
             contentDescription = if (contact.isFavorite) "Unfavourite" else "Favourite",
-            tint = if (contact.isFavorite) primaryLight else Color.LightGray,
+            tint = if (contact.isFavorite) AppTheme.colors.brand else MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier.size(20.dp).clickable { onToggleFavorite() }
         )
     }
@@ -334,14 +335,14 @@ private fun SearchContactScreen(
                             .fillMaxWidth()
                             .padding(end = 16.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(primaryLight.copy(alpha = 0.2f))
+                            .background(AppTheme.colors.brand.copy(alpha = 0.2f))
                             .padding(horizontal = 12.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         TextField(
                             value = query,
                             onValueChange = onQueryChange,
-                            placeholder = { Text("Search contact", color = Color.Black) },
+                            placeholder = { Text("Search contact", color = MaterialTheme.colorScheme.onSurface) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
@@ -350,12 +351,12 @@ private fun SearchContactScreen(
                                 unfocusedIndicatorColor = Color.Transparent
                             ),
                             leadingIcon = {
-                                Icon(Icons.Default.Search, contentDescription = null, tint = Color.Black)
+                                Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                             },
                             trailingIcon = {
                                 if (query.isNotEmpty()) {
                                     IconButton(onClick = { onQueryChange("") }) {
-                                        Icon(Icons.Default.Close, contentDescription = null, tint = Color.Black)
+                                        Icon(Icons.Default.Close, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                                     }
                                 }
                             }
@@ -367,10 +368,10 @@ private fun SearchContactScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
             if (query.isEmpty()) {
@@ -418,7 +419,7 @@ private fun SearchContactScreen(
                         item {
                             Text(
                                 text = "Nobody matches that yet",
-                                color = Color.Gray,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp,
                                 modifier = Modifier.padding(vertical = 16.dp)
                             )
@@ -457,10 +458,10 @@ private fun ContactDetailScreen(
                         Icon(Icons.Default.StarBorder, contentDescription = "Favorite")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
             // Pay and Request move wallet money, so they only exist with the wallet on.
             if (FeatureFlags.WALLET) Row(
@@ -474,17 +475,17 @@ private fun ContactDetailScreen(
                     onClick = { /* Request */ },
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Request", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Request", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = { /* Pay */ },
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Pay", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Pay", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -497,12 +498,12 @@ private fun ContactDetailScreen(
             UserAvatar(contact.avatarUrl, contact.name, size = 100.dp)
             Spacer(modifier = Modifier.height(16.dp))
             Text(contact.name, fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            Text(contact.email, color = Color.Gray, fontSize = 14.sp)
-            Text("splitfy Account", color = Color.Gray, fontSize = 12.sp)
+            Text(contact.email, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+            Text("splitfy Account", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             
             Spacer(modifier = Modifier.height(32.dp))
             TextButton(onClick = onDeleteClick) {
-                Text("Delete Contact", color = Color.Red, fontWeight = FontWeight.Bold)
+                Text("Delete Contact", color = AppTheme.colors.negative, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -512,9 +513,9 @@ private fun ContactDetailScreen(
             onDismissRequest = onDeleteDismiss,
             title = { 
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text("Delete Contact", fontWeight = FontWeight.Bold, color = Color.Red)
+                    Text("Delete Contact", fontWeight = FontWeight.Bold, color = AppTheme.colors.negative)
                     Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             },
             text = { 
@@ -529,9 +530,9 @@ private fun ContactDetailScreen(
                     onClick = onDeleteConfirm,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Yes, Delete", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Yes, Delete", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -539,12 +540,12 @@ private fun ContactDetailScreen(
                     onClick = onDeleteDismiss,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             },
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(24.dp)
         )
     }
@@ -552,14 +553,14 @@ private fun ContactDetailScreen(
     if (isDeleteSuccessVisible) {
         ModalBottomSheet(
             onDismissRequest = onDeleteSuccess,
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(modifier = Modifier.size(80.dp).background(primaryLight, CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(40.dp))
+                Box(modifier = Modifier.size(80.dp).background(AppTheme.colors.brand, CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(40.dp), tint = AppTheme.colors.onBrand)
                 }
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("Contact Deleted!", fontWeight = FontWeight.Bold, fontSize = 20.sp)
@@ -588,10 +589,10 @@ private fun AddContactScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -604,17 +605,17 @@ private fun AddContactScreen(
                     onClick = onNavigateBack,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onContinue,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Add Contact", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Add Contact", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -626,10 +627,10 @@ private fun AddContactScreen(
                 value = name,
                 onValueChange = onNameChange,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                placeholder = { Text("Brooklyn Simmons", color = Color.Gray) },
+                placeholder = { Text("Brooklyn Simmons", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = Color(0xFFF5F5F5),
-                    focusedContainerColor = Color(0xFFF5F5F5),
+                    unfocusedContainerColor = AppTheme.colors.field,
+                    focusedContainerColor = AppTheme.colors.field,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -643,10 +644,10 @@ private fun AddContactScreen(
                 value = email,
                 onValueChange = onEmailChange,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                placeholder = { Text("name@example.com", color = Color.Gray) },
+                placeholder = { Text("name@example.com", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = Color(0xFFF5F5F5),
-                    focusedContainerColor = Color(0xFFF5F5F5),
+                    unfocusedContainerColor = AppTheme.colors.field,
+                    focusedContainerColor = AppTheme.colors.field,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -673,10 +674,10 @@ private fun SearchResultScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -689,17 +690,17 @@ private fun SearchResultScreen(
                     onClick = onNavigateBack,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onShowSuccess,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Add to Contact", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Add to Contact", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -709,28 +710,28 @@ private fun SearchResultScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(40.dp))
-            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray))
+            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant))
             Spacer(modifier = Modifier.height(16.dp))
             Text("Brooklyn Simmons", fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            Text("Ask them for the email they signed up with", color = Color.Gray, fontSize = 14.sp)
-            Text("splitfy Account", color = Color.Gray, fontSize = 12.sp)
+            Text("Ask them for the email they signed up with", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+            Text("splitfy Account", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             
             Spacer(modifier = Modifier.height(32.dp))
-            Text("This contact is ready to split bills with you!", color = Color.Gray, fontSize = 14.sp)
+            Text("This contact is ready to split bills with you!", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         }
     }
 
     if (isSuccessVisible) {
         ModalBottomSheet(
             onDismissRequest = onAddSuccess,
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(modifier = Modifier.size(80.dp).background(primaryLight, CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(40.dp))
+                Box(modifier = Modifier.size(80.dp).background(AppTheme.colors.brand, CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(40.dp), tint = AppTheme.colors.onBrand)
                 }
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("Contact Added Successfully!", fontWeight = FontWeight.Bold, fontSize = 20.sp)

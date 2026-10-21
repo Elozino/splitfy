@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.payment_methods
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
 import com.elozino.splitfy.screens.account.upgrade_success.benefitListShort
 import com.elozino.splitfy.screens.expenses.add.label
@@ -105,7 +107,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.AddPaymentMethodRequest
 import com.elozino.splitfy.domain.model.PaymentMethodType
-import com.elozino.splitfy.ui.theme.primaryLight
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -150,9 +151,9 @@ fun PaymentMethodsScreen(
                 IconButton(onClick = onNavigateToAddPayment) {
                     Icon(Icons.Default.Add, contentDescription = "Add")
                 }
-            }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
         )
-    }, containerColor = Color.White, bottomBar = {
+    }, containerColor = MaterialTheme.colorScheme.background, bottomBar = {
         Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
             Button(
                 onClick = {
@@ -162,11 +163,11 @@ fun PaymentMethodsScreen(
                 enabled = state.selectedPaymentMethodId != null,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
                 Text(
                     if (state.paymentStep == 0) "Continue" else "Confirm Payment",
-                    color = Color.Black,
+                    color = AppTheme.colors.onBrand,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -179,7 +180,7 @@ fun PaymentMethodsScreen(
                 if (methods.isEmpty()) {
                     Text(
                         text = "No payment methods yet. Add a card to top up or withdraw.",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                 }
@@ -199,19 +200,19 @@ fun PaymentMethodsScreen(
 
                 state.errorMessage?.let { message ->
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(message, color = Color(0xFFD32F2F), fontSize = 14.sp)
+                    Text(message, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
                 }
             } else {
                 Spacer(modifier = Modifier.height(24.dp))
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("splitfy Premium", fontWeight = FontWeight.Bold, color = primaryLight)
+                        Text("splitfy Premium", fontWeight = FontWeight.Bold, color = AppTheme.colors.brand)
                         Text(
                             "$49.99 / year",
                             fontSize = 36.sp,
@@ -227,11 +228,11 @@ fun PaymentMethodsScreen(
                                 Icon(
                                     Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = primaryLight,
+                                    tint = AppTheme.colors.brand,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text(benefit, fontSize = 14.sp, color = Color.Gray)
+                                Text(benefit, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -241,7 +242,7 @@ fun PaymentMethodsScreen(
                 Text("Selected Payment Method", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(16.dp))
                 Surface(
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = Color(0xFFF5F5F5)
+                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = AppTheme.colors.field
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically
@@ -254,7 +255,7 @@ fun PaymentMethodsScreen(
                         )
                         Text(
                             "Change",
-                            color = primaryLight,
+                            color = AppTheme.colors.brand,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             modifier = Modifier.clickable { viewModel.setPaymentStep(0) })
@@ -275,14 +276,14 @@ private fun PaymentMethodItem(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).border(
-            1.2.dp, if (isSelected) primaryLight else Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(20.dp)
+            1.2.dp, if (isSelected) AppTheme.colors.brand else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)
         ).clip(RoundedCornerShape(20.dp)).clickable { onClick() }.padding(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             icon,
             contentDescription = null,
-            tint = if (label.contains("Pay")) Color.Unspecified else Color.Black,
+            tint = if (label.contains("Pay")) Color.Unspecified else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(28.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
@@ -292,13 +293,13 @@ private fun PaymentMethodItem(
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Remove payment method",
-                    tint = Color.Gray,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
         }
         RadioButton(
-            selected = isSelected, onClick = onClick, colors = RadioButtonDefaults.colors(selectedColor = primaryLight)
+            selected = isSelected, onClick = onClick, colors = RadioButtonDefaults.colors(selectedColor = AppTheme.colors.brand)
         )
     }
 }
@@ -306,17 +307,17 @@ private fun PaymentMethodItem(
 @Composable
 private fun ProcessingPaymentOverlay() {
     Surface(
-        modifier = Modifier.fillMaxSize(), color = Color.Black.copy(alpha = 0.5f)
+        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Surface(
-                modifier = Modifier.size(180.dp), shape = RoundedCornerShape(32.dp), color = Color.White
+                modifier = Modifier.size(180.dp), shape = RoundedCornerShape(32.dp), color = MaterialTheme.colorScheme.background
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
                 ) {
                     CircularProgressIndicator(
-                        color = primaryLight, strokeWidth = 4.dp, modifier = Modifier.size(48.dp)
+                        color = AppTheme.colors.brand, strokeWidth = 4.dp, modifier = Modifier.size(48.dp)
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text("Processing Payment...", fontSize = 14.sp, fontWeight = FontWeight.Bold)

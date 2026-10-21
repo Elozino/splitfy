@@ -44,7 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import com.elozino.splitfy.domain.model.ExpenseCategory
 import com.elozino.splitfy.domain.model.Money
 import com.elozino.splitfy.ui.components.SearchField
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import org.koin.compose.viewmodel.koinViewModel
@@ -133,7 +133,7 @@ fun GroupDetailScreen(
                         DropdownMenu(
                             expanded = state.isOverflowMenuVisible,
                             onDismissRequest = { viewModel.setOverflowMenuVisible(false) },
-                            modifier = Modifier.background(Color.White)
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
                             if (state.group?.isArchived == false) DropdownMenuItem(
                                 text = { Text("Invite by link") },
@@ -155,10 +155,10 @@ fun GroupDetailScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             GroupActionsBar(
@@ -179,7 +179,7 @@ fun GroupDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .then(if (state.isFirstLoad) Modifier.shimmer() else Modifier.background(Color.LightGray))
+                        .then(if (state.isFirstLoad) Modifier.shimmer() else Modifier.background(MaterialTheme.colorScheme.surfaceVariant))
                 ) {
                     state.group?.coverImageUrl?.let { url ->
                         AsyncImage(
@@ -191,10 +191,10 @@ fun GroupDetailScreen(
                     }
                     if (state.isUploadingCover) {
                         Box(
-                            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
+                            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            CircularProgressIndicator(color = Color.White)
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.surface)
                         }
                     }
                     if (state.canEditCover) {
@@ -203,11 +203,11 @@ fun GroupDetailScreen(
                                 .align(Alignment.BottomEnd)
                                 .padding(16.dp)
                                 .size(36.dp)
-                                .background(primaryLight, CircleShape)
+                                .background(AppTheme.colors.brand, CircleShape)
                                 .clickable(enabled = !state.isUploadingCover) { coverPicker.launch() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Edit, contentDescription = "Change cover photo", modifier = Modifier.size(18.dp), tint = Color.Black)
+                            Icon(Icons.Default.Edit, contentDescription = "Change cover photo", modifier = Modifier.size(18.dp), tint = AppTheme.colors.onBrand)
                         }
                     }
                 }
@@ -215,15 +215,15 @@ fun GroupDetailScreen(
                 // Tabs
                 SecondaryScrollableTabRow(
                     selectedTabIndex = state.selectedTab,
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.background,
                     edgePadding = 24.dp,
                     indicator = {
                         TabRowDefaults.SecondaryIndicator(
                             modifier = Modifier.tabIndicatorOffset(state.selectedTab, true),
-                            color = primaryLight
+                            color = AppTheme.colors.brand
                         )
                     },
-                    divider = { HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f)) }
+                    divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
                 ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
@@ -236,8 +236,8 @@ fun GroupDetailScreen(
                                     fontSize = 13.sp
                                 )
                             },
-                            selectedContentColor = Color.Black,
-                            unselectedContentColor = Color.Gray
+                            selectedContentColor = MaterialTheme.colorScheme.onSurface,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -287,7 +287,7 @@ private fun GroupActionsBar(
 ) {
     if (actions == GroupActions.None) return
     Surface(
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp,
         shadowElevation = 8.dp
     ) {
@@ -299,11 +299,11 @@ private fun GroupActionsBar(
             GroupActions.SettledUp -> Column(barModifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Everyone's settled up 🎉", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Nobody owes anything in this group.", color = Color.Gray, fontSize = 13.sp)
+                Text("Nobody owes anything in this group.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 TextButton(onClick = onAddExpense) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Add, contentDescription = null, tint = AppTheme.colors.onBrand, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Add an expense", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Add an expense", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
             else -> Row(barModifier, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -312,18 +312,18 @@ private fun GroupActionsBar(
                         onClick = onSettleUp,
                         modifier = Modifier.weight(1f).height(56.dp),
                         shape = RoundedCornerShape(100.dp),
-                        border = BorderStroke(1.dp, primaryLight)
+                        border = BorderStroke(1.dp, AppTheme.colors.brand)
                     ) {
-                        Text("Settle up", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text("Settle up", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                     }
                 }
                 Button(
                     onClick = onAddExpense,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Add expense", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Add expense", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -339,11 +339,11 @@ private fun AddMemberDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         title = { Text("Add a member", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Text("They need a splitfy account with this email.", color = Color.Gray, fontSize = 13.sp)
+                Text("They need a splitfy account with this email.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = state.memberEmail,
@@ -359,11 +359,11 @@ private fun AddMemberDialog(
         },
         confirmButton = {
             TextButton(onClick = onConfirm, enabled = !state.isUpdatingMembers) {
-                Text("Add", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Add", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = Color.Gray) }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         },
     )
 }
@@ -387,7 +387,7 @@ private fun ExpensesList(
 
     if (needle.isNotEmpty() && expenses.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            Text("No expenses match \"$needle\"", color = Color.Gray, fontSize = 14.sp)
+            Text("No expenses match \"$needle\"", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         }
         return
     }
@@ -402,7 +402,7 @@ private fun ExpensesList(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 "Add the first one and we'll keep everyone's share up to date.",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
         }
@@ -425,10 +425,10 @@ private fun ExpensesList(
         if (state.hasMore) {
             item {
                 if (state.isLoadingMore) {
-                    CircularProgressIndicator(color = primaryLight, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = AppTheme.colors.brand, modifier = Modifier.size(24.dp))
                 } else {
                     TextButton(onClick = onLoadMore) {
-                        Text("Load more", color = primaryLight, fontWeight = FontWeight.Bold)
+                        Text("Load more", color = AppTheme.colors.brand, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -475,7 +475,7 @@ private fun ExpenseItem(data: ExpenseItemData, onClick: () -> Unit) {
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color.LightGray.copy(alpha = 0.2f)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(data.emoji, fontSize = 24.sp)
@@ -483,11 +483,11 @@ private fun ExpenseItem(data: ExpenseItemData, onClick: () -> Unit) {
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(data.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(data.subtitle, color = Color.Gray, fontSize = 12.sp)
+            Text(data.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(data.amount, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-            Text(data.date, color = Color.Gray, fontSize = 10.sp)
+            Text(data.amount, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(data.date, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
         }
     }
 }
@@ -521,18 +521,18 @@ private fun BalancesList(state: GroupDetailState, onSettleUp: () -> Unit) {
             BalanceBar(
                 name = label,
                 progress = if (largest == 0L) 0f else kotlin.math.abs(balance.net.amount) / largest.toFloat(),
-                color = if (balance.net.isNegative) Color(0xFFE57373) else Color(0xFF4CAF50),
+                color = if (balance.net.isNegative) AppTheme.colors.negative else AppTheme.colors.positive,
                 amount = (if (balance.net.isNegative) "- " else "+ ") + balance.net.abs().toPlainString()
             )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Spacer(modifier = Modifier.height(24.dp))
 
         // One row per outstanding transfer, taken from the shared debt simplifier.
         if (state.suggestedTransfers.isEmpty()) {
-            Text("Everyone is settled up 🎉", color = Color.Gray, fontSize = 14.sp)
+            Text("Everyone is settled up 🎉", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         }
         state.suggestedTransfers.forEach { transfer ->
             val youArePayer = transfer.from.value == state.currentUserId
@@ -559,7 +559,7 @@ private fun BalancesList(state: GroupDetailState, onSettleUp: () -> Unit) {
 private fun BalanceBar(name: String, progress: Float, color: Color, amount: String) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(name, fontSize = 12.sp, color = Color.Gray)
+            Text(name, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(amount, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color)
         }
         Spacer(modifier = Modifier.height(4.dp))
@@ -570,7 +570,7 @@ private fun BalanceBar(name: String, progress: Float, color: Color, amount: Stri
                 .height(8.dp)
                 .clip(RoundedCornerShape(4.dp)),
             color = color,
-            trackColor = Color.LightGray.copy(alpha = 0.2f)
+            trackColor = MaterialTheme.colorScheme.outlineVariant
         )
     }
 }
@@ -592,17 +592,17 @@ private fun BalanceItem(
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(name, fontWeight = FontWeight.Bold)
-            Text(details, color = if (isOwed) Color(0xFF4CAF50) else Color.Red, fontSize = 12.sp)
+            Text(details, color = if (isOwed) AppTheme.colors.positive else AppTheme.colors.negative, fontSize = 12.sp)
         }
         if (showSettle) {
             TextButton(
                 onClick = onSettle,
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                modifier = Modifier.height(32.dp).border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                modifier = Modifier.height(32.dp).border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
             ) {
-                Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.Black)
+                Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurface)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Settle", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Settle", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -637,13 +637,13 @@ private fun TotalsList(state: GroupDetailState) {
 
         Spacer(modifier = Modifier.weight(1f))
         
-        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Spacer(modifier = Modifier.height(16.dp))
         
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            color = Color(0xFFE8F5E9)
+            color = AppTheme.colors.positive.copy(alpha = 0.15f)
         ) {
             val net = state.yourBalance(state.currentUserId) ?: Money.zero(state.currency)
             DetailRow(
@@ -665,11 +665,11 @@ private fun SummaryCard(label: String, value: String, modifier: Modifier = Modif
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFFF5F5F5),
-        border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
+        color = AppTheme.colors.field,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(label, fontSize = 12.sp, color = Color.Gray)
+            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(8.dp))
             Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
@@ -691,7 +691,7 @@ private fun GroupInfoList(
     Column(modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
         Text(state.group?.name ?: "Group", fontWeight = FontWeight.Bold, fontSize = 20.sp)
         state.group?.description?.let { description ->
-            Text(description, color = Color.Gray, fontSize = 14.sp)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -703,8 +703,8 @@ private fun GroupInfoList(
             Text("Group Members", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             if (state.canManageMembers) {
                 TextButton(onClick = onAddMember) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = primaryLight)
-                    Text("Add", color = primaryLight, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Add, contentDescription = null, tint = AppTheme.colors.brand)
+                    Text("Add", color = AppTheme.colors.brand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -723,7 +723,7 @@ private fun GroupInfoList(
                     Text(label, fontWeight = FontWeight.Bold)
                     Text(
                         member.role.name.lowercase().replaceFirstChar { it.uppercase() },
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
@@ -731,21 +731,21 @@ private fun GroupInfoList(
                     var isMenuVisible by remember { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { isMenuVisible = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Member options", tint = Color.Gray)
+                            Icon(Icons.Default.MoreVert, contentDescription = "Member options", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         DropdownMenu(
                             expanded = isMenuVisible,
                             onDismissRequest = { isMenuVisible = false },
-                            modifier = Modifier.background(Color.White)
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Remove from group", color = Color.Red) },
+                                text = { Text("Remove from group", color = AppTheme.colors.negative) },
                                 onClick = {
                                     isMenuVisible = false
                                     onRemoveMember(member.userId.value)
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.PersonRemove, contentDescription = null, tint = Color.Red)
+                                    Icon(Icons.Default.PersonRemove, contentDescription = null, tint = AppTheme.colors.negative)
                                 }
                             )
                         }
@@ -768,8 +768,8 @@ internal fun DetailRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = if (isHighlight) Color.Black else Color.Gray, fontWeight = if (isHighlight) FontWeight.Bold else FontWeight.Medium)
-        Text(value, fontWeight = FontWeight.Bold, color = if (isHighlight) Color(0xFF4CAF50) else Color.Black)
+        Text(label, color = if (isHighlight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = if (isHighlight) FontWeight.Bold else FontWeight.Medium)
+        Text(value, fontWeight = FontWeight.Bold, color = if (isHighlight) AppTheme.colors.positive else MaterialTheme.colorScheme.onSurface)
     }
 }
 

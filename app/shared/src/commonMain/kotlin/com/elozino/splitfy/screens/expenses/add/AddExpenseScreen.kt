@@ -37,7 +37,7 @@ import com.elozino.splitfy.rememberPermissionLauncher
 import com.preat.peekaboo.image.picker.ResizeOptions
 import androidx.compose.ui.layout.ContentScale
 import com.elozino.splitfy.domain.model.SplitMethod
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
 import com.preat.peekaboo.image.picker.SelectionMode
 import com.preat.peekaboo.ui.camera.PeekabooCamera
@@ -142,10 +142,10 @@ private fun ExpenseDetailsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             Row(
@@ -159,20 +159,20 @@ private fun ExpenseDetailsScreen(
                     onClick = onNavigateBack,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onContinue,
                     enabled = state.canSave,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
                     Text(
                         text = if (state.isSaving) "Saving…" else "Save",
-                        color = Color.Black,
+                        color = AppTheme.colors.onBrand,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -193,8 +193,8 @@ private fun ExpenseDetailsScreen(
                     onValueChange = viewModel::onTitleChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = Color(0xFFF5F5F5),
-                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedContainerColor = AppTheme.colors.field,
+                        focusedContainerColor = AppTheme.colors.field,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
@@ -209,8 +209,8 @@ private fun ExpenseDetailsScreen(
                     onValueChange = viewModel::onAmountChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = Color(0xFFF5F5F5),
-                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedContainerColor = AppTheme.colors.field,
+                        focusedContainerColor = AppTheme.colors.field,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
@@ -226,7 +226,7 @@ private fun ExpenseDetailsScreen(
                         viewModel.onCategoryChange(all[(all.indexOf(state.category) + 1) % all.size])
                     },
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF5F5F5)
+                    color = AppTheme.colors.field
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -235,7 +235,7 @@ private fun ExpenseDetailsScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
-                                modifier = Modifier.size(24.dp).background(Color(0xFF4CAF50), CircleShape),
+                                modifier = Modifier.size(24.dp).background(AppTheme.colors.positive, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
@@ -246,7 +246,7 @@ private fun ExpenseDetailsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -263,7 +263,7 @@ private fun ExpenseDetailsScreen(
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF5F5F5)
+                    color = AppTheme.colors.field
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -275,7 +275,7 @@ private fun ExpenseDetailsScreen(
                             text = payer?.displayName ?: "Select who paid",
                             fontWeight = FontWeight.Bold
                         )
-                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -285,7 +285,7 @@ private fun ExpenseDetailsScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable { onSelectSplitType() },
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF5F5F5)
+                    color = AppTheme.colors.field
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -293,7 +293,7 @@ private fun ExpenseDetailsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(selectedSplitType, fontWeight = FontWeight.Bold)
-                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -305,8 +305,8 @@ private fun ExpenseDetailsScreen(
                     onValueChange = viewModel::onNotesChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 100.dp),
                     colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = Color(0xFFF5F5F5),
-                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedContainerColor = AppTheme.colors.field,
+                        focusedContainerColor = AppTheme.colors.field,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
@@ -343,12 +343,12 @@ private fun ReceiptAttachment(
         Surface(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable(onClick = onAdd),
             shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFF5F5F5)
+            color = AppTheme.colors.field
         ) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = Color.Gray)
+                Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("Add a photo of the receipt", color = Color.Gray, fontWeight = FontWeight.Medium)
+                Text("Add a photo of the receipt", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
             }
         }
         return
@@ -359,7 +359,7 @@ private fun ReceiptAttachment(
             .padding(top = 8.dp)
             .size(width = 120.dp, height = 160.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF5F5F5))
+            .background(AppTheme.colors.field)
     ) {
         if (preview != null) {
             AsyncImage(
@@ -371,10 +371,10 @@ private fun ReceiptAttachment(
         }
         if (isUploading) {
             Box(
-                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f)),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.surface, modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
             }
         }
         if (isAttached || isUploading) {
@@ -384,7 +384,7 @@ private fun ReceiptAttachment(
                     .align(Alignment.TopEnd)
                     .padding(4.dp)
                     .size(28.dp)
-                    .background(Color.Black.copy(alpha = 0.55f), CircleShape),
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f), CircleShape),
             ) {
                 Icon(Icons.Default.Close, contentDescription = "Remove receipt", tint = Color.White, modifier = Modifier.size(16.dp))
             }
@@ -403,7 +403,7 @@ private fun ImagePickerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -481,15 +481,15 @@ private fun ReceiptCaptureScreen(
                 ) {
                     Text(
                         "Allow camera access to photograph receipts, or pick one from your photos.",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.surface,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = requestPermission,
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryLight),
+                        colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand),
                     ) {
-                        Text("Allow camera", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text("Allow camera", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -517,10 +517,10 @@ private fun ReceiptCaptureScreen(
                 Box(
                     modifier = Modifier
                         .size(72.dp)
-                        .border(4.dp, primaryLight, CircleShape)
+                        .border(4.dp, AppTheme.colors.brand, CircleShape)
                         .padding(4.dp)
                         .clip(CircleShape)
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .clickable { cameraState.capture() }
                 )
                 
@@ -559,10 +559,10 @@ private fun SplitWithScreen(
                         Icon(Icons.Default.Close, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -575,18 +575,18 @@ private fun SplitWithScreen(
                     onClick = onNavigateBack,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onDone,
                     enabled = state.splitError == null,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("OK", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("OK", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -611,8 +611,8 @@ private fun SplitWithScreen(
                         label = { Text(mode.label()) },
                         shape = RoundedCornerShape(100.dp),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = primaryLight,
-                            selectedLabelColor = Color.Black
+                            selectedContainerColor = AppTheme.colors.brand,
+                            selectedLabelColor = AppTheme.colors.onBrand
                         )
                     )
                 }
@@ -673,7 +673,7 @@ private fun SplitParticipantItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             if (isParticipant && previewAmount != null) {
-                Text("$previewAmount $currencyCode", color = Color.Gray, fontSize = 12.sp)
+                Text("$previewAmount $currencyCode", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
         }
 
@@ -681,7 +681,7 @@ private fun SplitParticipantItem(
             Checkbox(
                 checked = false,
                 onCheckedChange = { onToggle() },
-                colors = CheckboxDefaults.colors(checkedColor = primaryLight)
+                colors = CheckboxDefaults.colors(checkedColor = AppTheme.colors.brand)
             )
             return@Row
         }
@@ -691,7 +691,7 @@ private fun SplitParticipantItem(
                 Checkbox(
                     checked = true,
                     onCheckedChange = { onToggle() },
-                    colors = CheckboxDefaults.colors(checkedColor = primaryLight)
+                    colors = CheckboxDefaults.colors(checkedColor = AppTheme.colors.brand)
                 )
             }
             SplitMethod.EXACT -> {
@@ -718,7 +718,7 @@ private fun SplitParticipantItem(
                         value = if (rawValue == 0L) "" else rawValue.toString(),
                         onValueChange = onValueChange
                     )
-                    Text(" shares", color = Color.Gray, fontSize = 12.sp)
+                    Text(" shares", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
         }
@@ -757,7 +757,7 @@ private fun SplitSummaryFooter(state: AddExpenseState) {
         // The error comes straight from the shared calculator, so what blocks Save
         // here is exactly what the server would have rejected.
         state.splitError?.let { message ->
-            Text(message, color = Color(0xFFD32F2F), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(message, color = MaterialTheme.colorScheme.error, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             return@Column
         }
 
@@ -765,7 +765,7 @@ private fun SplitSummaryFooter(state: AddExpenseState) {
             SplitMethod.EQUAL -> {
                 val each = state.previewShares.firstOrNull()?.amount?.toPlainString() ?: "-"
                 Text("$each /person", fontWeight = FontWeight.Bold)
-                Text("(${'$'}{state.participants.size} people)", color = Color.Gray, fontSize = 12.sp)
+                Text("(${'$'}{state.participants.size} people)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             SplitMethod.EXACT -> {
                 val assigned = state.participants.sumOf { state.weightOf(it) }
@@ -774,12 +774,12 @@ private fun SplitSummaryFooter(state: AddExpenseState) {
                     text = "${(assigned / 100.0).toFixed(2)} of $total",
                     fontWeight = FontWeight.Bold
                 )
-                Text("${'$'}{(state.remaining / 100.0).toFixed(2)} left", color = Color.Gray, fontSize = 12.sp)
+                Text("${'$'}{(state.remaining / 100.0).toFixed(2)} left", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             SplitMethod.PERCENTAGE -> {
                 val assigned = state.participants.sumOf { state.weightOf(it) } / 100
                 Text("$assigned% of 100%", fontWeight = FontWeight.Bold)
-                Text("${'$'}{state.remaining / 100}% left", color = Color.Gray, fontSize = 12.sp)
+                Text("${'$'}{state.remaining / 100}% left", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             SplitMethod.SHARES -> {
                 val totalShares = state.participants.sumOf { state.weightOf(it) }

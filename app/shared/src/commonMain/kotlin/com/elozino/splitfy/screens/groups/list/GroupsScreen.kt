@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.GroupSummary
 import com.elozino.splitfy.ui.components.SearchField
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -102,15 +102,15 @@ private fun GroupsListScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreateGroupClick,
-                containerColor = primaryLight,
-                contentColor = Color.Black,
+                containerColor = AppTheme.colors.brand,
+                contentColor = AppTheme.colors.onBrand,
                 shape = CircleShape,
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Group")
@@ -132,7 +132,7 @@ private fun GroupsListScreen(
                 ) { index ->
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         SkeletonListItem(
@@ -162,7 +162,7 @@ private fun GroupsListScreen(
                         item {
                             Text(
                                 text = message,
-                                color = Color(0xFFD32F2F),
+                                color = AppTheme.colors.negative,
                                 fontSize = 14.sp,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
@@ -172,7 +172,7 @@ private fun GroupsListScreen(
                         item {
                             Text(
                                 text = "No groups match \"${query.trim()}\"",
-                                color = Color.Gray,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp,
                                 modifier = Modifier.padding(8.dp)
                             )
@@ -211,15 +211,15 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
                 modifier = Modifier
                     .size(100.dp, 130.dp)
                     .offset(x = (-20).dp, y = (-10).dp)
-                    .border(1.dp, Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
             ) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .offset(y = (-8).dp)
                         .size(40.dp, 12.dp)
-                        .background(primaryLight.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+                        .background(AppTheme.colors.brand.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
                 )
             }
             
@@ -228,15 +228,15 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
                 modifier = Modifier
                     .size(110.dp, 140.dp)
                     .offset(x = 10.dp, y = 10.dp)
-                    .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
             ) {
                Box(
                    modifier = Modifier
                        .align(Alignment.TopCenter)
                        .offset(y = (-10).dp)
                        .size(50.dp, 15.dp)
-                       .background(primaryLight, RoundedCornerShape(4.dp))
+                       .background(AppTheme.colors.brand, RoundedCornerShape(4.dp))
                )
             }
         }
@@ -248,7 +248,7 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
         )
         Text(
             text = "You haven't created any group yet.",
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
         )
@@ -257,9 +257,9 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
             onClick = onCreateClick,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(100.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
         ) {
-            Text("Create a New Group", color = Color.Black, fontWeight = FontWeight.Bold)
+            Text("Create a New Group", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -271,7 +271,7 @@ fun GroupItem(data: GroupItemData, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -284,33 +284,33 @@ fun GroupItem(data: GroupItemData, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(primaryLight.copy(alpha = 0.2f)),
+                    .background(AppTheme.colors.brand.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Group, contentDescription = null, tint = primaryLight)
+                Icon(Icons.Default.Group, contentDescription = null, tint = AppTheme.colors.brand)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = data.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = data.members, fontSize = 12.sp, color = Color.Gray)
+                Text(text = data.members, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Column(horizontalAlignment = Alignment.End) {
                 if (data.isSettled) {
-                    Text(text = "Settled up", fontSize = 12.sp, color = Color.Gray)
+                    Text(text = "Settled up", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     Text(
                         text = data.balance,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = if (data.isOwed) Color(0xFF4CAF50) else Color(0xFFE57373)
+                        color = if (data.isOwed) AppTheme.colors.positive else AppTheme.colors.negative
                     )
                     Text(
                         text = if (data.isOwed) "You are owed" else "You owe",
                         fontSize = 10.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

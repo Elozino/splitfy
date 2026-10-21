@@ -1,5 +1,7 @@
 package com.elozino.splitfy.ui.components
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -31,7 +33,7 @@ fun SuccessDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier
@@ -42,14 +44,14 @@ fun SuccessDialog(
                 Box(
                     modifier = Modifier
                         .size(100.dp)
-                        .background(Color(0xFFFEBB1B), CircleShape),
+                        .background(AppTheme.colors.brand, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier.size(48.dp),
-                        tint = Color.Black
+                        tint = AppTheme.colors.onBrand
                     )
                 }
 
@@ -60,7 +62,7 @@ fun SuccessDialog(
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -69,7 +71,7 @@ fun SuccessDialog(
                     text = message,
                     fontSize = 16.sp,
                     textAlign = TextAlign.Center,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 24.sp
                 )
 
@@ -77,7 +79,7 @@ fun SuccessDialog(
 
                 CircularProgressIndicator(
                     modifier = Modifier.size(48.dp),
-                    color = Color(0xFFFEBB1B),
+                    color = AppTheme.colors.brand,
                     strokeWidth = 4.dp
                 )
             }

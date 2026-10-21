@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.account.legal
 
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,10 +44,10 @@ fun LegalDocumentScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         SelectionContainer {
             Column(
@@ -55,7 +57,7 @@ fun LegalDocumentScreen(
                 LegalReviewBanner()
                 Text(
                     "Last updated: ${LegalCopy.LAST_UPDATED}",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(bottom = 16.dp),
                 )
@@ -63,7 +65,7 @@ fun LegalDocumentScreen(
                     Text(section.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Text(
                         section.body,
-                        color = Color.DarkGray,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp,
                         lineHeight = 20.sp,
                         modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
@@ -80,13 +82,13 @@ fun LegalReviewBanner() {
     if (!LegalCopy.LEGAL_REVIEW_PENDING) return
     Text(
         "Draft — pending legal review. Bracketed items are still to be confirmed.",
-        color = Color(0xFF7A4B00),
+        color = MaterialTheme.colorScheme.onSurface,
         fontSize = 12.sp,
         fontWeight = FontWeight.Medium,
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 12.dp)
-            .background(Color(0xFFFFF4E0), RoundedCornerShape(8.dp))
+            .background(AppTheme.colors.brand.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
             .padding(12.dp),
     )
 }

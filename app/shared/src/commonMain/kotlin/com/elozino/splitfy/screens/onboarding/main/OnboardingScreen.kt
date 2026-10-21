@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.onboarding.main
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
@@ -52,18 +53,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elozino.splitfy.ui.generated.resources.UiRes
 import com.elozino.splitfy.ui.generated.resources.app_name
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import kotlin.math.absoluteValue
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import com.elozino.splitfy.screens.expenses.add.label
 
-private val Ink = Color(0xFF191915)
-private val MutedInk = Color(0xFF706F68)
-private val Canvas = Color(0xFFFFFCF6)
-private val SoftYellow = Color(0xFFFFEAB5)
-private val Success = Color(0xFF2D7D46)
+// The phone frame in the hero artwork is a physical object, so it stays dark in both themes.
+private val DeviceBezel = Color(0xFF191915)
+// A deeper yellow blob on the brand-yellow hero, same in both themes.
+private val HeroShade = Color(0xFFE19A00)
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -78,7 +78,7 @@ fun OnboardingScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Canvas),
+                .background(MaterialTheme.colorScheme.background),
         ) {
             Column(
                 modifier = Modifier
@@ -134,20 +134,20 @@ private fun OnboardingHeader(onSkip: () -> Unit) {
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(primaryLight),
+                    .background(AppTheme.colors.brand),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.Category,
                     contentDescription = "Logo",
                     modifier = Modifier.size(20.dp),
-                    tint = Color.Black
+                    tint = AppTheme.colors.onBrand
                 )
             }
             Spacer(Modifier.width(10.dp))
             Text(
                 text = stringResource(UiRes.string.app_name),
-                color = Ink,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.5).sp,
@@ -157,14 +157,14 @@ private fun OnboardingHeader(onSkip: () -> Unit) {
                     .padding(start = 2.dp, top = 12.dp)
                     .size(5.dp)
                     .clip(CircleShape)
-                    .background(primaryLight),
+                    .background(AppTheme.colors.brand),
             )
         }
 
         TextButton(
             onClick = onSkip,
             shape = RoundedCornerShape(50),
-            colors = ButtonDefaults.textButtonColors(contentColor = Ink),
+            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onBackground),
         ) {
             Text("Skip", fontWeight = FontWeight.SemiBold)
         }
@@ -207,7 +207,7 @@ private fun OnboardingPage(
                     .graphicsLayer {
                         alpha = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f) * 0.35f
                     },
-                color = Ink,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = titleSize,
                 lineHeight = (titleSize.value + 3).sp,
                 fontWeight = FontWeight.Bold,
@@ -218,7 +218,7 @@ private fun OnboardingPage(
             Text(
                 text = slide.subtitle,
                 modifier = Modifier.fillMaxWidth(0.92f),
-                color = MutedInk,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 16.sp,
                 lineHeight = 23.sp,
                 fontWeight = FontWeight.Normal,
@@ -237,7 +237,7 @@ private fun HeroArtwork(
     BoxWithConstraints(
         modifier = modifier
             .clip(RoundedCornerShape(36.dp))
-            .background(primaryLight),
+            .background(AppTheme.colors.brand),
     ) {
         Box(
             Modifier
@@ -252,7 +252,7 @@ private fun HeroArtwork(
                 .align(Alignment.BottomEnd)
                 .offset(x = maxWidth * 0.16f, y = maxHeight * 0.20f)
                 .clip(CircleShape)
-                .background(Color(0xFFE19A00).copy(alpha = 0.30f)),
+                .background(HeroShade.copy(alpha = 0.30f)),
         )
 
         ProductPreview(
@@ -276,7 +276,7 @@ private fun HeroArtwork(
                 .padding(end = 14.dp, bottom = 22.dp)
                 .shadow(10.dp, RoundedCornerShape(18.dp))
                 .clip(RoundedCornerShape(18.dp))
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 12.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -284,20 +284,20 @@ private fun HeroArtwork(
                 modifier = Modifier
                     .size(22.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE4F4E8)),
+                    .background(AppTheme.colors.positive.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Check,
                     contentDescription = null,
-                    tint = Success,
+                    tint = AppTheme.colors.positive,
                     modifier = Modifier.size(14.dp),
                 )
             }
             Spacer(Modifier.width(7.dp))
             Text(
                 text = slide.badge,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -314,7 +314,7 @@ private fun ProductPreview(
         modifier = modifier
             .shadow(20.dp, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
             .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-            .background(Ink)
+            .background(DeviceBezel)
             .padding(start = 7.dp, top = 8.dp, end = 7.dp),
     ) {
         Image(
@@ -333,7 +333,7 @@ private fun ProductPreview(
                 .width(44.dp)
                 .height(12.dp)
                 .clip(CircleShape)
-                .background(Ink),
+                .background(DeviceBezel),
         )
     }
 }
@@ -360,8 +360,8 @@ private fun OnboardingFooter(
                 .height(58.dp),
             shape = RoundedCornerShape(50.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = primaryLight,
-                contentColor = Color.White,
+                containerColor = AppTheme.colors.brand,
+                contentColor = AppTheme.colors.onBrand,
             ),
         ) {
             Text(
@@ -392,7 +392,7 @@ private fun PagerIndicator(pageCount: Int, currentPage: Int) {
                 label = "onboardingIndicatorWidth",
             )
             val color by animateColorAsState(
-                targetValue = if (selected) primaryLight else SoftYellow,
+                targetValue = if (selected) AppTheme.colors.brand else AppTheme.colors.brand.copy(alpha = 0.3f),
                 label = "onboardingIndicatorColor",
             )
             Box(

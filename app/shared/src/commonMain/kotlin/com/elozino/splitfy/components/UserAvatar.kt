@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.SubcomposeAsyncImage
 
 /**
- * A person's profile photo, or their initials on a grey circle when they have none
+ * A person's profile photo, or their initials on a neutral circle when they have none
  * (or it fails to load).
  */
 @Composable
@@ -29,13 +29,13 @@ fun UserAvatar(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier.size(size).clip(CircleShape).background(Color.LightGray),
+        modifier = modifier.size(size).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
         val initials = @Composable {
             Text(
                 text = initialsOf(name),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 fontSize = (size.value * 0.36f).sp,
             )
