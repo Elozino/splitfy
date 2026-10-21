@@ -48,7 +48,7 @@ class SecurityViewModelsTest {
 
     @Test
     fun `mismatched or weak passwords never reach the server`() = runTest(dispatcher) {
-        val viewModel = ChangePasswordViewModel(passwordSet = true, security)
+        val viewModel = ChangePasswordViewModel(hasPassword = true, security)
         viewModel.onCurrentPasswordChange("Password123")
         viewModel.onNewPasswordChange("short")
         viewModel.onConfirmPasswordChange("different")
@@ -67,7 +67,7 @@ class SecurityViewModelsTest {
         security.changePasswordResult = DataResult.Failure(
             DataError.Validation(listOf(FieldError("currentPassword", "Your current password is incorrect")), "nope"),
         )
-        val viewModel = filledChangePassword(passwordSet = true)
+        val viewModel = filledChangePassword(hasPassword = true)
 
         viewModel.submit()
         advanceUntilIdle()
@@ -78,7 +78,7 @@ class SecurityViewModelsTest {
 
     @Test
     fun `a successful change finishes and forgets the passwords`() = runTest(dispatcher) {
-        val viewModel = filledChangePassword(passwordSet = true)
+        val viewModel = filledChangePassword(hasPassword = true)
 
         viewModel.submit()
         advanceUntilIdle()
@@ -91,7 +91,7 @@ class SecurityViewModelsTest {
 
     @Test
     fun `setting a first password sends no current password`() = runTest(dispatcher) {
-        val viewModel = ChangePasswordViewModel(passwordSet = false, security)
+        val viewModel = ChangePasswordViewModel(hasPassword = false, security)
         viewModel.onNewPasswordChange("NewPassword456")
         viewModel.onConfirmPasswordChange("NewPassword456")
         assertTrue(viewModel.state.value.canSubmit)
@@ -102,7 +102,7 @@ class SecurityViewModelsTest {
         assertEquals(listOf<Pair<String?, String>>(null to "NewPassword456"), security.passwordChanges)
     }
 
-    private fun filledChangePassword(passwordSet: Boolean) = ChangePasswordViewModel(passwordSet, security).apply {
+    private fun filledChangePassword(hasPassword: Boolean) = ChangePasswordViewModel(hasPassword, security).apply {
         onCurrentPasswordChange("Password123")
         onNewPasswordChange("NewPassword456")
         onConfirmPasswordChange("NewPassword456")
@@ -229,7 +229,7 @@ class SecurityViewModelsTest {
 
     @Test
     fun `turning 2FA off with the password updates the overview`() = runTest(dispatcher) {
-        security.overviewResult = DataResult.Success(SecurityOverview(passwordSet = true, twoFactorEnabled = true, recoveryCodesRemaining = 8))
+        security.overviewResult = DataResult.Success(SecurityOverview(hasPassword = true, twoFactorEnabled = true, recoveryCodesRemaining = 8))
         val viewModel = securityViewModel()
         advanceUntilIdle()
 
@@ -246,7 +246,7 @@ class SecurityViewModelsTest {
 
     @Test
     fun `a wrong code keeps the dialog open with the reason`() = runTest(dispatcher) {
-        security.overviewResult = DataResult.Success(SecurityOverview(passwordSet = true, twoFactorEnabled = true))
+        security.overviewResult = DataResult.Success(SecurityOverview(hasPassword = true, twoFactorEnabled = true))
         security.disableResult = DataResult.Failure(DataError.Api(ApiErrorCode.INVALID_CREDENTIALS, "That code isn't right."))
         val viewModel = securityViewModel()
         advanceUntilIdle()

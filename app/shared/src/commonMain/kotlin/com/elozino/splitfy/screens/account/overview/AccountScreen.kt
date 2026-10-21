@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.overview
 
+import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.ui.components.SkeletonText
 import com.elozino.splitfy.ui.components.SkeletonCircle
 import com.elozino.splitfy.FeatureFlags
@@ -172,9 +173,7 @@ fun AccountScreen(
                             SkeletonText(0.7f, height = 14.dp)
                         }
                     } else {
-                        Box(
-                            modifier = Modifier.size(60.dp).clip(CircleShape).background(Color.LightGray)
-                        )
+                        UserAvatar(state.user?.avatarUrl, state.displayName, size = 60.dp)
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(

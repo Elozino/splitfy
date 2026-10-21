@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 
 data class ChangePasswordState(
     /** False for a Google/Apple account with no password of its own: no "current password" field. */
-    val passwordSet: Boolean = true,
+    val hasPassword: Boolean = true,
     val currentPassword: String = "",
     val newPassword: String = "",
     val confirmPassword: String = "",
@@ -27,15 +27,15 @@ data class ChangePasswordState(
 ) {
     val canSubmit: Boolean
         get() = !isSubmitting && newPassword.isNotEmpty() && confirmPassword.isNotEmpty() &&
-            (!passwordSet || currentPassword.isNotEmpty())
+            (!hasPassword || currentPassword.isNotEmpty())
 }
 
 class ChangePasswordViewModel(
-    passwordSet: Boolean,
+    hasPassword: Boolean,
     private val security: SecurityRepository,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ChangePasswordState(passwordSet = passwordSet))
+    private val _state = MutableStateFlow(ChangePasswordState(hasPassword = hasPassword))
     val state: StateFlow<ChangePasswordState> = _state.asStateFlow()
 
     fun onCurrentPasswordChange(value: String) = _state.update {
@@ -57,10 +57,10 @@ class ChangePasswordViewModel(
         val current = _state.value
         if (current.isSubmitting) return
         val errors = buildMap {
-            if (current.passwordSet && current.currentPassword.isEmpty()) put(FIELD_CURRENT, "Enter your current password")
+            if (current.hasPassword && current.currentPassword.isEmpty()) put(FIELD_CURRENT, "Enter your current password")
             Validators.password(current.newPassword, FIELD_NEW)?.let { put(it.field, it.message) }
             if (current.confirmPassword != current.newPassword) put(FIELD_CONFIRM, "Passwords don't match")
-            if (current.passwordSet && current.newPassword.isNotEmpty() && current.newPassword == current.currentPassword) {
+            if (current.hasPassword && current.newPassword.isNotEmpty() && current.newPassword == current.currentPassword) {
                 put(FIELD_NEW, "Choose a password you haven't used here")
             }
         }
@@ -72,7 +72,7 @@ class ChangePasswordViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isSubmitting = true, errorMessage = null, fieldErrors = emptyMap()) }
             val result = security.changePassword(
-                currentPassword = current.currentPassword.takeIf { current.passwordSet },
+                currentPassword = current.currentPassword.takeIf { current.hasPassword },
                 newPassword = current.newPassword,
             )
             when (result) {

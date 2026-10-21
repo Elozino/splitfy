@@ -8,7 +8,7 @@ import com.elozino.splitfy.repositories.SecurityRepository
 
 /** Answers from fields the test sets; records what was asked. */
 class FakeSecurityRepository : SecurityRepository {
-    var overviewResult: DataResult<SecurityOverview> = DataResult.Success(SecurityOverview(passwordSet = true, twoFactorEnabled = false))
+    var overviewResult: DataResult<SecurityOverview> = DataResult.Success(SecurityOverview(hasPassword = true, twoFactorEnabled = false))
     var changePasswordResult: DataResult<Unit> = DataResult.Success(Unit)
     var sessionsResult: DataResult<List<DeviceSession>> = DataResult.Success(emptyList())
     var revokeResult: DataResult<Unit> = DataResult.Success(Unit)

@@ -218,7 +218,7 @@ class AuthService(
         ) ?: throw AppException.InvalidCredentials("Reset token is not valid or has expired")
 
         passwordResets.consume(resetId)
-        users.updatePasswordHash(userId, hasher.hash(request.newPassword), passwordSet = true)
+        users.updatePasswordHash(userId, hasher.hash(request.newPassword), usable = true)
 
         // A password change invalidates every existing session.
         refreshTokens.revokeAllForUser(userId)
@@ -267,7 +267,7 @@ class AuthService(
         val record = users.findRecordById(userId) ?: throw AppException.Unauthorized()
         val enabled = twoFactor.isEnabled(userId)
         return SecurityOverview(
-            passwordSet = record.passwordSet,
+            hasPassword = record.hasPassword,
             twoFactorEnabled = enabled,
             recoveryCodesRemaining = if (enabled) twoFactor.recoveryCodesRemaining(userId) else 0,
         )
@@ -283,7 +283,7 @@ class AuthService(
             ?.let { throw AppException.Validation(listOf(it)) }
         val record = users.findRecordById(caller.userId) ?: throw AppException.Unauthorized()
 
-        if (record.passwordSet) {
+        if (record.hasPassword) {
             val current = request.currentPassword.orEmpty()
             if (current.isEmpty()) {
                 throw AppException.Validation(listOf(FieldError("currentPassword", "Enter your current password")))
@@ -299,7 +299,7 @@ class AuthService(
             }
         }
 
-        users.updatePasswordHash(caller.userId, hasher.hash(request.newPassword), passwordSet = true)
+        users.updatePasswordHash(caller.userId, hasher.hash(request.newPassword), usable = true)
         refreshTokens.revokeOtherSessions(caller.userId, keep = caller.sessionId)
     }
 
@@ -380,6 +380,12 @@ class AuthService(
 interface OtpNotifier {
     suspend fun sendPasswordResetCode(email: String, code: String)
     suspend fun sendEmailVerificationCode(email: String, code: String)
+
+    /** The code that confirms a change of address, sent to the new address. */
+    suspend fun sendEmailChangeCode(email: String, code: String)
+
+    /** Tells the previous address that the account has moved to [newEmail]. */
+    suspend fun sendEmailChangedNotice(oldEmail: String, newEmail: String)
 }
 
 /**
@@ -402,5 +408,13 @@ class LoggingOtpNotifier(private val environment: AppConfig.Environment) : OtpNo
 
     override suspend fun sendEmailVerificationCode(email: String, code: String) {
         logger.info("[dev] email verification code for {}: {}", email, code)
+    }
+
+    override suspend fun sendEmailChangeCode(email: String, code: String) {
+        logger.info("[dev] email change code for {}: {}", email, code)
+    }
+
+    override suspend fun sendEmailChangedNotice(oldEmail: String, newEmail: String) {
+        logger.info("[dev] email changed notice to {}: account now uses {}", oldEmail, newEmail)
     }
 }

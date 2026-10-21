@@ -107,6 +107,9 @@ fun dataModule(isDebug: Boolean, apiBaseUrl: String? = null, googleClientId: Str
     single<NotificationRepository> { NotificationRepositoryImpl(get(), get()) }
     single<ContactRepository> { ContactRepositoryImpl(get(), get()) }
     single<UploadRepository> { UploadRepositoryImpl(get(), get(), storageHttpClient()) }
+    single<com.elozino.splitfy.repositories.AccountRepository> {
+        com.elozino.splitfy.repositories.AccountRepositoryImpl(get(), get())
+    }
     single { platformImageCompressor() }
     single<SecurityRepository> { SecurityRepositoryImpl(get(), get()) }
     single { AppLockSettings(get()) }
@@ -125,7 +128,7 @@ val viewModelModule: Module = module {
     factory { AuthViewModel(get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get(), get()) }
     factory { GroupsViewModel(get()) }
-    factory { NewGroupViewModel(get(), get()) }
+    factory { NewGroupViewModel(get(), get(), get()) }
     factory { (groupId: String) -> GroupDetailViewModel(groupId, get(), get(), get(), get(), get()) }
     factory { (groupId: String) -> AddExpenseViewModel(groupId, get(), get(), get(), get(), get()) }
     factory { (groupId: String) -> GroupSettingsViewModel(groupId, get(), get()) }
@@ -138,9 +141,16 @@ val viewModelModule: Module = module {
     factory { ContactsViewModel(get(), get()) }
     factory { AccountViewModel(get(), get(), get(), get(), get()) }
     factory { SecurityViewModel(get(), get()) }
-    factory { (passwordSet: Boolean) -> ChangePasswordViewModel(passwordSet, get()) }
+    factory { (hasPassword: Boolean) -> ChangePasswordViewModel(hasPassword, get()) }
     factory { DevicesViewModel(get()) }
     factory { TwoFactorSetupViewModel(get()) }
+    factory {
+        com.elozino.splitfy.screens.account.personal_info.PersonalInfoViewModel(
+            get(), get(), get(), com.elozino.splitfy.uploads.platformAvatarCropper(), get(),
+        )
+    }
+    factory { com.elozino.splitfy.screens.account.linked_accounts.LinkedAccountsViewModel(get()) }
+    factory { com.elozino.splitfy.screens.account.data_analytics.DataAnalyticsViewModel(get(), get()) }
 }
 
 /**

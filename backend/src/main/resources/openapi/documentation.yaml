@@ -448,6 +448,172 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /api/v1/users/me/uploads:
+    post:
+      tags: [Users, Uploads]
+      summary: Request a presigned URL to upload a profile photo
+      description: |
+        Same contract as `POST /groups/{groupId}/uploads`, for `purpose: AVATAR`
+        only. The app crops and downscales the photo to a square JPEG first. Pass the
+        returned `objectKey` as `avatarUrl` in `PATCH /users/me`, which accepts only
+        avatar keys issued to the caller ("" removes the photo). Avatars in every
+        response (`User`, `GroupMember`, `Contact`) are displayable URLs, like group
+        covers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadSlotRequest" }
+      responses:
+        "201":
+          description: Upload slot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadSlot" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "503": { $ref: "#/components/responses/StorageUnavailable" }
+
+  /api/v1/users/me/email-change:
+    post:
+      tags: [Users]
+      summary: Start moving the account to a new email address
+      description: |
+        Sends a six-digit code to `newEmail` (not the current address); confirm it
+        with `POST /users/me/email-change/confirm` within 30 minutes. A new request
+        replaces any pending one. Refused with 409 `EMAIL_ALREADY_REGISTERED` when a
+        verified account holds the address. An address held by an account that never
+        verified it is not blocked: proving ownership wins, as with Google/Apple
+        sign-in. At most one request a minute and five a day per account (429).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailChangeRequest" }
+      responses:
+        "202":
+          description: Code sent to the new address
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EmailChangePending" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/v1/users/me/email-change/confirm:
+    post:
+      tags: [Users]
+      summary: Confirm a change of email with the code sent to the new address
+      description: |
+        Moves the account to the new address and marks it verified, then emails the
+        previous address that the account has moved. If an unverified account still
+        holds the new address, it loses it: its email becomes a placeholder and its
+        password is revoked. Five wrong codes burn the pending change.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailChangeConfirmRequest" }
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { description: "Code is wrong or expired (`INVALID_CREDENTIALS`)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/v1/users/me/identities:
+    get:
+      tags: [Users]
+      summary: Google/Apple identities linked to the account
+      responses:
+        "200":
+          description: Sign-in methods
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LinkedAccountsResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/users/me/identities/{provider}:
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        schema: { type: string, enum: [google, apple] }
+    post:
+      tags: [Users]
+      summary: Link a Google or Apple identity to the signed-in account
+      description: |
+        Takes an ID token from the platform sign-in sheet, verified exactly as in
+        `POST /auth/oauth/{provider}`. Linking an identity already on this account is
+        a no-op. Refused with 409 when the identity belongs to another account, or
+        when this account already has a different identity from the same provider.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken: { type: string }
+                nonce: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Sign-in methods after linking
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LinkedAccountsResponse" }
+        "400": { description: "The token could not be verified (`INVALID_CREDENTIALS`)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: The provider is not configured on this server }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+    delete:
+      tags: [Users]
+      summary: Unlink a Google or Apple identity
+      description: |
+        Refused with 409 when it is the account's last way to sign in: no other
+        identity and no password the owner knows (`hasPassword` is false for
+        accounts created through Google or Apple until a password is set through
+        password reset).
+      responses:
+        "200":
+          description: Sign-in methods after unlinking
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LinkedAccountsResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/v1/users/me/export:
+    get:
+      tags: [Users]
+      summary: Download a copy of the caller's data
+      description: |
+        Everything the server holds about the caller as one JSON document, sent as
+        an attachment with `Cache-Control: no-store`: profile, linked sign-in
+        methods, groups, the expenses they paid or share, the settlements they paid
+        or received, and their notifications. Other members appear by display name
+        only. Credentials and receipt files are not included.
+      responses:
+        "200":
+          description: The export
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'attachment; filename="splitfy-data-2026-10-21.json"' }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataExport" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
   /api/v1/users/search:
     get:
       tags: [Users]
@@ -1266,7 +1432,7 @@ paths:
       tags: [Security]
       summary: Change the password, or set one for a Google/Apple account
       description: |
-        `currentPassword` is required unless `SecurityOverview.passwordSet` is false.
+        `currentPassword` is required unless `SecurityOverview.hasPassword` is false.
         On success every other device is signed out; the calling device stays signed in.
         A wrong current password is a 400 (`INVALID_CREDENTIALS`), not a 401.
       requestBody:
@@ -1469,11 +1635,133 @@ components:
           schema: { $ref: "#/components/schemas/ApiErrorResponse" }
 
   schemas:
+    EmailChangeRequest:
+      type: object
+      required: [newEmail]
+      properties:
+        newEmail: { type: string, format: email }
+
+    EmailChangePending:
+      type: object
+      required: [newEmail, expiresAt]
+      properties:
+        newEmail: { type: string, format: email }
+        expiresAt: { type: string, format: date-time }
+
+    EmailChangeConfirmRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string }
+
+    LinkedIdentity:
+      type: object
+      required: [provider, linkedAt]
+      properties:
+        provider: { type: string, enum: [GOOGLE, APPLE] }
+        email: { type: string, format: email, nullable: true }
+        linkedAt: { type: string, format: date-time }
+
+    LinkedAccountsResponse:
+      type: object
+      required: [identities, hasPassword, availableProviders]
+      properties:
+        identities:
+          type: array
+          items: { $ref: "#/components/schemas/LinkedIdentity" }
+        hasPassword:
+          type: boolean
+          description: False for Google/Apple accounts that never set a password
+        availableProviders:
+          type: array
+          description: Providers this server can verify, i.e. the ones that can be linked
+          items: { type: string, enum: [GOOGLE, APPLE] }
+
+    DataExport:
+      type: object
+      description: Amounts are decimal strings in the item's currency.
+      required: [format, exportedAt, profile, linkedAccounts, groups, expenses, settlements, notifications]
+      properties:
+        format: { type: string, example: splitfy-export/1 }
+        exportedAt: { type: string, format: date-time }
+        profile:
+          type: object
+          properties:
+            id: { type: string, format: uuid }
+            email: { type: string, format: email }
+            emailVerified: { type: boolean }
+            displayName: { type: string }
+            phoneNumber: { type: string, nullable: true }
+            defaultCurrency: { type: string }
+            hasPassword: { type: boolean }
+            createdAt: { type: string, format: date-time }
+        linkedAccounts:
+          type: array
+          items:
+            type: object
+            properties:
+              provider: { type: string }
+              email: { type: string, nullable: true }
+              linkedAt: { type: string, format: date-time }
+        groups:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              currency: { type: string }
+              role: { type: string }
+              joinedAt: { type: string, format: date-time }
+              archived: { type: boolean }
+        expenses:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              groupId: { type: string, format: uuid }
+              groupName: { type: string, nullable: true }
+              description: { type: string }
+              category: { type: string }
+              amount: { type: string }
+              yourShare: { type: string }
+              currency: { type: string }
+              paidByYou: { type: boolean }
+              paidBy: { type: string, nullable: true }
+              notes: { type: string, nullable: true }
+              incurredAt: { type: string, format: date-time }
+        settlements:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              groupId: { type: string, format: uuid }
+              groupName: { type: string, nullable: true }
+              direction: { type: string, enum: [PAID, RECEIVED] }
+              counterparty: { type: string, nullable: true }
+              amount: { type: string }
+              currency: { type: string }
+              status: { type: string }
+              note: { type: string, nullable: true }
+              settledAt: { type: string, format: date-time }
+        notifications:
+          type: array
+          items:
+            type: object
+            properties:
+              category: { type: string }
+              title: { type: string }
+              message: { type: string }
+              read: { type: boolean }
+              createdAt: { type: string, format: date-time }
+
     UploadSlotRequest:
       type: object
       required: [purpose, contentType, sizeBytes]
       properties:
-        purpose: { type: string, enum: [RECEIPT, GROUP_COVER] }
+        purpose: { type: string, enum: [RECEIPT, GROUP_COVER, AVATAR] }
         contentType:
           type: string
           description: |
@@ -1788,9 +2076,9 @@ components:
 
     SecurityOverview:
       type: object
-      required: [passwordSet, twoFactorEnabled]
+      required: [hasPassword, twoFactorEnabled]
       properties:
-        passwordSet:
+        hasPassword:
           type: boolean
           description: False for Google/Apple accounts that never chose a password; they may set one without a current password.
         twoFactorEnabled: { type: boolean }
@@ -1867,8 +2155,12 @@ components:
       properties:
         displayName: { type: string }
         phoneNumber: { type: string }
-        avatarUrl: { type: string }
-        defaultCurrency: { type: string }
+        avatarUrl:
+          type: string
+          description: An AVATAR `objectKey` from `POST /users/me/uploads`, or "" to remove the photo
+        defaultCurrency:
+          type: string
+          description: ISO 4217 code; preselected for new groups
 
     GroupMember:
       type: object

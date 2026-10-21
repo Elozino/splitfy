@@ -29,8 +29,8 @@ object UsersTable : Table("users") {
     val updatedAt = timestamp("updated_at")
     /** Set when the account was deleted; the row stays as an anonymous tombstone. */
     val deletedAt = timestamp("deleted_at").nullable()
-    /** False while the hash is a random one nobody knows (Google/Apple sign-up). */
-    val passwordSet = bool("password_set").default(true)
+    /** False while the password hash is a random one nobody knows (Google/Apple sign-ups). */
+    val hasPassword = bool("has_password").default(true)
 
     override val primaryKey = PrimaryKey(id)
 
@@ -112,6 +112,11 @@ object UserIdentitiesTable : Table("user_identities") {
 }
 
 object EmailVerificationsTable : OneTimeCodesTable("email_verifications")
+
+/** A code sent to [newEmail]; redeeming it moves the account to that address. */
+object EmailChangesTable : OneTimeCodesTable("email_changes") {
+    val newEmail = varchar("new_email", 254)
+}
 
 object GroupsTable : Table("groups") {
     val id = uuid("id")

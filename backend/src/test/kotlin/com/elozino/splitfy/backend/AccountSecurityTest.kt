@@ -123,13 +123,13 @@ class AccountSecurityTest {
     @Test
     fun `an account without a usable password can set one without the current password`() = securityTest {
         val ada = register("ada@example.com")
-        database.execute("UPDATE users SET password_set = FALSE WHERE email = 'ada@example.com'")
-        assertFalse(overview(ada.tokens.accessToken).passwordSet)
+        database.execute("UPDATE users SET has_password = FALSE WHERE email = 'ada@example.com'")
+        assertFalse(overview(ada.tokens.accessToken).hasPassword)
 
         val response = changePassword(ada.tokens.accessToken, current = null, new = "ChosenPassword1")
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(overview(ada.tokens.accessToken).passwordSet)
+        assertTrue(overview(ada.tokens.accessToken).hasPassword)
         assertNotNull(login("ada@example.com", password = "ChosenPassword1").tokens)
         // From now on the current password is required.
         assertEquals(HttpStatusCode.BadRequest, changePassword(ada.tokens.accessToken, current = null, new = "Another123").status)
@@ -253,7 +253,7 @@ class AccountSecurityTest {
 
         assertEquals(10, codes.size)
         assertEquals(10, codes.toSet().size)
-        assertEquals(SecurityOverview(passwordSet = true, twoFactorEnabled = true, recoveryCodesRemaining = 10), overview(ada.tokens.accessToken))
+        assertEquals(SecurityOverview(hasPassword = true, twoFactorEnabled = true, recoveryCodesRemaining = 10), overview(ada.tokens.accessToken))
         assertEquals(HttpStatusCode.Conflict, client.post(ApiRoutes.Security.TWO_FACTOR_SETUP) { bearerAuth(ada.tokens.accessToken) }.status)
     }
 

@@ -78,7 +78,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SecuritySettingsScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToChangePassword: (passwordSet: Boolean) -> Unit,
+    onNavigateToChangePassword: (hasPassword: Boolean) -> Unit,
     onNavigateToDevices: () -> Unit,
     onNavigateToTwoFactorSetup: () -> Unit,
     viewModel: SecurityViewModel = koinViewModel(),
@@ -154,13 +154,13 @@ fun SecuritySettingsScreen(
                     item {
                         SettingRow(
                             icon = Icons.Default.Password,
-                            title = if (overview.passwordSet) "Change password" else "Set a password",
-                            subtitle = if (overview.passwordSet) {
+                            title = if (overview.hasPassword) "Change password" else "Set a password",
+                            subtitle = if (overview.hasPassword) {
                                 "Other devices are signed out when you change it"
                             } else {
                                 "You sign in with Google or Apple. Add a password to sign in with your email too."
                             },
-                            onClick = { onNavigateToChangePassword(overview.passwordSet) },
+                            onClick = { onNavigateToChangePassword(overview.hasPassword) },
                         )
                     }
                     item {

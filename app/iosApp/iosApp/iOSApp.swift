@@ -23,8 +23,10 @@ struct iOSApp: App {
     }
 }
 
-/// Starts Sentry when the build has a DSN (`SENTRY_DSN` in the xcconfig) and the
-/// Sentry Swift package is linked; otherwise does nothing.
+/// Starts Sentry when the build has a DSN (`SENTRY_DSN` in the xcconfig), the
+/// Sentry Swift package is linked and the user hasn't turned crash reports off in
+/// Data & Analytics (stored under the key in CrashReportingSettings.kt); otherwise
+/// does nothing.
 ///
 /// Sentry is started here rather than from Kotlin because the Kotlin side would
 /// need Sentry's Cocoa framework at link time, including for the Kotlin/Native
@@ -36,7 +38,8 @@ struct iOSApp: App {
 private func startCrashReporting() {
     #if canImport(Sentry)
     guard let dsn = Bundle.main.object(forInfoDictionaryKey: "SentryDsn") as? String,
-          !dsn.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+          !dsn.trimmingCharacters(in: .whitespaces).isEmpty,
+          UserDefaults.standard.object(forKey: "splitfy.crashReports.enabled") as? Bool ?? true else { return }
     SentrySDK.start { options in
         options.dsn = dsn
         #if DEBUG

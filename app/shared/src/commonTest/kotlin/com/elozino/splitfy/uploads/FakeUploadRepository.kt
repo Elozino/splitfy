@@ -28,6 +28,12 @@ class FakeUploadRepository(var enabled: Boolean = true) : UploadRepository {
         return uploadResult
     }
 
+    override suspend fun uploadAvatar(file: UploadFile): DataResult<String> {
+        uploads += Call("", UploadPurpose.AVATAR, file.bytes, file.contentType)
+        gate?.await()
+        return uploadResult
+    }
+
     override suspend fun receiptLink(groupId: String, expenseId: String) = receiptResult
 }
 

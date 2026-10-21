@@ -11,6 +11,9 @@ enum class UploadPurpose {
 
     /** The group's cover photo. Owners and admins only, matching who may edit the group. */
     GROUP_COVER,
+
+    /** The caller's own profile photo, requested through `ApiRoutes.Users.ME_UPLOADS`. */
+    AVATAR,
 }
 
 /**
@@ -28,7 +31,7 @@ object UploadRules {
 
     fun allowedContentTypes(purpose: UploadPurpose): Set<String> = when (purpose) {
         UploadPurpose.RECEIPT -> setOf(JPEG, PNG, HEIC, PDF)
-        UploadPurpose.GROUP_COVER -> setOf(JPEG, PNG, HEIC)
+        UploadPurpose.GROUP_COVER, UploadPurpose.AVATAR -> setOf(JPEG, PNG, HEIC)
     }
 }
 

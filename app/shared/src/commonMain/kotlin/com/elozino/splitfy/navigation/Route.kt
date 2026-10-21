@@ -111,9 +111,9 @@ sealed class Route(val name: String, val isProtected: Boolean) {
     @Serializable
     object SecuritySettings : Route("security_settings", true)
 
-    /** [passwordSet] false turns "Change password" into "Set a password" (no current password). */
+    /** [hasPassword] false turns "Change password" into "Set a password" (no current password). */
     @Serializable
-    data class ChangePassword(val passwordSet: Boolean) : Route("change_password", true)
+    data class ChangePassword(val hasPassword: Boolean) : Route("change_password", true)
 
     @Serializable
     object Devices : Route("devices", true)

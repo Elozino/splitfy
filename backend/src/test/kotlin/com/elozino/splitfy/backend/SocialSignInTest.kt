@@ -201,7 +201,7 @@ class SocialSignInTest {
 
         val overview = client.get(ApiRoutes.Security.BASE) { bearerAuth(ada.tokens.accessToken) }.body<SecurityOverview>()
 
-        assertFalse(overview.passwordSet)
+        assertFalse(overview.hasPassword)
     }
 
     @Test

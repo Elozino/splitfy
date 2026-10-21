@@ -5,6 +5,7 @@ import com.elozino.splitfy.backend.repositories.GroupRepository
 import com.elozino.splitfy.backend.repositories.SettlementRepository
 import com.elozino.splitfy.backend.schema.ContactFavoritesTable
 import com.elozino.splitfy.backend.schema.DeviceTokensTable
+import com.elozino.splitfy.backend.schema.EmailChangesTable
 import com.elozino.splitfy.backend.schema.EmailVerificationsTable
 import com.elozino.splitfy.backend.schema.GroupMembersTable
 import com.elozino.splitfy.backend.schema.GroupsTable
@@ -122,6 +123,7 @@ class AccountDeletionService(
         TwoFactorChallengesTable.deleteWhere { userId eq callerId }
         PasswordResetsTable.deleteWhere { userId eq callerId }
         EmailVerificationsTable.deleteWhere { userId eq callerId }
+        EmailChangesTable.deleteWhere { userId eq callerId }
         NotificationsTable.deleteWhere { userId eq callerId }
         // The row survives, so ON DELETE CASCADE never fires: without this the
         // phone would keep getting pushes for groups the user is still listed in.

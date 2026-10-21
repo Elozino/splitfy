@@ -417,13 +417,13 @@ fun NavSetup() {
             composable<Route.SecuritySettings> {
                 SecuritySettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToChangePassword = { passwordSet -> navController.navigate(Route.ChangePassword(passwordSet)) },
+                    onNavigateToChangePassword = { hasPassword -> navController.navigate(Route.ChangePassword(hasPassword)) },
                     onNavigateToDevices = { navController.navigate(Route.Devices) },
                     onNavigateToTwoFactorSetup = { navController.navigate(Route.TwoFactorSetup) })
             }
             composable<Route.ChangePassword> { backStackEntry ->
                 val route: Route.ChangePassword = backStackEntry.toRoute()
-                ChangePasswordScreen(passwordSet = route.passwordSet, onNavigateBack = { navController.popBackStack() })
+                ChangePasswordScreen(hasPassword = route.hasPassword, onNavigateBack = { navController.popBackStack() })
             }
             composable<Route.Devices> {
                 DevicesScreen(onNavigateBack = { navController.popBackStack() })

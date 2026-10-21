@@ -6,13 +6,15 @@ import com.elozino.splitfy.backend.schema.toJava
 import com.elozino.splitfy.backend.schema.UploadsTable
 import java.util.UUID
 import kotlin.time.Clock
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 
 data class NewUpload(
     val objectKey: String,
-    val groupId: UUID,
+    /** Null for a profile photo. */
+    val groupId: UUID?,
     val purpose: UploadPurpose,
     val contentType: String,
     val sizeBytes: Long,
@@ -39,6 +41,16 @@ class UploadRepository {
         UploadsTable.selectAll().where {
             (UploadsTable.objectKey eq objectKey) and
                 (UploadsTable.groupId eq groupId) and
+                (UploadsTable.purpose eq purpose)
+        }.any()
+    }
+
+    /** Whether [objectKey] was issued to [userId] as a group-less upload for [purpose]. */
+    suspend fun wasIssuedToUser(objectKey: String, userId: UUID, purpose: UploadPurpose): Boolean = dbQuery {
+        UploadsTable.selectAll().where {
+            (UploadsTable.objectKey eq objectKey) and
+                UploadsTable.groupId.isNull() and
+                (UploadsTable.uploadedBy eq userId) and
                 (UploadsTable.purpose eq purpose)
         }.any()
     }

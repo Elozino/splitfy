@@ -48,9 +48,9 @@ import org.koin.core.parameter.parametersOf
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangePasswordScreen(
-    passwordSet: Boolean,
+    hasPassword: Boolean,
     onNavigateBack: () -> Unit,
-    viewModel: ChangePasswordViewModel = koinViewModel { parametersOf(passwordSet) },
+    viewModel: ChangePasswordViewModel = koinViewModel { parametersOf(hasPassword) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -75,7 +75,7 @@ fun ChangePasswordScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(if (state.passwordSet) "Change password" else "Set a password", fontWeight = FontWeight.Bold) },
+                title = { Text(if (state.hasPassword) "Change password" else "Set a password", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -96,7 +96,7 @@ fun ChangePasswordScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                if (state.passwordSet) {
+                if (state.hasPassword) {
                     "After you change it, every other device signed in to your account is signed out. This one stays signed in."
                 } else {
                     "Your account was created with Google or Apple, so it has no password yet. Set one to also sign in with your email."
@@ -106,7 +106,7 @@ fun ChangePasswordScreen(
             )
             Spacer(Modifier.height(16.dp))
 
-            if (state.passwordSet) {
+            if (state.hasPassword) {
                 AuthTextField(
                     value = state.currentPassword,
                     onValueChange = viewModel::onCurrentPasswordChange,
@@ -128,7 +128,7 @@ fun ChangePasswordScreen(
                 placeholder = "At least 8 characters, with a letter and a number",
                 leadingIcon = Icons.Default.Lock,
                 visualTransformation = transformation,
-                trailingIcon = visibilityToggle.takeUnless { state.passwordSet },
+                trailingIcon = visibilityToggle.takeUnless { state.hasPassword },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             )
             AuthFieldError(state.fieldErrors[FIELD_NEW])
@@ -150,7 +150,7 @@ fun ChangePasswordScreen(
             PrimaryButton(
                 text = when {
                     state.isSubmitting -> "Saving…"
-                    state.passwordSet -> "Change password"
+                    state.hasPassword -> "Change password"
                     else -> "Set password"
                 },
                 onClick = viewModel::submit,

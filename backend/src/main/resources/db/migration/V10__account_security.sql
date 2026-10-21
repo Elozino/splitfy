@@ -1,21 +1,7 @@
--- Account security: named device sessions, password state, authenticator-app 2FA.
+-- Account security: named device sessions and authenticator-app 2FA.
 
--- False when nobody knows the password: accounts created through Google or Apple
--- (and unverified accounts a provider sign-in took over) get a random one. Such
--- users may set a password without supplying the current one.
-ALTER TABLE users ADD COLUMN password_set BOOLEAN NOT NULL DEFAULT TRUE;
-
--- Existing accounts that were created by a provider sign-in: the identity was linked
--- within a minute of the account being created, and the owner never completed a
--- password reset since (which would have given them a password they know).
-UPDATE users u SET password_set = FALSE
-WHERE EXISTS (
-    SELECT 1 FROM user_identities i
-    WHERE i.user_id = u.id AND i.created_at <= u.created_at + INTERVAL '1 minute'
-)
-AND NOT EXISTS (
-    SELECT 1 FROM password_resets r WHERE r.user_id = u.id AND r.consumed_at IS NOT NULL
-);
+-- Whether the owner knows the account's password is users.has_password, added in
+-- V11 (shared with linked accounts, which needs the same fact).
 
 -- A session is one signed-in device: the chain of refresh tokens that rotate into
 -- each other. Listing and revoking work on sessions, never on token hashes.

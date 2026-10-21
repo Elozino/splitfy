@@ -1,12 +1,17 @@
 package com.elozino.splitfy.backend.repositories
 
+import com.elozino.splitfy.api.dto.LinkedIdentity
 import com.elozino.splitfy.api.dto.OAuthProvider
 import com.elozino.splitfy.backend.schema.UserIdentitiesTable
 import com.elozino.splitfy.backend.schema.dbQuery
 import com.elozino.splitfy.backend.schema.toJava
+import com.elozino.splitfy.backend.schema.toKotlin
 import java.util.UUID
 import kotlin.time.Clock
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.selectAll
 
@@ -28,6 +33,29 @@ class UserIdentityRepository {
             it[UserIdentitiesTable.userId] = userId
             it[UserIdentitiesTable.email] = email
             it[createdAt] = Clock.System.now().toJava()
+        }
+    }
+
+    /** Oldest first. Identities for providers this build no longer knows are skipped. */
+    suspend fun listForUser(userId: UUID): List<LinkedIdentity> = dbQuery {
+        UserIdentitiesTable.selectAll()
+            .where { UserIdentitiesTable.userId eq userId }
+            .orderBy(UserIdentitiesTable.createdAt to SortOrder.ASC)
+            .mapNotNull { row ->
+                val provider = OAuthProvider.entries.firstOrNull { it.name == row[UserIdentitiesTable.provider] }
+                    ?: return@mapNotNull null
+                LinkedIdentity(
+                    provider = provider,
+                    email = row[UserIdentitiesTable.email],
+                    linkedAt = row[UserIdentitiesTable.createdAt].toKotlin(),
+                )
+            }
+    }
+
+    /** Removes every [provider] identity from [userId]; returns how many there were. */
+    suspend fun unlink(userId: UUID, provider: OAuthProvider): Int = dbQuery {
+        UserIdentitiesTable.deleteWhere {
+            (UserIdentitiesTable.userId eq userId) and (UserIdentitiesTable.provider eq provider.name)
         }
     }
 }

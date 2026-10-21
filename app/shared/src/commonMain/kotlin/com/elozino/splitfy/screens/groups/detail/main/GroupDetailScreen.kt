@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.groups.detail.main
 
+import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.screens.groups.detail.shared.GroupActions
 import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
@@ -511,6 +512,7 @@ private fun BalancesList(state: GroupDetailState, onSettleUp: () -> Unit) {
     ) {
         // One bar per member, scaled against the largest position in the group.
         val names = state.group?.members.orEmpty().associate { it.userId to it.displayName }
+        val avatars = state.group?.members.orEmpty().associate { it.userId to it.avatarUrl }
         val largest = state.balances.maxOfOrNull { kotlin.math.abs(it.net.amount) } ?: 0L
 
         state.balances.forEach { balance ->
@@ -536,12 +538,10 @@ private fun BalancesList(state: GroupDetailState, onSettleUp: () -> Unit) {
             val youArePayer = transfer.from.value == state.currentUserId
             val youArePayee = transfer.to.value == state.currentUserId
             val amount = transfer.amount.toPlainString()
+            val counterparty = if (youArePayer) transfer.to else transfer.from
             BalanceItem(
-                name = when {
-                    youArePayer -> names[transfer.to] ?: "Someone"
-                    youArePayee -> names[transfer.from] ?: "Someone"
-                    else -> names[transfer.from] ?: "Someone"
-                },
+                name = names[counterparty] ?: "Someone",
+                avatarUrl = avatars[counterparty],
                 details = when {
                     youArePayer -> "you owe $amount"
                     youArePayee -> "owes you $amount"
@@ -578,6 +578,7 @@ private fun BalanceBar(name: String, progress: Float, color: Color, amount: Stri
 @Composable
 private fun BalanceItem(
     name: String,
+    avatarUrl: String?,
     details: String,
     isOwed: Boolean,
     showSettle: Boolean = false,
@@ -587,7 +588,7 @@ private fun BalanceItem(
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+        UserAvatar(avatarUrl, name)
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(name, fontWeight = FontWeight.Bold)
@@ -716,7 +717,7 @@ private fun GroupInfoList(
                 member.displayName
             }
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+                UserAvatar(member.avatarUrl, member.displayName)
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(label, fontWeight = FontWeight.Bold)

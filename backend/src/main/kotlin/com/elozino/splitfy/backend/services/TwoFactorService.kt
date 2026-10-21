@@ -86,7 +86,7 @@ class TwoFactorService(
             password != null -> {
                 ensureNotLocked(record)
                 val account = users.findRecordById(userId) ?: throw AppException.Unauthorized()
-                (account.passwordSet && hasher.verify(password, account.passwordHash)).also { ok ->
+                (account.hasPassword && hasher.verify(password, account.passwordHash)).also { ok ->
                     if (ok) repository.resetFailures(userId) else repository.recordFailure(userId)
                 }
             }
@@ -163,7 +163,7 @@ class TwoFactorService(
     private fun ensureNotLocked(record: TotpRecord) {
         val lastFailure = record.lastFailedAt ?: return
         if (record.failedAttempts >= MAX_FAILURES && clock.now() - lastFailure < LOCKOUT) {
-            throw AppException.TooManyAttempts("Too many incorrect codes. Try again in 15 minutes.")
+            throw AppException.TooManyRequests("Too many incorrect codes. Try again in 15 minutes.")
         }
     }
 

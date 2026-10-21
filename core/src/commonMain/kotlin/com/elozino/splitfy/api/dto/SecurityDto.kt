@@ -39,12 +39,12 @@ data class SecurityOverview(
      * False for accounts created through Google or Apple that never chose a password:
      * they can set one without knowing the random one the server generated.
      */
-    val passwordSet: Boolean,
+    val hasPassword: Boolean,
     val twoFactorEnabled: Boolean,
     val recoveryCodesRemaining: Int = 0,
 )
 
-/** [currentPassword] is required unless [SecurityOverview.passwordSet] is false. */
+/** [currentPassword] is required unless [SecurityOverview.hasPassword] is false. */
 @Serializable
 data class ChangePasswordRequest(
     val currentPassword: String? = null,
