@@ -20,9 +20,14 @@ class NotificationViewModel(
 
     init { load() }
 
-    fun load() {
+    fun load() = fetch(isRefresh = false)
+
+    /** Pull-to-refresh: reloads while what's on screen stays put, so no placeholders flash. */
+    fun refresh() = fetch(isRefresh = true)
+
+    private fun fetch(isRefresh: Boolean) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            _state.update { it.copy(isLoading = !isRefresh, isRefreshing = isRefresh, errorMessage = null) }
             apply(notificationRepository.list())
         }
     }
@@ -42,11 +47,13 @@ class NotificationViewModel(
             when (result) {
                 is DataResult.Success -> current.copy(
                     isLoading = false,
+                    isRefreshing = false,
                     items = result.data.items,
                     unreadCount = result.data.unreadCount,
                 )
                 is DataResult.Failure -> current.copy(
                     isLoading = false,
+                    isRefreshing = false,
                     errorMessage = result.error.userMessage(),
                 )
             }

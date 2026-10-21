@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.groups.detail.main
 
+import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.shimmer
 import com.elozino.splitfy.ui.components.SkeletonText
@@ -190,96 +191,98 @@ fun GroupDetailScreen(
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Group Header Image
-            Box(
+        RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .then(if (state.isFirstLoad) Modifier.shimmer() else Modifier.background(Color.LightGray))
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                state.group?.coverImageUrl?.let { url ->
-                    AsyncImage(
-                        model = url,
-                        contentDescription = "Cover photo",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-                if (state.isUploadingCover) {
-                    Box(
-                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(color = Color.White)
+                // Group Header Image
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .then(if (state.isFirstLoad) Modifier.shimmer() else Modifier.background(Color.LightGray))
+                ) {
+                    state.group?.coverImageUrl?.let { url ->
+                        AsyncImage(
+                            model = url,
+                            contentDescription = "Cover photo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    if (state.isUploadingCover) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(color = Color.White)
+                        }
+                    }
+                    if (state.canEditCover) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(16.dp)
+                                .size(36.dp)
+                                .background(primaryLight, CircleShape)
+                                .clickable(enabled = !state.isUploadingCover) { coverPicker.launch() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Change cover photo", modifier = Modifier.size(18.dp), tint = Color.Black)
+                        }
                     }
                 }
-                if (state.canEditCover) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
-                            .size(36.dp)
-                            .background(primaryLight, CircleShape)
-                            .clickable(enabled = !state.isUploadingCover) { coverPicker.launch() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Change cover photo", modifier = Modifier.size(18.dp), tint = Color.Black)
+
+                // Tabs
+                SecondaryScrollableTabRow(
+                    selectedTabIndex = state.selectedTab,
+                    containerColor = Color.White,
+                    edgePadding = 24.dp,
+                    indicator = {
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(state.selectedTab, true),
+                            color = primaryLight
+                        )
+                    },
+                    divider = { HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f)) }
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = state.selectedTab == index,
+                            onClick = { viewModel.onTabSelected(index) },
+                            text = {
+                                Text(
+                                    text = title,
+                                    fontWeight = if (state.selectedTab == index) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            },
+                            selectedContentColor = Color.Black,
+                            unselectedContentColor = Color.Gray
+                        )
                     }
                 }
-            }
 
-            // Tabs
-            SecondaryScrollableTabRow(
-                selectedTabIndex = state.selectedTab,
-                containerColor = Color.White,
-                edgePadding = 24.dp,
-                indicator = {
-                    TabRowDefaults.SecondaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(state.selectedTab, true),
-                        color = primaryLight
+                val loadError = state.loadError
+                if (loadError != null && state.group == null) {
+                    LoadErrorState(loadError, onRetry = viewModel::load)
+                } else when (state.selectedTab) {
+                    0 -> ExpensesList(
+                        state = state,
+                        query = query,
+                        onExpenseClick = { expenseId -> onNavigateToExpenseDetail(expenseId) },
+                        onLoadMore = viewModel::loadMore,
                     )
-                },
-                divider = { HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f)) }
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = state.selectedTab == index,
-                        onClick = { viewModel.onTabSelected(index) },
-                        text = {
-                            Text(
-                                text = title,
-                                fontWeight = if (state.selectedTab == index) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 13.sp
-                            )
-                        },
-                        selectedContentColor = Color.Black,
-                        unselectedContentColor = Color.Gray
+                    1 -> BalancesList(state, onSettleUp = onNavigateToSettleUp)
+                    2 -> TotalsList(state)
+                    3 -> GroupInfoList(
+                        state = state,
+                        onAddMember = { viewModel.setAddMemberDialogVisible(true) },
+                        onRemoveMember = viewModel::removeMember,
                     )
                 }
-            }
-
-            val loadError = state.loadError
-            if (loadError != null && state.group == null) {
-                LoadErrorState(loadError, onRetry = viewModel::load)
-            } else when (state.selectedTab) {
-                0 -> ExpensesList(
-                    state = state,
-                    query = query,
-                    onExpenseClick = { expenseId -> onNavigateToExpenseDetail(expenseId) },
-                    onLoadMore = viewModel::loadMore,
-                )
-                1 -> BalancesList(state, onSettleUp = onNavigateToSettleUp)
-                2 -> TotalsList(state)
-                3 -> GroupInfoList(
-                    state = state,
-                    onAddMember = { viewModel.setAddMemberDialogVisible(true) },
-                    onRemoveMember = viewModel::removeMember,
-                )
             }
         }
     }

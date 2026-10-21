@@ -41,9 +41,14 @@ class SettleUpViewModel(
         load()
     }
 
-    fun load() {
+    fun load() = fetch(isRefresh = false)
+
+    /** Pull-to-refresh: reloads while what's on screen stays put, so no placeholders flash. */
+    fun refresh() = fetch(isRefresh = true)
+
+    private fun fetch(isRefresh: Boolean) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null, loadError = null) }
+            _state.update { it.copy(isLoading = !isRefresh, isRefreshing = isRefresh, errorMessage = null, loadError = null) }
 
             val group = async { groupRepository.get(groupId) }
             val balances = async { groupRepository.balances(groupId) }
@@ -56,6 +61,7 @@ class SettleUpViewModel(
             _state.update { current ->
                 current.copy(
                     isLoading = false,
+                    isRefreshing = false,
                     currentUserId = sessionManager.currentUserId(),
                     group = groupResult.getOrNull() ?: current.group,
                     suggestedTransfers = balancesResult.getOrNull()?.suggestedTransfers

@@ -20,6 +20,8 @@ internal data class ExpenseItemData(
 
 data class GroupDetailState(
     val isLoading: Boolean = true,
+    /** A pull-to-refresh is in flight; content stays on screen meanwhile. */
+    val isRefreshing: Boolean = false,
     val group: Group? = null,
     val expenses: List<Expense> = emptyList(),
     val balances: List<Balance> = emptyList(),
