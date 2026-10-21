@@ -38,6 +38,9 @@ interface UploadRepository {
     /** Uploads [file] for [groupId] and returns the object key to attach it with. */
     suspend fun upload(groupId: String, purpose: UploadPurpose, file: UploadFile): DataResult<String>
 
+    /** Uploads the caller's profile photo and returns the key to set as `avatarUrl`. */
+    suspend fun uploadAvatar(file: UploadFile): DataResult<String>
+
     /** A short-lived link to an expense's receipt. */
     suspend fun receiptLink(groupId: String, expenseId: String): DataResult<FileLink>
 }
@@ -59,12 +62,18 @@ class UploadRepositoryImpl(
     override suspend fun config(): DataResult<UploadConfig> =
         caller.execute { client.get(ApiRoutes.Uploads.CONFIG) }
 
-    override suspend fun upload(groupId: String, purpose: UploadPurpose, file: UploadFile): DataResult<String> {
+    override suspend fun upload(groupId: String, purpose: UploadPurpose, file: UploadFile): DataResult<String> =
+        uploadTo(ApiRoutes.Groups.uploads(groupId), purpose, file)
+
+    override suspend fun uploadAvatar(file: UploadFile): DataResult<String> =
+        uploadTo(ApiRoutes.Users.ME_UPLOADS, UploadPurpose.AVATAR, file)
+
+    private suspend fun uploadTo(slotPath: String, purpose: UploadPurpose, file: UploadFile): DataResult<String> {
         if (file.bytes.size > UploadRules.MAX_BYTES) {
             return DataResult.Failure(DataError.Api(ApiErrorCode.VALIDATION_FAILED, "That file is larger than 10 MB"))
         }
         val slot = caller.execute<UploadSlot> {
-            client.post(ApiRoutes.Groups.uploads(groupId)) {
+            client.post(slotPath) {
                 setBody(UploadSlotRequest(purpose, file.contentType, file.bytes.size.toLong()))
             }
         }

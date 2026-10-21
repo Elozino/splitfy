@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files the app hands to other apps through the share sheet, e.g. the data export.
+     Only this cache subfolder is exposed, and only through per-share read grants. -->
+<paths>
+    <cache-path name="shared" path="shared/" />
+</paths>

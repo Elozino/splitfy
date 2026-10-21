@@ -1,6 +1,8 @@
 package com.elozino.splitfy.di
 
 import android.content.Context
+import com.elozino.splitfy.crash.AndroidCrashReportingSettings
+import com.elozino.splitfy.crash.CrashReportingSettings
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.SharedPreferencesSettings
 import org.koin.android.ext.koin.androidContext
@@ -18,6 +20,7 @@ actual fun platformModule(): Module = module {
             context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
         )
     }
+    single<CrashReportingSettings> { AndroidCrashReportingSettings(androidContext()) }
 }
 
 private const val PREFERENCES_NAME = "splitfy.session"

@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.groups.create.participants
 
+import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
 import com.elozino.splitfy.ui.components.SkeletonBlock
@@ -126,7 +127,7 @@ fun SelectParticipantsScreen(
                         ) {
                             items(selectedContacts, key = { it.userId.value }) { contact ->
                                 Box(contentAlignment = Alignment.BottomEnd) {
-                                    Box(modifier = Modifier.size(56.dp).clip(CircleShape).background(Color.LightGray))
+                                    UserAvatar(contact.avatarUrl, contact.displayName, size = 56.dp)
                                     Box(
                                         modifier = Modifier
                                             .size(18.dp)
@@ -208,7 +209,7 @@ fun SelectParticipantsScreen(
                             .clickable { viewModel.toggleParticipant(contact) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.LightGray))
+                        UserAvatar(contact.avatarUrl, contact.displayName, size = 48.dp)
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(contact.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
