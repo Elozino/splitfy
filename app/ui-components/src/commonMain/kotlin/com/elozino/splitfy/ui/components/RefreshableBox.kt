@@ -1,5 +1,6 @@
 package com.elozino.splitfy.ui.components
 
+import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.elozino.splitfy.ui.theme.primaryLight
 
 /**
  * Swipe down to refresh, in the app's colours.
@@ -50,8 +50,8 @@ fun RefreshableBox(
                 state = state,
                 isRefreshing = isRefreshing,
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = indicatorPadding.calculateTopPadding()),
-                containerColor = primaryLight,
-                color = Color.Black,
+                containerColor = AppTheme.colors.brand,
+                color = AppTheme.colors.onBrand,
             )
         },
     ) {

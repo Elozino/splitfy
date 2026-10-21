@@ -1,5 +1,6 @@
 package com.elozino.splitfy.ui.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.Text
@@ -17,7 +18,6 @@ import androidx.compose.ui.unit.sp
 fun AuthFieldError(message: String?) {
     if (message == null) return
     Spacer(modifier = Modifier.height(8.dp))
-    Text(text = message, fontSize = 13.sp, color = ErrorRed)
+    Text(text = message, fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
 }
 
-val ErrorRed = Color(0xFFD32F2F)

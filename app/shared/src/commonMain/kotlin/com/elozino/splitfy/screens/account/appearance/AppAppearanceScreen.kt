@@ -1,5 +1,10 @@
 package com.elozino.splitfy.screens.account.appearance
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.MaterialTheme
+import com.elozino.splitfy.ui.theme.ThemeMode
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
 
 import androidx.compose.foundation.background
@@ -113,8 +118,12 @@ fun AppAppearanceScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     viewModel: AccountViewModel = koinViewModel(),
+    appearance: AppearanceViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val themeMode by appearance.themeMode.collectAsStateWithLifecycle()
+    var isThemeSheetVisible by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
 
     Scaffold(
         topBar = {
@@ -123,57 +132,55 @@ fun AppAppearanceScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.background)
             )
-        }, containerColor = Color.White
+        }, containerColor = colors.background
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { viewModel.setThemeSheetVisible(true) }.padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Theme", fontWeight = FontWeight.Bold)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(state.selectedTheme, color = Color.Gray)
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { onNavigateToLanguage() }.padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("App Language", fontWeight = FontWeight.Bold)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(state.selectedLanguage, color = Color.Gray)
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray
-                    )
-                }
-            }
+            SettingRow(label = "Theme", value = themeMode.label, onClick = { isThemeSheetVisible = true })
+            SettingRow(label = "App Language", value = state.selectedLanguage, onClick = onNavigateToLanguage)
         }
     }
 
-    if (state.isThemeSheetVisible) {
+    if (isThemeSheetVisible) {
         ThemeSelectionSheet(
-            selectedTheme = state.selectedTheme,
-            onThemeSelected = viewModel::selectTheme,
-            onDismiss = { viewModel.setThemeSheetVisible(false) },
+            selected = themeMode,
+            onSelect = appearance::selectTheme,
+            onDismiss = { isThemeSheetVisible = false },
         )
     }
 }
 
+@Composable
+private fun SettingRow(label: String, value: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** Picking a theme applies it immediately, so the sheet itself previews the choice. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSelectionSheet(
-    selectedTheme: String,
-    onThemeSelected: (String) -> Unit,
+    selected: ThemeMode,
+    onSelect: (ThemeMode) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
+    val brand = AppTheme.colors
     ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState, containerColor = Color.White
+        onDismissRequest = onDismiss, sheetState = sheetState, containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
             Text(
@@ -184,43 +191,39 @@ fun ThemeSelectionSheet(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            val themes = listOf("System Default", "Light", "Dark")
-            themes.forEach { theme ->
+            ThemeMode.entries.forEach { mode ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onThemeSelected(theme) }.padding(vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { onSelect(mode) }.padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
-                        selected = selectedTheme == theme,
-                        onClick = { onThemeSelected(theme) },
-                        colors = RadioButtonDefaults.colors(selectedColor = primaryLight)
+                        selected = selected == mode,
+                        onClick = { onSelect(mode) },
+                        colors = RadioButtonDefaults.colors(selectedColor = brand.brand)
                     )
-                    Text(theme, fontWeight = FontWeight.Medium)
+                    Column {
+                        Text(mode.label, fontWeight = FontWeight.Medium)
+                        if (mode == ThemeMode.System) {
+                            Text(
+                                "Follows your phone's light or dark setting",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(100.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = brand.brand, contentColor = brand.onBrand)
             ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
-                ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
-                ) {
-                    Text("OK", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
+                Text("Done", fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(32.dp))
         }

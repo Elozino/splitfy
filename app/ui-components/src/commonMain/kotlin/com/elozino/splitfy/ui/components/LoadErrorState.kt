@@ -1,5 +1,7 @@
 package com.elozino.splitfy.ui.components
 
+import com.elozino.splitfy.ui.theme.AppTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -22,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.elozino.splitfy.ui.theme.primaryLight
 
 /**
  * Shown when a screen's first load fails and there is nothing to show. Without it
@@ -40,18 +41,18 @@ fun LoadErrorState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(Icons.Default.CloudOff, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(64.dp))
+        Icon(Icons.Default.CloudOff, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(64.dp))
         Spacer(Modifier.height(16.dp))
-        Text("Couldn't load this", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+        Text("Couldn't load this", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
         Spacer(Modifier.height(8.dp))
-        Text(message, color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center)
+        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center)
         Spacer(Modifier.height(20.dp))
         Button(
             onClick = onRetry,
             shape = RoundedCornerShape(100.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryLight),
+            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand),
         ) {
-            Text("Try again", color = Color.Black, fontWeight = FontWeight.Bold)
+            Text("Try again", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
         }
     }
 }
