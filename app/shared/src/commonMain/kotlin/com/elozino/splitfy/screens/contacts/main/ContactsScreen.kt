@@ -160,7 +160,7 @@ private fun ContactListScreen(
             FloatingActionButton(
                 onClick = onAddContactClick,
                 containerColor = AppTheme.colors.brand,
-                contentColor = MaterialTheme.colorScheme.onSurface,
+                contentColor = AppTheme.colors.onBrand,
                 shape = CircleShape,
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Contact")
@@ -485,7 +485,7 @@ private fun ContactDetailScreen(
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Pay", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                    Text("Pay", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -532,7 +532,7 @@ private fun ContactDetailScreen(
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Yes, Delete", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                    Text("Yes, Delete", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -615,7 +615,7 @@ private fun AddContactScreen(
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Add Contact", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                    Text("Add Contact", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -700,7 +700,7 @@ private fun SearchResultScreen(
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Add to Contact", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                    Text("Add to Contact", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
