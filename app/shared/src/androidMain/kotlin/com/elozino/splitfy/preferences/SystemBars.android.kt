@@ -8,14 +8,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 
 @Composable
-actual fun SystemBarsEffect(darkTheme: Boolean) {
+actual fun SystemBarsEffect(darkTheme: Boolean, darkStatusBarIcons: Boolean) {
     val context = LocalContext.current
     SideEffect {
         var current = context
         while (current is ContextWrapper && current !is Activity) current = current.baseContext
         val window = (current as? Activity)?.window ?: return@SideEffect
         WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = !darkTheme
+            isAppearanceLightStatusBars = darkStatusBarIcons
             isAppearanceLightNavigationBars = !darkTheme
         }
     }

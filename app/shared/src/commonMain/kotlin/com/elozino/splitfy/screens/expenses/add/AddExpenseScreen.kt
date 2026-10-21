@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.expenses.add
 
+import com.elozino.splitfy.preferences.statusBarBackground
 import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -468,6 +469,7 @@ private fun ReceiptCaptureScreen(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Black)
             )
         },
+        modifier = Modifier.statusBarBackground(Color.Black),
         containerColor = Color.Black
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
