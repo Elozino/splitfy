@@ -37,7 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.domain.model.Expense
 import com.elozino.splitfy.domain.model.ExpenseCategory
 import com.elozino.splitfy.domain.model.Money
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.elozino.splitfy.screens.expenses.add.label
@@ -88,10 +88,10 @@ fun ExpenseDetailScreen(
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(
@@ -103,7 +103,7 @@ fun ExpenseDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.4f)
-                    .background(primaryLight),
+                    .background(AppTheme.colors.brand),
                 contentAlignment = Alignment.Center
             ) {
                 if (expense == null) Column(
@@ -135,12 +135,12 @@ fun ExpenseDetailScreen(
                     Text(
                         text = expense?.incurredAt?.toString()?.replace('T', ' ')?.take(16).orEmpty(),
                         fontSize = 12.sp,
-                        color = Color.Black.copy(alpha = 0.7f)
+                        color = AppTheme.colors.onBrand.copy(alpha = 0.7f)
                     )
                     Text(
                         text = state.group?.name.orEmpty(),
                         fontSize = 12.sp,
-                        color = Color.Black.copy(alpha = 0.7f)
+                        color = AppTheme.colors.onBrand.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -149,7 +149,7 @@ fun ExpenseDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.6f)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(24.dp)
             ) {
                 if (expense == null) {
@@ -172,12 +172,12 @@ fun ExpenseDetailScreen(
 
                 expense?.notes?.let { notes ->
                     Spacer(modifier = Modifier.height(24.dp))
-                    Text("Notes", color = Color.Gray, fontSize = 12.sp)
+                    Text("Notes", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Text(notes, fontSize = 14.sp)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Split between", color = Color.Gray, fontSize = 12.sp)
+                Text("Split between", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(8.dp))
                 expense?.shares.orEmpty().forEach { share ->
                     val member = state.group?.members?.firstOrNull { it.userId == share.userId }
@@ -199,7 +199,7 @@ fun ExpenseDetailScreen(
                     enabled = expense?.receiptUrl != null && !isOpening,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
                     Text(
                         text = when {
@@ -207,7 +207,7 @@ fun ExpenseDetailScreen(
                             expense?.receiptUrl != null -> "View Receipt"
                             else -> "No receipt attached"
                         },
-                        color = Color.Black,
+                        color = AppTheme.colors.onBrand,
                         fontWeight = FontWeight.Bold
                     )
                 }

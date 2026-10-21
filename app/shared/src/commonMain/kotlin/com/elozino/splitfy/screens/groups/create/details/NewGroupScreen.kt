@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.domain.model.CurrencyCode
 import com.elozino.splitfy.domain.model.GroupCategory
-import com.elozino.splitfy.ui.theme.primaryLight
+import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.groups.create.shared.NewGroupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -50,10 +50,10 @@ fun NewGroupScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Row(
                 modifier = Modifier
@@ -65,18 +65,18 @@ fun NewGroupScreen(
                     onClick = onNavigateBack,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    border = BorderStroke(1.dp, primaryLight)
+                    border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
-                    Text("Cancel", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = { if (viewModel.validateDetails()) onContinue() },
                     enabled = state.canContinue,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(100.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryLight)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
-                    Text("Continue", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Continue", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -94,22 +94,22 @@ fun NewGroupScreen(
                         .fillMaxWidth()
                         .height(150.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFF5F5F5))
-                        .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                        .background(AppTheme.colors.field)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
                         .clickable { /* TODO: Pick Image */ },
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Upload, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(32.dp))
+                        Icon(Icons.Default.Upload, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(32.dp))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Upload Cover Image", color = Color.Gray, fontSize = 14.sp)
+                        Text("Upload Cover Image", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                     }
                     // Edit icon overlay - normally visible when image is set
                     Box(
-                       modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).size(32.dp).background(primaryLight, CircleShape),
+                       modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).size(32.dp).background(AppTheme.colors.brand, CircleShape),
                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Black)
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = AppTheme.colors.onBrand)
                     }
                 }
             }
@@ -122,11 +122,11 @@ fun NewGroupScreen(
                     value = title,
                     onValueChange = viewModel::onNameChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    placeholder = { Text("Title", color = Color.Gray) },
+                    placeholder = { Text("Title", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = Color(0xFFF5F5F5),
-                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedContainerColor = AppTheme.colors.field,
+                        focusedContainerColor = AppTheme.colors.field,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     )
@@ -141,11 +141,11 @@ fun NewGroupScreen(
                     value = description,
                     onValueChange = viewModel::onDescriptionChange,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 100.dp),
-                    placeholder = { Text("Description", color = Color.Gray) },
+                    placeholder = { Text("Description", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = Color(0xFFF5F5F5),
-                        focusedContainerColor = Color(0xFFF5F5F5),
+                        unfocusedContainerColor = AppTheme.colors.field,
+                        focusedContainerColor = AppTheme.colors.field,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     )
@@ -160,21 +160,21 @@ fun NewGroupScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth().clickable { viewModel.setCurrencyMenuVisible(true) },
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFF5F5F5)
+                        color = AppTheme.colors.field
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp).fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(selectedCurrency, color = Color.Black)
-                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray)
+                            Text(selectedCurrency, color = MaterialTheme.colorScheme.onSurface)
+                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     DropdownMenu(
                         expanded = state.isCurrencyMenuVisible,
                         onDismissRequest = { viewModel.setCurrencyMenuVisible(false) },
-                        modifier = Modifier.fillMaxWidth(0.8f).background(Color.White)
+                        modifier = Modifier.fillMaxWidth(0.8f).background(MaterialTheme.colorScheme.surface)
                     ) {
                         currencies.forEach { currency ->
                             DropdownMenuItem(
@@ -217,14 +217,14 @@ fun NewGroupScreen(
                             label = { Text(label) },
                             shape = RoundedCornerShape(100.dp),
                             colors = FilterChipDefaults.filterChipColors(
-                                containerColor = Color.White,
-                                selectedContainerColor = primaryLight,
-                                labelColor = Color.Black,
-                                selectedLabelColor = Color.Black
+                                containerColor = MaterialTheme.colorScheme.background,
+                                selectedContainerColor = AppTheme.colors.brand,
+                                labelColor = MaterialTheme.colorScheme.onSurface,
+                                selectedLabelColor = AppTheme.colors.onBrand
                             ),
                             border = FilterChipDefaults.filterChipBorder(
-                                borderColor = Color.LightGray.copy(alpha = 0.5f),
-                                selectedBorderColor = primaryLight,
+                                borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                selectedBorderColor = AppTheme.colors.brand,
                                 borderWidth = 1.dp,
                                 enabled = true,
                                 selected = isSelected
