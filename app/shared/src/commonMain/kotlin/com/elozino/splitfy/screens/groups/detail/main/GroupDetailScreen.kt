@@ -1,5 +1,11 @@
 package com.elozino.splitfy.screens.groups.detail.main
 
+import com.elozino.splitfy.ui.components.LoadErrorState
+import com.elozino.splitfy.ui.components.shimmer
+import com.elozino.splitfy.ui.components.SkeletonText
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
+import com.elozino.splitfy.ui.components.SkeletonBlock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -93,10 +99,14 @@ fun GroupDetailScreen(
                             onClose = { isSearching = false },
                         )
                     } else {
-                        Text(
-                            text = state.group?.name ?: "Group",
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (state.group == null && state.isLoading) {
+                            SkeletonBlock(Modifier.width(140.dp).height(20.dp), RoundedCornerShape(6.dp))
+                        } else {
+                            Text(
+                                text = state.group?.name ?: "Group",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -190,7 +200,7 @@ fun GroupDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(Color.LightGray)
+                    .then(if (state.isFirstLoad) Modifier.shimmer() else Modifier.background(Color.LightGray))
             ) {
                 state.group?.coverImageUrl?.let { url ->
                     AsyncImage(
@@ -253,7 +263,10 @@ fun GroupDetailScreen(
                 }
             }
 
-            when (state.selectedTab) {
+            val loadError = state.loadError
+            if (loadError != null && state.group == null) {
+                LoadErrorState(loadError, onRetry = viewModel::load)
+            } else when (state.selectedTab) {
                 0 -> ExpensesList(
                     state = state,
                     query = query,
@@ -327,9 +340,7 @@ private fun ExpensesList(
     onLoadMore: () -> Unit,
 ) {
     if (state.isLoading && state.expenses.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = primaryLight)
-        }
+        SkeletonList(count = 6, spacing = 16.dp)
         return
     }
 
@@ -447,6 +458,16 @@ private fun ExpenseItem(data: ExpenseItemData, onClick: () -> Unit) {
 
 @Composable
 private fun BalancesList(state: GroupDetailState, onSettleUp: () -> Unit) {
+    if (state.isFirstLoad) {
+        // A label and a bar per member, as the real balances are drawn.
+        SkeletonList(count = 4, spacing = 18.dp) { index ->
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SkeletonText(0.3f + (index % 3) * 0.1f, height = 12.dp)
+                SkeletonBlock(Modifier.fillMaxWidth(0.4f + (index % 4) * 0.15f).height(8.dp), RoundedCornerShape(4.dp))
+            }
+        }
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -553,6 +574,19 @@ private fun BalanceItem(
 
 @Composable
 private fun TotalsList(state: GroupDetailState) {
+    if (state.isFirstLoad) {
+        SkeletonList(count = 1) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                SkeletonText(0.25f, height = 16.dp)
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SkeletonBlock(Modifier.weight(1f).height(84.dp), RoundedCornerShape(16.dp))
+                    SkeletonBlock(Modifier.weight(1f).height(84.dp), RoundedCornerShape(16.dp))
+                }
+                SkeletonBlock(Modifier.fillMaxWidth().height(84.dp), RoundedCornerShape(16.dp))
+            }
+        }
+        return
+    }
     Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
         Text("All time", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(16.dp))
@@ -612,6 +646,12 @@ private fun GroupInfoList(
     onAddMember: () -> Unit,
     onRemoveMember: (String) -> Unit,
 ) {
+    if (state.isFirstLoad) {
+        SkeletonList(count = 5, spacing = 16.dp) { index ->
+            if (index == 0) SkeletonText(0.5f, height = 20.dp) else SkeletonListItem(avatarSize = 40.dp, trailing = false)
+        }
+        return
+    }
     Column(modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())) {
         Text(state.group?.name ?: "Group", fontWeight = FontWeight.Bold, fontSize = 20.sp)
         state.group?.description?.let { description ->

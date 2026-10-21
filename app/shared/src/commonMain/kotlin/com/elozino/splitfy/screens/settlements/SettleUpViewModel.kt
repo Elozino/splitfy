@@ -43,7 +43,7 @@ class SettleUpViewModel(
 
     fun load() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            _state.update { it.copy(isLoading = true, errorMessage = null, loadError = null) }
 
             val group = async { groupRepository.get(groupId) }
             val balances = async { groupRepository.balances(groupId) }
@@ -61,6 +61,7 @@ class SettleUpViewModel(
                     suggestedTransfers = balancesResult.getOrNull()?.suggestedTransfers
                         ?: current.suggestedTransfers,
                     settlements = settlementsResult.getOrNull() ?: current.settlements,
+                    loadError = groupResult.errorOrNull()?.userMessage()?.takeIf { current.group == null },
                     errorMessage = listOfNotNull(
                         groupResult.errorOrNull(),
                         balancesResult.errorOrNull(),

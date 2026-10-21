@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.transactions.shared
 
+import com.elozino.splitfy.ui.components.SkeletonListItem
+import com.elozino.splitfy.ui.components.SkeletonList
 import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
@@ -190,9 +192,7 @@ private fun TransactionContent(
         }
 
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            SkeletonList(count = 6, contentPadding = PaddingValues(vertical = 8.dp))
             return@Column
         }
 

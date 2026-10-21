@@ -63,7 +63,7 @@ class GroupDetailViewModel(
 
     fun load() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            _state.update { it.copy(isLoading = true, errorMessage = null, loadError = null) }
 
             val group = async { groupRepository.get(groupId) }
             val expenses = async { expenseRepository.list(groupId) }
@@ -88,6 +88,8 @@ class GroupDetailViewModel(
                         (balancesResult as? DataResult.Failure)?.error,
                     ).firstOrNull()?.userMessage(),
                     currentUserId = sessionManager.currentUserId(),
+                    loadError = (groupResult as? DataResult.Failure)?.error?.userMessage()
+                        ?.takeIf { current.group == null },
                 )
             }
         }

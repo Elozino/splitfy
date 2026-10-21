@@ -31,6 +31,8 @@ data class GroupDetailState(
     val currentUserId: String? = null,
     val selectedTab: Int = 0,
     val isOverflowMenuVisible: Boolean = false,
+    /** Why the group couldn't be loaded at all. Unlike [errorMessage], not cleared by the snackbar. */
+    val loadError: String? = null,
     val isAddMemberDialogVisible: Boolean = false,
     val memberEmail: String = "",
     val memberError: String? = null,
@@ -56,6 +58,9 @@ data class GroupDetailState(
         canManageMembers && member.role != GroupRole.OWNER && member.userId.value != currentUserId
 
     val hasMore: Boolean get() = nextCursor != null
+
+    /** Nothing to show yet: the screen draws placeholders rather than zeroes. */
+    val isFirstLoad: Boolean get() = isLoading && group == null
     fun yourBalance(userId: String?): Money? =
         balances.firstOrNull { it.userId.value == userId }?.net
     val currency get() = group?.currency ?: CurrencyCode.NGN

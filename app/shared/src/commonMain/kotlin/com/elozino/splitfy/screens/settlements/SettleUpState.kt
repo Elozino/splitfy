@@ -33,6 +33,8 @@ data class SettleUpState(
     val busySettlementIds: Set<String> = emptySet(),
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
+    /** Why the screen couldn't load at all. Unlike [errorMessage], not cleared by the snackbar. */
+    val loadError: String? = null,
 ) {
     val currency: CurrencyCode get() = group?.currency ?: CurrencyCode.NGN
 
