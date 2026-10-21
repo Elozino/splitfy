@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.scan.pay
 
+import com.elozino.splitfy.preferences.statusBarBackground
 import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.newClientRequestId
 import androidx.compose.foundation.background
@@ -171,6 +172,7 @@ private fun ScanQRCodeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
+        modifier = Modifier.statusBarBackground(Color.Black),
         containerColor = Color.Black
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -446,6 +448,7 @@ private fun ScanAmountScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                modifier = Modifier.statusBarBackground(AppTheme.colors.brand),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AppTheme.colors.brand)
             )
         }

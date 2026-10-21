@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.transactions.history
 
+import com.elozino.splitfy.preferences.statusBarBackground
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.layout.PaddingValues
 import com.elozino.splitfy.ui.components.SkeletonListItem
@@ -273,6 +274,7 @@ private fun TransactionDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                modifier = Modifier.statusBarBackground(AppTheme.colors.brand),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = AppTheme.colors.brand
                 )

@@ -43,3 +43,21 @@ Outlined buttons on a screen use `colorScheme.onSurface` text with a brand borde
 2. Look at it in both themes: switch in App Appearance, or flip the emulator's
    dark theme with System default selected.
 3. Watch for text on the yellow: it must stay dark in dark mode.
+
+## The status bar
+
+Its icons follow whatever is drawn behind it, not just the theme. A screen that
+puts something other than `colorScheme.background` under the status bar (an app
+bar in `AppTheme.colors.brand`, a full-screen camera) marks it:
+
+```kotlin
+CenterAlignedTopAppBar(
+    modifier = Modifier.statusBarBackground(AppTheme.colors.brand),
+    colors = TopAppBarDefaults.topAppBarColors(containerColor = AppTheme.colors.brand),
+    …
+)
+```
+
+The icons turn dark over light colours and light over dark ones, and go back to
+the theme once the marked element leaves the top of the screen. Unmarked screens
+need nothing.
