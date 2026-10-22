@@ -153,9 +153,9 @@ class AccountViewModel(
                         }
                     }
                 },
-                onFailure = { failure ->
+                onFailure = {
                     _state.update {
-                        it.copy(isSaving = false, errorMessage = failure.message ?: "That card was rejected")
+                        it.copy(isSaving = false, errorMessage = "That card was rejected. Check the details and try again.")
                     }
                 },
             )

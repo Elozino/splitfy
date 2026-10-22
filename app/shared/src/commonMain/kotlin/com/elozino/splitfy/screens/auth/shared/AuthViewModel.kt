@@ -196,7 +196,8 @@ class AuthViewModel(
     /** Hands a provider's ID token to the server; a cancelled sheet is not an error. */
     fun onSocialSignIn(provider: OAuthProvider, result: SocialSignInResult) {
         when (result) {
-            SocialSignInResult.Cancelled -> Unit
+            // A cancelled sheet is not an error, and an earlier attempt's error is stale.
+            SocialSignInResult.Cancelled -> _state.update { it.copy(errorMessage = null) }
             is SocialSignInResult.Failure -> _state.update { it.copy(errorMessage = result.message) }
             is SocialSignInResult.Success -> submitSignIn {
                 authRepository.signInWithProvider(
