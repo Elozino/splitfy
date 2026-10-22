@@ -55,7 +55,7 @@ fun HelpSupportScreen(
         val items = listOf(
             "FAQ" to onNavigateToFAQ,
             "Contact Support" to onNavigateToContactSupport,
-            "Send Feedback" to { sendMail("splitfy feedback"); Unit },
+            "Send Feedback" to { sendMail("Splitfy feedback"); Unit },
             "Privacy Policy" to onNavigateToPrivacyPolicy,
             "Terms of Service" to onNavigateToTermsOfService,
         )

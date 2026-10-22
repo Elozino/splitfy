@@ -135,7 +135,7 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
             Spacer(modifier = Modifier.height(40.dp))
             Text("Congratulations!", fontWeight = FontWeight.Bold, fontSize = 28.sp)
             Text(
-                "Welcome to splitfy Premium!",
+                "Welcome to Splitfy Premium!",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp),
                 fontSize = 16.sp
@@ -163,7 +163,7 @@ fun UpgradeSuccessScreen(onDone: () -> Unit) {
 
             Spacer(modifier = Modifier.height(40.dp))
             Text(
-                "Enjoy an ad-free experience, priority support, and much more throughout the year. Thank you for choosing to elevate your splitfy experience.",
+                "Enjoy an ad-free experience, priority support, and much more throughout the year. Thank you for choosing to elevate your Splitfy experience.",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

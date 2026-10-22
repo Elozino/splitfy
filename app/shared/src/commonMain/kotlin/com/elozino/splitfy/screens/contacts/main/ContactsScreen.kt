@@ -405,7 +405,7 @@ private fun SearchContactScreen(
                     if (directoryResults.isNotEmpty()) {
                         item {
                             Text(
-                                text = "On splitfy",
+                                text = "On Splitfy",
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
@@ -499,7 +499,7 @@ private fun ContactDetailScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Text(contact.name, fontWeight = FontWeight.Bold, fontSize = 24.sp)
             Text(contact.email, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-            Text("splitfy Account", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            Text("Splitfy Account", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             
             Spacer(modifier = Modifier.height(32.dp))
             TextButton(onClick = onDeleteClick) {
@@ -714,7 +714,7 @@ private fun SearchResultScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Text("Brooklyn Simmons", fontWeight = FontWeight.Bold, fontSize = 24.sp)
             Text("Ask them for the email they signed up with", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-            Text("splitfy Account", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            Text("Splitfy Account", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             
             Spacer(modifier = Modifier.height(32.dp))
             Text("This contact is ready to split bills with you!", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)

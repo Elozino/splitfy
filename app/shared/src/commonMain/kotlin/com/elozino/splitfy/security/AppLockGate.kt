@@ -83,7 +83,7 @@ private fun LockScreen(onUnlocked: () -> Unit) {
         }
         prompting = true
         scope.launch {
-            when (val result = authenticator.authenticate("Confirm it's you to open splitfy")) {
+            when (val result = authenticator.authenticate("Confirm it's you to open Splitfy")) {
                 DeviceAuthResult.Success -> onUnlocked()
                 DeviceAuthResult.Cancelled -> message = null
                 is DeviceAuthResult.Failed -> message = result.message
@@ -107,7 +107,7 @@ private fun LockScreen(onUnlocked: () -> Unit) {
                 modifier = Modifier.size(64.dp),
             )
             Spacer(Modifier.height(24.dp))
-            Text("splitfy is locked", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text("Splitfy is locked", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
             Text(
                 message ?: "Unlock to continue where you left off.",

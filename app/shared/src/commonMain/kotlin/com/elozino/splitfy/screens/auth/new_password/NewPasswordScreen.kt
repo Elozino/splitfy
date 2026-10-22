@@ -93,7 +93,7 @@ fun NewPasswordScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "You're almost there! Please create a new password for your splitfy account.",
+                text = "You're almost there! Please create a new password for your Splitfy account.",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 24.sp

@@ -110,6 +110,6 @@ internal suspend fun UploadRepository.requireIssuedUpload(
     field: String,
 ) {
     if (!ObjectKeys.belongsTo(key, groupId) || !wasIssued(key, groupId, purpose)) {
-        throw AppException.Validation(listOf(FieldError(field, "Upload the file through splitfy, then attach it")))
+        throw AppException.Validation(listOf(FieldError(field, "Upload the file through Splitfy, then attach it")))
     }
 }

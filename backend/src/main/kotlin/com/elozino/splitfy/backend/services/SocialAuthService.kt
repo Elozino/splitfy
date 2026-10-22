@@ -95,7 +95,7 @@ class SocialAuthService(
         when (identities.findUserId(provider, identity.subject)) {
             userId -> return linkedAccounts(userId)
             null -> Unit
-            else -> throw AppException.Conflict("That ${provider.label} account is already linked to another splitfy account")
+            else -> throw AppException.Conflict("That ${provider.label} account is already linked to another Splitfy account")
         }
         if (identities.listForUser(userId).any { it.provider == provider }) {
             throw AppException.Conflict("Unlink your current ${provider.label} account first")
@@ -104,7 +104,7 @@ class SocialAuthService(
         identities.link(provider, identity.subject, userId, identity.email?.takeIf { identity.emailVerified })
         // Lost a race with another account linking the same identity: insertIgnore kept theirs.
         if (identities.findUserId(provider, identity.subject) != userId) {
-            throw AppException.Conflict("That ${provider.label} account is already linked to another splitfy account")
+            throw AppException.Conflict("That ${provider.label} account is already linked to another Splitfy account")
         }
         return linkedAccounts(userId)
     }

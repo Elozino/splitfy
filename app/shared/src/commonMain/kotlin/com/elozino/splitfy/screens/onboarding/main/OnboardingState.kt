@@ -23,7 +23,7 @@ data class OnboardingState(
 val onboardingSlides = listOf(
     OnboardingState(
         title = "Split the cost.\nKeep the vibe.",
-        subtitle = "Create a group, add expenses, and let splitfy keep every shared cost crystal clear.",
+        subtitle = "Create a group, add expenses, and let Splitfy keep every shared cost crystal clear.",
         badge = "Everyone's in sync",
         imageDescription = "A preview of shared expense groups",
         image = UiRes.drawable.onboarding_groups,
@@ -39,7 +39,7 @@ val onboardingSlides = listOf(
         title = "Settle up.\nMove on.",
         subtitle = "See what you owe and close the loop in a few taps—simple, quick, and drama-free.",
         badge = "All settled",
-        imageDescription = "A preview of the splitfy wallet",
+        imageDescription = "A preview of the Splitfy wallet",
         image = UiRes.drawable.onboarding_wallet,
     )
 )

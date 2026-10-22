@@ -70,7 +70,7 @@ private class AndroidDeviceAuthenticator(private val context: Context) : DeviceA
             )
             prompt.authenticate(
                 BiometricPrompt.PromptInfo.Builder()
-                    .setTitle("Unlock splitfy")
+                    .setTitle("Unlock Splitfy")
                     .setSubtitle(reason)
                     .setAllowedAuthenticators(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)
                     .build(),

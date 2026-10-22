@@ -33,7 +33,7 @@ class ResendOtpNotifier(
     }
 
     override suspend fun sendPasswordResetCode(email: String, code: String) =
-        send(email, "Your splitfy code: $code", OtpEmail.PasswordReset, code)
+        send(email, "Your Splitfy code: $code", OtpEmail.PasswordReset, code)
 
     override suspend fun sendEmailVerificationCode(email: String, code: String) =
         send(email, "Confirm your email: $code", OtpEmail.Verification, code)
@@ -42,7 +42,7 @@ class ResendOtpNotifier(
         send(email, "Confirm your new email: $code", OtpEmail.EmailChange, code)
 
     override suspend fun sendEmailChangedNotice(oldEmail: String, newEmail: String) =
-        deliver(oldEmail, "Your splitfy email was changed", "EmailChanged", EmailChangedNotice.text(newEmail), EmailChangedNotice.html(newEmail))
+        deliver(oldEmail, "Your Splitfy email was changed", "EmailChanged", EmailChangedNotice.text(newEmail), EmailChangedNotice.html(newEmail))
 
     private suspend fun send(email: String, subject: String, kind: OtpEmail, code: String) =
         deliver(email, subject, kind.name, kind.text(code), kind.html(code))
@@ -86,22 +86,22 @@ class ResendOtpNotifier(
 /** The code emails. Plain enough to survive any client, including text-only ones. */
 internal enum class OtpEmail(private val heading: String, private val ignoreLine: String) {
     PasswordReset(
-        heading = "Reset your splitfy password",
+        heading = "Reset your Splitfy password",
         ignoreLine = "If you didn't ask to reset your password, you can ignore this email.",
     ),
     Verification(
         heading = "Confirm your email",
-        ignoreLine = "If you didn't create a splitfy account, you can ignore this email.",
+        ignoreLine = "If you didn't create a Splitfy account, you can ignore this email.",
     ),
     EmailChange(
         heading = "Confirm your new email",
-        ignoreLine = "If you didn't ask to move a splitfy account to this address, you can ignore this email.",
+        ignoreLine = "If you didn't ask to move a Splitfy account to this address, you can ignore this email.",
     );
 
     fun text(code: String) = """
         |$heading
         |
-        |Your splitfy code is $code
+        |Your Splitfy code is $code
         |
         |It expires soon. $ignoreLine
     """.trimMargin()
@@ -118,14 +118,14 @@ internal enum class OtpEmail(private val heading: String, private val ignoreLine
 
 /** Sent to the old address after a change, so a hijacked session can't move the account silently. */
 internal object EmailChangedNotice {
-    private const val HEADING = "Your splitfy email was changed"
+    private const val HEADING = "Your Splitfy email was changed"
     private const val WARNING =
-        "If you didn't make this change, contact splitfy support straight away so we can secure your account."
+        "If you didn't make this change, contact Splitfy support straight away so we can secure your account."
 
     fun text(newEmail: String) = """
         |$HEADING
         |
-        |Your splitfy account now signs in with $newEmail, and this address will no longer receive its emails.
+        |Your Splitfy account now signs in with $newEmail, and this address will no longer receive its emails.
         |
         |$WARNING
     """.trimMargin()
@@ -133,7 +133,7 @@ internal object EmailChangedNotice {
     fun html(newEmail: String) = """
         <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:420px;margin:0 auto;padding:24px;color:#111">
           <h1 style="font-size:20px;margin:0 0 16px">$HEADING</h1>
-          <p style="margin:0 0 16px;color:#444">Your splitfy account now signs in with <strong>${newEmail.escapeHtml()}</strong>, and this address will no longer receive its emails.</p>
+          <p style="margin:0 0 16px;color:#444">Your Splitfy account now signs in with <strong>${newEmail.escapeHtml()}</strong>, and this address will no longer receive its emails.</p>
           <p style="margin:0;color:#777;font-size:13px">$WARNING</p>
         </div>
     """.trimIndent()
