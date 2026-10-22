@@ -42,7 +42,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.elozino.splitfy.screens.expenses.add.label
 import com.elozino.splitfy.screens.groups.detail.main.DetailRow
-import com.elozino.splitfy.screens.groups.detail.main.emoji
+import com.elozino.splitfy.screens.expenses.emoji
 import com.elozino.splitfy.screens.groups.detail.shared.GroupDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -49,8 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.ActivityFilter
-import com.elozino.splitfy.FeatureFlags
-import com.elozino.splitfy.api.dto.DebtEntry
 import com.elozino.splitfy.ui.components.SearchField
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -226,29 +224,6 @@ fun ActivityScreen(
     }
 }
 
-/**
- * Turns a debt line into the row model, phrased from the viewer's point of view.
- */
-private fun DebtEntry.toItem(currentUserId: String?): ActivityItemData {
-    val youArePayer = fromUserId.value == currentUserId
-    val youArePayee = toUserId.value == currentUserId
-    return ActivityItemData(
-        name = if (youArePayer) "$fromName (You)" else fromName,
-        status = "owes",
-        target = if (youArePayee) "$toName (You)" else toName,
-        amount = amount.toPlainString() + " " + amount.currency.code,
-        actionLabel = when {
-            isSettled -> "Paid"
-            !FeatureFlags.WALLET -> "Settle"
-            youArePayer -> "Pay"
-            else -> "Request"
-        },
-        isOwed = youArePayee,
-        isCompleted = isSettled,
-        groupId = groupId.value,
-    )
-}
-
 @Composable
 fun ActivityItem(data: ActivityItemData, onActionClick: () -> Unit = {}) {
     Row(
@@ -273,29 +248,38 @@ fun ActivityItem(data: ActivityItemData, onActionClick: () -> Unit = {}) {
 
         Text(
             text = data.amount,
-            color = if (data.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else AppTheme.colors.negative,
+            color = when {
+                data.isCompleted -> MaterialTheme.colorScheme.onSurfaceVariant
+                data.direction == DebtDirection.OWED_TO_YOU -> AppTheme.colors.positive
+                data.direction == DebtDirection.YOU_OWE -> AppTheme.colors.negative
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
-        Button(
-            onClick = onActionClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (data.isCompleted) Color.Transparent else AppTheme.colors.brand,
-                contentColor = if (data.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else AppTheme.colors.onBrand
-            ),
-            shape = RoundedCornerShape(20.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-            modifier = Modifier
-                .height(32.dp)
-                .then(
-                    if (data.isCompleted) Modifier.background(Color.Transparent).padding(0.dp) else Modifier
+        // Only the payer or payee can settle a debt, so others see the amount alone.
+        val actionLabel = data.actionLabel
+        if (actionLabel != null) {
+            Button(
+                onClick = onActionClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (data.isCompleted) Color.Transparent else AppTheme.colors.brand,
+                    contentColor = if (data.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else AppTheme.colors.onBrand
                 ),
-            border = if (data.isCompleted) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant) else null,
-            elevation = null
-        ) {
-            Text(text = data.actionLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                shape = RoundedCornerShape(20.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .height(32.dp)
+                    .then(
+                        if (data.isCompleted) Modifier.background(Color.Transparent).padding(0.dp) else Modifier
+                    ),
+                border = if (data.isCompleted) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant) else null,
+                elevation = null
+            ) {
+                Text(text = actionLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
