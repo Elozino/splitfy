@@ -34,8 +34,8 @@ The app's screens are not in git, so `main` does not compile for anyone else.
 
 ## Phase 1 — PostgreSQL in tests and production config · M
 
-Backend tests currently run on H2 with Flyway **disabled** (`backend/src/test/.../TestSupport.kt`),
-so the real migrations are never exercised.
+Backend tests used to run on H2 with Flyway **disabled**, so the real migrations were never
+exercised. They now run every migration against embedded PostgreSQL (`backend/src/test/.../TestSupport.kt`).
 
 - [x] Boot tests against real PostgreSQL (`io.zonky.test:embedded-postgres`, no Docker) with Flyway **enabled**; one server per test run, one database per test class.
 - [x] Remove the H2 dependency.

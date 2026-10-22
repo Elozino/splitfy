@@ -34,6 +34,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 class WalletAndTransferTest {
 
@@ -181,6 +183,59 @@ class WalletAndTransferTest {
     }
 
     @Test
+    fun `an approval the payer cannot afford leaves the request pending`() = testApplication {
+        useTestConfig(database)
+        val client = jsonClient()
+        val ada = client.register("ada@example.com")
+        val bode = client.register("bode@example.com")
+        val method = client.addCard(bode.token)
+        val request = client.requestMoney(from = bode, by = ada, minorUnits = 75_000)
+
+        val tooPoor = client.post(ApiRoutes.Transfers.approve(request.id)) { bearerAuth(bode.token) }
+        assertEquals(HttpStatusCode.BadRequest, tooPoor.status)
+        assertEquals(TransferStatus.PENDING, client.transferStatus(ada.token, request.id))
+
+        client.topUp(bode.token, method.id, 100_000)
+        val approved = client.post(ApiRoutes.Transfers.approve(request.id)) { bearerAuth(bode.token) }
+        assertEquals(HttpStatusCode.OK, approved.status)
+        assertEquals(75_000L, client.wallet(ada.token).balance.amount)
+        assertEquals(25_000L, client.wallet(bode.token).balance.amount)
+    }
+
+    /**
+     * Bode approves while Ada withdraws the request. Exactly one wins, and the money
+     * only moves if the approval did — never a CANCELLED record with funds gone.
+     */
+    @Test
+    fun `a simultaneous approve and cancel has exactly one winner`() = testApplication {
+        useTestConfig(database)
+        val client = jsonClient()
+        val ada = client.register("ada@example.com")
+        val bode = client.register("bode@example.com")
+        val method = client.addCard(bode.token)
+        client.topUp(bode.token, method.id, 1_000_000)
+
+        var moved = 0L
+        repeat(10) {
+            val request = client.requestMoney(from = bode, by = ada, minorUnits = 10_000)
+            val (approve, cancel) = coroutineScope {
+                val approve = async { client.post(ApiRoutes.Transfers.approve(request.id)) { bearerAuth(bode.token) } }
+                val cancel = async { client.post(ApiRoutes.Transfers.decline(request.id)) { bearerAuth(ada.token) } }
+                approve.await() to cancel.await()
+            }
+
+            assertEquals(setOf(HttpStatusCode.OK, HttpStatusCode.Conflict), setOf(approve.status, cancel.status))
+            val approvedWon = approve.status == HttpStatusCode.OK
+            if (approvedWon) moved += 10_000
+            assertEquals(
+                if (approvedWon) TransferStatus.COMPLETED else TransferStatus.CANCELLED,
+                client.transferStatus(ada.token, request.id),
+            )
+            assertEquals(moved, client.wallet(ada.token).balance.amount)
+        }
+    }
+
+    @Test
     fun `a full card number is refused in place of a provider token`() = testApplication {
         useTestConfig(database)
         val client = jsonClient()
@@ -297,4 +352,15 @@ class WalletAndTransferTest {
 
     private suspend fun HttpClient.wallet(token: String): Wallet =
         get(ApiRoutes.Wallet.BASE) { bearerAuth(token) }.body()
+
+    /** [by] asks [from] for money; nothing moves until [from] approves. */
+    private suspend fun HttpClient.requestMoney(from: Account, by: Account, minorUnits: Long): Transfer =
+        post(ApiRoutes.Transfers.BASE) {
+            bearerAuth(by.token)
+            contentType(ContentType.Application.Json)
+            setBody(CreateTransferRequest(TransferKind.REQUEST, from.user.id, Money(minorUnits, ngn)))
+        }.body()
+
+    private suspend fun HttpClient.transferStatus(token: String, id: String): TransferStatus =
+        get(ApiRoutes.Transfers.BASE) { bearerAuth(token) }.body<List<Transfer>>().single { it.id == id }.status
 }

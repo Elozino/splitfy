@@ -91,8 +91,8 @@ class SettlementService(
         if (settlement.toUserId.value != callerId.toString()) {
             throw AppException.Forbidden("Only the recipient can confirm this payment")
         }
-        val confirmed = settlements.updateStatus(settlementId, SettlementStatus.CONFIRMED)
-            ?: throw AppException.NotFound("Settlement")
+        val confirmed = settlements.transition(settlementId, SettlementStatus.PENDING, SettlementStatus.CONFIRMED)
+            ?: throw lostRace(settlementId)
         val group = groupService.get(groupId, callerId)
         tell(
             confirmed.fromUserId, group,
@@ -104,15 +104,19 @@ class SettlementService(
 
     suspend fun cancel(groupId: UUID, settlementId: UUID, callerId: UUID): Settlement {
         val settlement = load(groupId, settlementId, callerId)
-        if (settlement.status == SettlementStatus.CONFIRMED) {
-            throw AppException.Conflict("A confirmed settlement cannot be cancelled")
-        }
         val parties = setOf(settlement.fromUserId.value, settlement.toUserId.value)
         if (callerId.toString() !in parties) {
             throw AppException.Forbidden("Only the payer or the recipient can cancel this payment")
         }
-        val cancelled = settlements.updateStatus(settlementId, SettlementStatus.CANCELLED)
-            ?: throw AppException.NotFound("Settlement")
+        // A retried cancel is a no-op rather than an error, and doesn't notify twice.
+        if (settlement.status == SettlementStatus.CANCELLED) return settlement
+        if (settlement.status == SettlementStatus.CONFIRMED) {
+            throw AppException.Conflict("A confirmed settlement cannot be cancelled")
+        }
+        val cancelled = settlements.transition(settlementId, SettlementStatus.PENDING, SettlementStatus.CANCELLED)
+            ?: return settlements.findById(settlementId)
+                ?.takeIf { it.status == SettlementStatus.CANCELLED }
+                ?: throw lostRace(settlementId)
         val other = if (cancelled.fromUserId.value == callerId.toString()) cancelled.toUserId else cancelled.fromUserId
         val group = groupService.get(groupId, callerId)
         tell(
@@ -121,6 +125,12 @@ class SettlementService(
             "${cancelled.amount.display()} in ${group.name} was cancelled.",
         )
         return cancelled
+    }
+
+    /** Another request changed the status between our read and our conditional write. */
+    private suspend fun lostRace(settlementId: UUID): AppException {
+        val current = settlements.findById(settlementId) ?: return AppException.NotFound("Settlement")
+        return AppException.Conflict("This settlement is already ${current.status.name.lowercase()}")
     }
 
     private suspend fun nameOf(userId: UUID): String = users.findById(userId)?.displayName ?: "Someone"

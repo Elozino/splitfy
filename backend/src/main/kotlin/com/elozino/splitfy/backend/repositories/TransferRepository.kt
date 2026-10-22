@@ -64,12 +64,21 @@ class TransferRepository {
             .map { it.toTransfer() }
     }
 
-    suspend fun updateStatus(id: UUID, status: TransferStatus, completedAt: Instant?): Transfer? = dbQuery {
-        TransfersTable.update({ TransfersTable.id eq id }) {
-            it[TransfersTable.status] = status
+    /**
+     * Moves a transfer from [from] to [to] in one conditional UPDATE, so a concurrent
+     * approve and decline can't both win. Returns null when the row was no longer in [from].
+     */
+    suspend fun transition(
+        id: UUID,
+        from: TransferStatus,
+        to: TransferStatus,
+        completedAt: Instant?,
+    ): Transfer? = dbQuery {
+        val updated = TransfersTable.update({ (TransfersTable.id eq id) and (TransfersTable.status eq from) }) {
+            it[status] = to
             it[TransfersTable.completedAt] = completedAt?.toJava()
         }
-        load(id)
+        if (updated == 0) null else load(id)
     }
 
     private fun load(id: UUID): Transfer? =

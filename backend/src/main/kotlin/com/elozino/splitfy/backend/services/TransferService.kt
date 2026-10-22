@@ -110,12 +110,23 @@ class TransferService(
             throw AppException.Forbidden("Only the person being asked can approve this request")
         }
 
+        // Claim the request before moving money, so a decline racing this approval
+        // can't leave a DECLINED record whose funds actually moved.
+        val completed = transfers.transition(transferId, TransferStatus.PENDING, TransferStatus.COMPLETED, Clock.System.now())
+            ?: throw lostRace(transferId)
+
         val payerId = UUID.fromString(transfer.fromUserId.value)
         val payeeId = UUID.fromString(transfer.toUserId.value)
-        settle(transfer, payerId, payeeId, transfer.amount, transfer.fromName, transfer.toName)
-
-        return transfers.updateStatus(transferId, TransferStatus.COMPLETED, Clock.System.now())
-            ?: throw AppException.NotFound("Transfer")
+        try {
+            settle(transfer, payerId, payeeId, transfer.amount, transfer.fromName, transfer.toName)
+        } catch (e: Exception) {
+            // Usually an insufficient balance, which fails the debit before anything moves.
+            // Hand the request back; the ledger writes are keyed per transfer, so a later
+            // approval won't repeat any leg that did go through.
+            transfers.transition(transferId, TransferStatus.COMPLETED, TransferStatus.PENDING, null)
+            throw e
+        }
+        return completed
     }
 
     suspend fun decline(callerId: UUID, transferId: UUID): Transfer {
@@ -128,7 +139,13 @@ class TransferService(
         if (!isPayer && !isRequester) throw AppException.Forbidden("You are not part of this request")
 
         val status = if (isPayer) TransferStatus.DECLINED else TransferStatus.CANCELLED
-        return transfers.updateStatus(transferId, status, null) ?: throw AppException.NotFound("Transfer")
+        return transfers.transition(transferId, TransferStatus.PENDING, status, null) ?: throw lostRace(transferId)
+    }
+
+    /** Another request changed the status between our read and our conditional write. */
+    private suspend fun lostRace(transferId: UUID): AppException {
+        val current = transfers.findById(transferId) ?: return AppException.NotFound("Transfer")
+        return AppException.Conflict("This request is already ${current.status.name.lowercase()}")
     }
 
     /**

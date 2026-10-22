@@ -197,12 +197,10 @@ These are deliberate omissions, not oversights:
 5. **QR decoding.** The scan flow captures a frame and confirms the recipient against
    real contacts before paying, because the project has no QR decoder dependency yet.
    Paying the wrong person is unrecoverable, so the confirmation stays either way.
-6. **Receipt upload.** An expense carries a `receiptUrl`, but there is no object-store
-   upload endpoint behind it yet.
-7. **Multi-currency conversion.** Balances are computed per currency and never summed
+6. **Multi-currency conversion.** Balances are computed per currency and never summed
    across them. Cross-currency groups need an FX rate source before that changes.
-8. **Subscription billing.** The upgrade-plan screens are presentational; there is no
+7. **Subscription billing.** The upgrade-plan screens are presentational; there is no
    entitlement model on the server.
-9. **Migration tests.** Server tests build the schema from the Exposed definitions, so
-   they verify behaviour rather than the Flyway scripts. Running the suite against the
-   Postgres container in CI would close that gap.
+8. **Invite install handoff.** Someone without the app installs it and then has to
+   reopen the invite link; the invite isn't carried through the store. See
+   [GROUP_INVITES.md](GROUP_INVITES.md).
