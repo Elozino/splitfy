@@ -171,7 +171,7 @@ fun UpgradePlanScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    "splitfy Premium", fontWeight = FontWeight.Bold, color = AppTheme.colors.brand, fontSize = 18.sp
+                    "Splitfy Premium", fontWeight = FontWeight.Bold, color = AppTheme.colors.brand, fontSize = 18.sp
                 )
 
                 Row(

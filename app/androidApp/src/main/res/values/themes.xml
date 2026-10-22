@@ -11,5 +11,17 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
+    <!--
+        The launch splash on every Android version (core-splashscreen backports the
+        Android 12 one): the logo on the brand yellow, over the window background.
+        Swapped for Theme.Splitfy as soon as MainActivity starts.
+    -->
+    <style name="Theme.Splitfy.Starting" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@color/splitfy_window_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splitfy_brand</item>
+        <item name="postSplashScreenTheme">@style/Theme.Splitfy</item>
+    </style>
+
     <color name="splitfy_window_background">#FFFFFFFF</color>
 </resources>

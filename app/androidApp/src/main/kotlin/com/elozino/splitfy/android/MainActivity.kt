@@ -6,6 +6,7 @@ import com.elozino.splitfy.invites.InviteLinks
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.elozino.splitfy.App
@@ -19,6 +20,8 @@ import com.elozino.splitfy.push.PushNotifications
 class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Before super: swaps the launch splash (Theme.Splitfy.Starting) for the app theme.
+        installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) {

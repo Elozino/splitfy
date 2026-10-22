@@ -1,5 +1,6 @@
 package com.elozino.splitfy.social
 
+import android.util.Log
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -71,7 +72,8 @@ private class AndroidSocialSignIn(
         } catch (_: NoCredentialException) {
             SocialSignInResult.Failure("Add a Google account to this device to continue with Google")
         } catch (e: GetCredentialException) {
-            SocialSignInResult.Failure("Google sign-in failed: ${e.message ?: e.type}")
+            Log.w("SocialSignIn", "Google sign-in failed: ${e.type}", e)
+            SocialSignInResult.Failure("We couldn't sign you in with Google. Please try again.")
         } catch (_: GoogleIdTokenParsingException) {
             SocialSignInResult.Failure("Google returned a token we couldn't read")
         }

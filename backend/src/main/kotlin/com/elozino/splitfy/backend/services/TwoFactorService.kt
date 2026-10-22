@@ -185,7 +185,7 @@ class TwoFactorService(
         code.lowercase().filter { it.isLetterOrDigit() }
 
     companion object {
-        const val ISSUER = "splitfy"
+        const val ISSUER = "Splitfy"
         const val MAX_FAILURES = 5
         const val MAX_CHALLENGE_ATTEMPTS = 5
         const val RECOVERY_CODE_COUNT = 10

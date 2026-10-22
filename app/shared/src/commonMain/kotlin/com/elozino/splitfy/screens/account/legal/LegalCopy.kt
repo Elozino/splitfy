@@ -22,20 +22,20 @@ object LegalCopy {
     val terms: List<LegalSection> = listOf(
         LegalSection(
             "1. About these terms",
-            "These terms govern your use of the splitfy app and service (\"splitfy\", \"we\", \"us\"), " +
+            "These terms govern your use of the Splitfy app and service (\"Splitfy\", \"we\", \"us\"), " +
                 "operated by [legal entity name and registered address]. By creating an account or using " +
-                "splitfy you agree to them. If you do not agree, do not use splitfy.",
+                "Splitfy you agree to them. If you do not agree, do not use Splitfy.",
         ),
         LegalSection(
-            "2. What splitfy does",
-            "splitfy helps groups of people keep track of shared expenses and work out who owes whom. " +
-                "splitfy is a record-keeping tool: it does not hold, transfer or receive money on your " +
-                "behalf. When you \"settle up\", you pay the other person outside splitfy (for example by " +
+            "2. What Splitfy does",
+            "Splitfy helps groups of people keep track of shared expenses and work out who owes whom. " +
+                "Splitfy is a record-keeping tool: it does not hold, transfer or receive money on your " +
+                "behalf. When you \"settle up\", you pay the other person outside Splitfy (for example by " +
                 "bank transfer or cash) and record that payment in the app.",
         ),
         LegalSection(
             "3. Your account",
-            "You must be at least [13/16] years old to use splitfy. Give accurate information, keep your " +
+            "You must be at least [13/16] years old to use Splitfy. Give accurate information, keep your " +
                 "password private, and tell us at the support address below if you think someone else has " +
                 "accessed your account. You are responsible for activity on your account.",
         ),
@@ -48,14 +48,14 @@ object LegalCopy {
         ),
         LegalSection(
             "5. Balances are not a debt we enforce",
-            "Balances shown in splitfy are calculated from what members record. They are not a statement " +
+            "Balances shown in Splitfy are calculated from what members record. They are not a statement " +
                 "of a legal debt, and we do not collect, guarantee or enforce payments between members. " +
                 "Check amounts before you pay anyone, and settle disagreements directly with the people " +
                 "involved.",
         ),
         LegalSection(
             "6. Acceptable use",
-            "Do not use splitfy to break the law, to harass anyone, to send spam, or to interfere with " +
+            "Do not use Splitfy to break the law, to harass anyone, to send spam, or to interfere with " +
                 "the service (for example by probing, scraping or overloading it). We may suspend or close " +
                 "accounts that do.",
         ),
@@ -68,7 +68,7 @@ object LegalCopy {
         ),
         LegalSection(
             "8. Availability and changes",
-            "We work to keep splitfy available and accurate but provide it \"as is\", without warranties " +
+            "We work to keep Splitfy available and accurate but provide it \"as is\", without warranties " +
                 "of any kind, to the extent the law allows. We may change or discontinue features. If we " +
                 "change these terms in a way that matters, we will tell you in the app before the change " +
                 "takes effect.",
@@ -89,7 +89,7 @@ object LegalCopy {
     val privacy: List<LegalSection> = listOf(
         LegalSection(
             "1. Who we are",
-            "splitfy is operated by [legal entity name and registered address], the controller of the " +
+            "Splitfy is operated by [legal entity name and registered address], the controller of the " +
                 "personal data described here. Contact us about privacy at ${SupportContact.EMAIL}.",
         ),
         LegalSection(
@@ -109,7 +109,7 @@ object LegalCopy {
         ),
         LegalSection(
             "3. How we use it",
-            "To provide splitfy (show your groups and balances, sync between your devices, send the " +
+            "To provide Splitfy (show your groups and balances, sync between your devices, send the " +
                 "notifications and emails you need such as verification and password-reset codes), to keep " +
                 "it secure, to fix problems, and to meet legal obligations. We do not sell your data and " +
                 "we do not use it for advertising.",
@@ -118,7 +118,7 @@ object LegalCopy {
             "4. Who can see it",
             "Members of a group see your name, photo and everything recorded in that group. Someone can " +
                 "find you to add to a group only by your exact, verified email address. We share data with " +
-                "service providers that run parts of splitfy for us, under contracts that limit their use " +
+                "service providers that run parts of Splitfy for us, under contracts that limit their use " +
                 "of it: our hosting and database provider [name], our email provider (Resend), our " +
                 "crash-reporting provider (Sentry, when enabled), and Google and Apple for sign-in and push " +
                 "notifications. We may disclose data when the law requires it.",
@@ -147,13 +147,13 @@ object LegalCopy {
         ),
         LegalSection(
             "8. Security",
-            "Connections to splitfy are encrypted, passwords are hashed, and sign-in sessions can be " +
+            "Connections to Splitfy are encrypted, passwords are hashed, and sign-in sessions can be " +
                 "revoked. No system is perfectly secure; if we learn of a breach affecting your data we " +
                 "will tell you as the law requires.",
         ),
         LegalSection(
             "9. Children",
-            "splitfy is not intended for children under [13/16], and we do not knowingly collect their data.",
+            "Splitfy is not intended for children under [13/16], and we do not knowingly collect their data.",
         ),
         LegalSection(
             "10. Changes",
@@ -167,19 +167,19 @@ object LegalCopy {
     val faqs: List<FaqEntry> = listOf(
         FaqEntry(
             "General",
-            "What is splitfy?",
-            "splitfy keeps track of shared costs — trips, rent, dinners — and works out who owes whom, " +
+            "What is Splitfy?",
+            "Splitfy keeps track of shared costs — trips, rent, dinners — and works out who owes whom, " +
                 "so nobody has to keep a spreadsheet.",
         ),
         FaqEntry(
             "General",
-            "Is splitfy free?",
+            "Is Splitfy free?",
             "Yes. Everything you need to track and settle shared expenses is free.",
         ),
         FaqEntry(
             "General",
-            "Does splitfy move money?",
-            "No. splitfy records what was spent and what has been paid back, but the payments themselves " +
+            "Does Splitfy move money?",
+            "No. Splitfy records what was spent and what has been paid back, but the payments themselves " +
                 "happen outside the app — bank transfer, cash, whatever your group prefers.",
         ),
         FaqEntry(
@@ -191,7 +191,7 @@ object LegalCopy {
         FaqEntry(
             "Groups",
             "How are expenses split?",
-            "Equally, by exact amounts, by percentage or by shares. splitfy handles the rounding so the " +
+            "Equally, by exact amounts, by percentage or by shares. Splitfy handles the rounding so the " +
                 "parts always add up to the total.",
         ),
         FaqEntry(
@@ -209,7 +209,7 @@ object LegalCopy {
         FaqEntry(
             "Settling up",
             "Why do the suggested payments differ from individual expenses?",
-            "splitfy simplifies the debts in a group so everyone settles with as few payments as possible. " +
+            "Splitfy simplifies the debts in a group so everyone settles with as few payments as possible. " +
                 "The totals are the same.",
         ),
         FaqEntry(

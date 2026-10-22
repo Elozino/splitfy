@@ -50,7 +50,10 @@ private class IosDeviceAuthenticator : DeviceAuthenticator {
             val result = when {
                 success -> DeviceAuthResult.Success
                 error?.code in setOf(LAErrorUserCancel, LAErrorAppCancel, LAErrorSystemCancel) -> DeviceAuthResult.Cancelled
-                else -> DeviceAuthResult.Failed(error?.localizedDescription ?: "Couldn't confirm it's you")
+                else -> {
+                    error?.let { println("[app-lock] ${it.domain} ${it.code} ${it.localizedDescription}") }
+                    DeviceAuthResult.Failed("Couldn't confirm it's you. Try again.")
+                }
             }
             continuation.resume(result)
         }

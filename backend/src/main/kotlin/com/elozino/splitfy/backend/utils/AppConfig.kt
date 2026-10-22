@@ -70,7 +70,7 @@ data class AppConfig(
     data class EmailConfig(
         /** Resend API key. Blank means "log codes instead", which production refuses. */
         val resendApiKey: String = "",
-        val from: String = "splitfy <no-reply@splitfy.app>",
+        val from: String = "Splitfy <no-reply@splitfy.app>",
     )
 
     data class OAuthConfig(

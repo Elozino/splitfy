@@ -24,6 +24,10 @@ sealed interface SocialSignInResult {
     /** The user closed the sheet. Not an error, so nothing is shown. */
     data object Cancelled : SocialSignInResult
 
+    /**
+     * Shown to the user as is, so it must be plain words: platform error text
+     * (NSError descriptions, exception messages) goes to the log, never here.
+     */
     data class Failure(val message: String) : SocialSignInResult
 }
 

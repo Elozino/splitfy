@@ -127,7 +127,7 @@ fun AuthScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "With splitfy, expenses and bill splitting are easier than ever before",
+                text = "With Splitfy, expenses and bill splitting are easier than ever before",
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,

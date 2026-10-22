@@ -88,7 +88,7 @@ class TransferService(
                     userId = counterpartyId,
                     category = NotificationCategory.PAYMENT,
                     title = "${caller.displayName} requested ${request.amount.toPlainString()}",
-                    message = request.note ?: "Open splitfy to approve or decline the request.",
+                    message = request.note ?: "Open Splitfy to approve or decline the request.",
                 )
                 transfer
             }
@@ -191,7 +191,7 @@ class TransferService(
             userId = payeeId,
             category = NotificationCategory.PAYMENT,
             title = "$payerName sent you ${amount.toPlainString()}",
-            message = transfer.note ?: "The money is in your splitfy balance.",
+            message = transfer.note ?: "The money is in your Splitfy balance.",
         )
     }
 

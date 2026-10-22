@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppTheme.colors.brand and onBrand: the launcher icon and splash use them in both themes. -->
+    <color name="splitfy_brand">#FFFEBB1B</color>
+    <color name="splitfy_ink">#FF212121</color>
+</resources>

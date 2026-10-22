@@ -343,7 +343,7 @@ private fun AddMemberDialog(
         title = { Text("Add a member", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Text("They need a splitfy account with this email.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                Text("They need a Splitfy account with this email.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = state.memberEmail,

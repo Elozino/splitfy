@@ -117,7 +117,7 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Join splitfy today and start splitting bills with ease.",
+                text = "Join Splitfy today and start splitting bills with ease.",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 24.sp

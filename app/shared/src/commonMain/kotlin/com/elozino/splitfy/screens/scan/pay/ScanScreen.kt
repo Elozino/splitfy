@@ -221,7 +221,7 @@ private fun ScanQRCodeScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "To scan QR codes and make payments, splitfy needs access to your camera.",
+                            text = "To scan QR codes and make payments, Splitfy needs access to your camera.",
                             color = Color.Gray,
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center,

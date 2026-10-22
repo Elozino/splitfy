@@ -16,7 +16,7 @@ object SupportContact {
      * choose what to write.
      */
     fun mailto(subject: String, platform: String): String {
-        val body = "\n\n—\nSent from splitfy on $platform"
+        val body = "\n\n—\nSent from Splitfy on $platform"
         return "mailto:$EMAIL?subject=${subject.encodeURLParameter()}&body=${body.encodeURLParameter()}"
     }
 }

@@ -92,7 +92,7 @@ fun LinkedAccountsScreen(
             loadError != null -> LoadErrorState(loadError, onRetry = viewModel::load, modifier = Modifier.padding(padding))
             else -> Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
                 Text(
-                    "Sign in to splitfy with these accounts as well as your email.",
+                    "Sign in to Splitfy with these accounts as well as your email.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                 )

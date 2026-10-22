@@ -126,7 +126,7 @@ class GroupDetailViewModelTest {
         vm.addMember()
         advanceUntilIdle()
 
-        assertEquals("No one with that email uses splitfy yet", vm.state.value.memberError)
+        assertEquals("No one with that email uses Splitfy yet", vm.state.value.memberError)
         assertTrue(vm.state.value.isAddMemberDialogVisible)
     }
 

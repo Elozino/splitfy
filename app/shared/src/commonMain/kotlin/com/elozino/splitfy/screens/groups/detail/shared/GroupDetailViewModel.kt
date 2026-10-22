@@ -213,7 +213,7 @@ class GroupDetailViewModel(
                     it.copy(
                         isUpdatingMembers = false,
                         memberError = when (result.error) {
-                            is DataError.NotFound -> "No one with that email uses splitfy yet"
+                            is DataError.NotFound -> "No one with that email uses Splitfy yet"
                             else -> result.error.userMessage()
                         },
                     )

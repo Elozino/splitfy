@@ -222,7 +222,7 @@ fun AccountScreen(
                                 "Upgrade Plan to Unlock More!", fontWeight = FontWeight.Bold, fontSize = 15.sp
                             )
                             Text(
-                                "Get full access with splitfy premium plans",
+                                "Get full access with Splitfy premium plans",
                                 fontSize = 11.sp,
                                 color = AppTheme.colors.onBrand.copy(alpha = 0.7f)
                             )

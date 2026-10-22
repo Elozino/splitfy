@@ -2,6 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- The name under the home-screen icon. PRODUCT_NAME stays lowercase: it names the binary. -->
+	<key>CFBundleDisplayName</key>
+	<string>Splitfy</string>
 	<key>CFBundleURLTypes</key>
 	<array><dict><key>CFBundleURLSchemes</key><array><string>splitfy</string></array></dict></array>
 	<!-- Assembled from API_SCHEME and API_HOST in the active .xcconfig. Read back
@@ -24,7 +27,14 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires photo library access to select QR codes for payments.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Face ID unlocks splitfy when App lock is on.</string>
+	<string>Face ID unlocks Splitfy when App lock is on.</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>LaunchLogo</string>
+	</dict>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 </dict>

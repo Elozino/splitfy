@@ -36,7 +36,7 @@ class UserService(
         // An empty string removes the photo; anything else must be an avatar key issued to the caller.
         request.avatarUrl?.takeIf { it.isNotEmpty() }?.let { key ->
             if (!ObjectKeys.belongsToUser(key, callerId) || !uploads.wasIssuedToUser(key, callerId, UploadPurpose.AVATAR)) {
-                throw AppException.Validation(listOf(FieldError("avatarUrl", "Upload the photo through splitfy, then attach it")))
+                throw AppException.Validation(listOf(FieldError("avatarUrl", "Upload the photo through Splitfy, then attach it")))
             }
         }
 

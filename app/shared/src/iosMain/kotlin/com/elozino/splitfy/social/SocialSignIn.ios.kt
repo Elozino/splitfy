@@ -27,6 +27,7 @@ import platform.AuthenticationServices.ASAuthorizationController
 import platform.AuthenticationServices.ASAuthorizationControllerDelegateProtocol
 import platform.AuthenticationServices.ASAuthorizationControllerPresentationContextProvidingProtocol
 import platform.AuthenticationServices.ASAuthorizationErrorCanceled
+import platform.AuthenticationServices.ASAuthorizationErrorUnknown
 import platform.AuthenticationServices.ASAuthorizationScopeEmail
 import platform.AuthenticationServices.ASAuthorizationScopeFullName
 import platform.AuthenticationServices.ASPresentationAnchor
@@ -125,12 +126,21 @@ private class AppleSignInDelegate(
     }
 
     override fun authorizationController(controller: ASAuthorizationController, didCompleteWithError: NSError) {
+        val code = didCompleteWithError.code
+        if (code == ASAuthorizationErrorCanceled) {
+            onResult(SocialSignInResult.Cancelled)
+            return
+        }
+        println("[sign-in] Apple failed: ${didCompleteWithError.domain} $code ${didCompleteWithError.localizedDescription}")
         onResult(
-            if (didCompleteWithError.code == ASAuthorizationErrorCanceled) {
-                SocialSignInResult.Cancelled
-            } else {
-                SocialSignInResult.Failure("Apple sign-in failed: ${didCompleteWithError.localizedDescription}")
-            }
+            SocialSignInResult.Failure(
+                // Unknown (1000) is what iOS reports when no Apple Account is signed in.
+                if (code == ASAuthorizationErrorUnknown) {
+                    "We couldn't sign you in with Apple. Check you're signed in to your Apple Account in Settings, then try again."
+                } else {
+                    "We couldn't sign you in with Apple. Please try again."
+                }
+            )
         )
     }
 
@@ -169,7 +179,10 @@ private suspend fun signInWithGoogle(clientId: String): SocialSignInResult {
     val callback = when (val outcome = runWebAuthentication(authUrl, scheme)) {
         is WebAuthOutcome.Callback -> outcome.url
         WebAuthOutcome.Cancelled -> return SocialSignInResult.Cancelled
-        is WebAuthOutcome.Failed -> return SocialSignInResult.Failure("Google sign-in failed: ${outcome.message}")
+        is WebAuthOutcome.Failed -> {
+            println("[sign-in] Google web sign-in failed: ${outcome.message}")
+            return SocialSignInResult.Failure(GOOGLE_FAILED)
+        }
     }
 
     val query = NSURLComponents.componentsWithURL(callback, resolvingAgainstBaseURL = false)
@@ -200,12 +213,15 @@ private suspend fun exchangeCode(
         },
     )
     if (!response.status.isSuccess()) {
-        return@use SocialSignInResult.Failure("Google sign-in failed (${response.status.value})")
+        println("[sign-in] Google token exchange failed: HTTP ${response.status.value}")
+        return@use SocialSignInResult.Failure(GOOGLE_FAILED)
     }
     val idToken = Json.parseToJsonElement(response.bodyAsText()).jsonObject["id_token"]?.jsonPrimitive?.content
         ?: return@use SocialSignInResult.Failure("Google didn't return a sign-in token")
     SocialSignInResult.Success(idToken = idToken, nonce = nonce)
 }
+
+private const val GOOGLE_FAILED = "We couldn't sign you in with Google. Please try again."
 
 private sealed interface WebAuthOutcome {
     data class Callback(val url: NSURL) : WebAuthOutcome
