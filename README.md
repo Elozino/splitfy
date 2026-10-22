@@ -35,8 +35,13 @@ renamed endpoint is a compile error rather than a 404 in production.
 
 Groups and expenses with four split methods, balances reduced to a minimal set of
 settling transfers, a wallet with an append-only ledger, peer payments and requests,
-an activity feed, notifications, and contacts derived from shared groups. Every
-screen reads from the API — there is no sample data left in the client.
+an activity feed, notifications, and contacts derived from shared groups. The group,
+expense, balance, settlement, activity and contact screens read from the API.
+
+Two areas are deliberately not real yet: the wallet moves money only inside splitfy's
+own ledger (no payment provider; off unless `features.wallet` is enabled), and the
+plan and billing screens are presentational, with fixed prices and no server-side
+entitlements. See the known follow-ups in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Running it
 
