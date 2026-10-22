@@ -70,8 +70,11 @@ links:
 observability:
   # Sentry error reporting. Empty turns it off; no events leave the server.
   sentryDsn: "$SENTRY_DSN:"
-  # Tags error reports with the build; the release workflow sets it to the image tag.
+  # Tags error reports with the build. The release workflow bakes the image tag into
+  # APP_VERSION. Hosts that build from source instead (Render) leave it at "dev", so
+  # the deployed commit is used: Render sets RENDER_GIT_COMMIT on every service.
   release: "$APP_VERSION:"
+  gitCommit: "$RENDER_GIT_COMMIT:"
   # /metrics (Prometheus) needs `Authorization: Bearer <token>`. Empty disables the
   # endpoint (404). At least 24 characters when set.
   metricsToken: "$METRICS_TOKEN:"

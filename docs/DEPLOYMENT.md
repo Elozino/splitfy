@@ -92,7 +92,7 @@ platform's secret store, never in the repository or the image.
 | `DATABASE_STATEMENT_TIMEOUT_SECONDS` | `30` | |
 | `GOOGLE_CLIENT_IDS` / `APPLE_CLIENT_IDS` | empty | Social sign-in; empty hides the provider. |
 | `SENTRY_DSN` | empty | Error reporting; empty turns it off. |
-| `APP_VERSION` | image tag | Set by the release workflow; tags Sentry events. |
+| `APP_VERSION` | image tag | Set by the release workflow; tags Sentry events and the startup log. Hosts that build from source (Render) leave it at `dev`, and the server uses the deployed commit from `RENDER_GIT_COMMIT` instead, so there is nothing to set. |
 | `METRICS_TOKEN` | empty | Enables `/metrics` behind this bearer token (≥ 24 chars). |
 | `FCM_SERVICE_ACCOUNT_JSON` / `FCM_SERVICE_ACCOUNT_PATH` | empty | Secret. Firebase service-account key (JSON, or a path to it); empty means pushes are only logged. See `docs/PUSH_NOTIFICATIONS.md`. |
 | `PAYMENT_REMINDERS_ENABLED` | `true` | Daily reminder for old balances; safe with several instances. |

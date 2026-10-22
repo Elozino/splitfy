@@ -154,6 +154,19 @@ data class AppConfig(
 
         fun from(application: Application): AppConfig = from(application.environment.config)
 
+        /**
+         * A versioned image ("v1.2.0", from the release workflow) names itself. An image
+         * built by the host from source carries the Dockerfile's "dev" placeholder, so
+         * the deployed commit identifies it instead. Empty when neither is known.
+         */
+        internal fun resolveRelease(appVersion: String, gitCommit: String): String =
+            appVersion.takeUnless { it.isEmpty() || it == UNVERSIONED_BUILD }
+                ?: gitCommit.take(SHORT_SHA_LENGTH).ifEmpty { appVersion }
+
+        /** The Dockerfile's `APP_VERSION` default when no version is passed to the build. */
+        private const val UNVERSIONED_BUILD = "dev"
+        private const val SHORT_SHA_LENGTH = 12
+
         fun from(config: ApplicationConfig): AppConfig {
             val environment = Environment.valueOf(
                 config.propertyOrNull("app.environment")?.getString()?.uppercase() ?: "LOCAL"
@@ -231,7 +244,10 @@ data class AppConfig(
                 ),
                 observability = ObservabilityConfig(
                     sentryDsn = config.propertyOrNull("observability.sentryDsn")?.getString().orEmpty().trim(),
-                    release = config.propertyOrNull("observability.release")?.getString().orEmpty().trim(),
+                    release = resolveRelease(
+                        appVersion = config.propertyOrNull("observability.release")?.getString().orEmpty().trim(),
+                        gitCommit = config.propertyOrNull("observability.gitCommit")?.getString().orEmpty().trim(),
+                    ),
                     metricsToken = config.propertyOrNull("observability.metricsToken")?.getString().orEmpty().trim()
                         .also { token ->
                             require(token.isEmpty() || token.length >= MIN_METRICS_TOKEN_LENGTH) {
