@@ -88,30 +88,12 @@ fun NewGroupScreen(
             contentPadding = PaddingValues(24.dp)
         ) {
             item {
-                // Group Image Placeholder
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(AppTheme.colors.field)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
-                        .clickable { /* TODO: Pick Image */ },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Upload, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(32.dp))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Upload Cover Image", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                    }
-                    // Edit icon overlay - normally visible when image is set
-                    Box(
-                       modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).size(32.dp).background(AppTheme.colors.brand, CircleShape),
-                       contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = AppTheme.colors.onBrand)
-                    }
-                }
+                // Covers are uploaded against an existing group, so they're set from group detail.
+                Text(
+                    "You can add a cover photo from the group once it's created.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp
+                )
             }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }

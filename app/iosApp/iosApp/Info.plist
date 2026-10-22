@@ -25,5 +25,7 @@
 	<string>This app requires photo library access to select QR codes for payments.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Face ID unlocks splitfy when App lock is on.</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 </dict>
 </plist>

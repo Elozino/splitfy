@@ -24,8 +24,6 @@ data class AccountState(
     val deleteAccountError: String? = null,
     val profileFullName: String = "",
     val profilePhone: String = "",
-    val isThemeSheetVisible: Boolean = false,
-    val selectedTheme: String = "Light",
     val selectedLanguage: String = "English (US)",
     val selectedFaqCategory: String = "General",
     val expandedFaqQuestion: String? = null,

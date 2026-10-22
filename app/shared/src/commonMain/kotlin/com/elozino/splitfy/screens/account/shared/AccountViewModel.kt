@@ -187,10 +187,6 @@ class AccountViewModel(
 
     fun onProfilePhoneChange(value: String) = _state.update { it.copy(profilePhone = value) }
 
-    fun setThemeSheetVisible(isVisible: Boolean) = _state.update { it.copy(isThemeSheetVisible = isVisible) }
-
-    fun selectTheme(theme: String) = _state.update { it.copy(selectedTheme = theme) }
-
     fun selectLanguage(language: String) = _state.update { it.copy(selectedLanguage = language) }
 
     fun selectFaqCategory(category: String) = _state.update { it.copy(selectedFaqCategory = category) }

@@ -441,10 +441,9 @@ fun NavSetup() {
                 DataAnalyticsScreen(onNavigateBack = { navController.popBackStack() })
             }
             composable<Route.AppAppearance> {
-                AppAppearanceScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToLanguage = { navController.navigate(Route.AppLanguage) })
+                AppAppearanceScreen(onNavigateBack = { navController.popBackStack() })
             }
+            // Not linked from App Appearance until the app ships translations.
             composable<Route.AppLanguage> {
                 AppLanguageScreen(onNavigateBack = { navController.popBackStack() })
             }
