@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.theme.ThemeMode
 import com.elozino.splitfy.ui.theme.AppTheme
-import com.elozino.splitfy.screens.account.shared.AccountViewModel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -115,11 +114,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun AppAppearanceScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToLanguage: () -> Unit,
-    viewModel: AccountViewModel = koinViewModel(),
     appearance: AppearanceViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
     val themeMode by appearance.themeMode.collectAsStateWithLifecycle()
     var isThemeSheetVisible by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
@@ -137,7 +133,6 @@ fun AppAppearanceScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             SettingRow(label = "Theme", value = themeMode.label, onClick = { isThemeSheetVisible = true })
-            SettingRow(label = "App Language", value = state.selectedLanguage, onClick = onNavigateToLanguage)
         }
     }
 
