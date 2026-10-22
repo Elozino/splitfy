@@ -90,6 +90,8 @@ fun NavSetup() {
     // One AuthViewModel for the whole unauthenticated graph: the reset flow spans
     // three screens and has to carry the email and reset token between them.
     val authViewModel: AuthViewModel = koinViewModel()
+    // Keyed on the entry, not the destination, so going back clears errors too.
+    LaunchedEffect(navBackStackEntry?.id) { authViewModel.onScreenChanged() }
     // The create-group draft spans two screens, so it lives above both of them.
     val newGroupViewModel: NewGroupViewModel = koinViewModel()
     val sessionManager: SessionManager = koinInject()

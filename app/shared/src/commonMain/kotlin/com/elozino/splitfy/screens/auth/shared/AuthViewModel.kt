@@ -86,6 +86,13 @@ class AuthViewModel(
     fun consumeError() = _state.update { it.copy(errorMessage = null) }
 
     /**
+     * Errors belong to the screen that produced them. Every auth screen shares this
+     * view model, so without this an error from the landing screen would follow the
+     * user onto Login, Sign up and the rest of the flow.
+     */
+    fun onScreenChanged() = _state.update { it.copy(errorMessage = null, fieldErrors = emptyMap()) }
+
+    /**
      * Validates with the same rules the server enforces (from `:shared`) before
      * spending a round trip on a request that would be rejected anyway.
      */
