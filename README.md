@@ -4,9 +4,11 @@ Splitfy tracks shared costs in a group (trips, rent, dinners) and works out who
 owes whom in as few payments as possible. It is one Kotlin Multiplatform
 repository: the Android app, the iOS app and the API that serves them.
 
-**Status: code-complete for a closed beta; not yet deployed.** Every screen talks to
-the real API, and the full test suite is green. What stands between this and
-real users is infrastructure, credentials and store paperwork, not features. See
+**Status: code-complete for a closed beta, with staging live.** The API runs at
+[splitfy.onrender.com](https://splitfy.onrender.com) on Neon PostgreSQL
+([API docs](https://splitfy.onrender.com/openapi)). Every screen talks to the real
+API, and the full test suite is green. What stands between this and real users is
+credentials, production capacity and store paperwork, not features. See
 [Launch status](#launch-status).
 
 ## Screenshots
@@ -208,6 +210,106 @@ screens, and the server flag removes the routes, so they can't be called directl
 |---|---|---|---|
 | Wallet and payments | `FeatureFlags.WALLET` in `:app:shared` | `FEATURE_WALLET` | Off: a top-up currently credits without charging |
 
+## Environments
+
+| | Staging | Production |
+|---|---|---|
+| API | [`https://splitfy.onrender.com`](https://splitfy.onrender.com) | `https://api.splitfy.app` (not yet live) |
+| API docs | [`/openapi`](https://splitfy.onrender.com/openapi) | |
+| Health | [`/health`](https://splitfy.onrender.com/health) (process up), [`/ready`](https://splitfy.onrender.com/ready) (database reachable) | |
+| Hosting | Render web service, Docker, Frankfurt, free instance | |
+| Database | Neon PostgreSQL 16, AWS Frankfurt (`eu-central-1`), free plan | |
+| Email | Resend, sending from `splitfy.app` | |
+
+The release app build already points at `https://api.splitfy.app`. That host is
+staging until production exists: add it as a custom domain on the Render service,
+then create the CNAME Render shows in the `splitfy.app` DNS (managed in Vercel).
+
+**Free-tier limits, accepted for staging only:**
+- The Render free instance sleeps after about 15 minutes idle, and the first
+  request after that takes up to a minute while the JVM starts on 0.1 CPU.
+- Neon's free compute scales to zero, so the first query after a quiet spell is
+  slower.
+- Neither plan gives meaningful backups. Upgrade both before any real user's data
+  lives there.
+
+### Deploying the backend to Render
+
+The service builds the backend's Docker image from the **repository root**, because
+`:backend` depends on `:core` and the root Gradle build. Pointing Render at
+`backend/` alone fails the build.
+
+| Render setting | Value |
+|---|---|
+| Language | Docker |
+| Root Directory | *empty* (repository root) |
+| Dockerfile Path | `backend/Dockerfile` |
+| Docker Build Context | `.` |
+| Region | Frankfurt, next to the database |
+| Health Check Path | `/ready` |
+| Branch | `main` |
+
+`PORT` is injected by Render and read by the server; don't set it. Migrations run on
+boot. Flyway takes a lock, so this is safe for one instance. With several instances,
+switch to the pre-deploy migrator described in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#running-migrations).
+
+**Database (Neon).** Use the **direct** connection string, with *Connection pooling*
+off in Neon's Connect dialog: Flyway's migration lock needs a session, which the
+pooler doesn't provide. The server takes the connection as three variables in JDBC
+form, not Neon's `postgresql://` URL. Neon's `channel_binding` parameter is dropped;
+`sslmode=require` keeps the connection encrypted.
+
+```properties
+DATABASE_URL=jdbc:postgresql://<endpoint>.eu-central-1.aws.neon.tech:5432/<database>?sslmode=require
+DATABASE_USER=<role>
+DATABASE_PASSWORD=<password>
+```
+
+**Environment.** Secrets live only in Render's environment settings, never in the
+repository or the image. To prepare them locally, write a `.env.render` file (any
+`.env.*` file is gitignored) and paste it into Render's *Add from .env* dialog.
+
+| Variable | Staging value |
+|---|---|
+| `APP_ENV` | `STAGING` (the image defaults to `PRODUCTION`) |
+| `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD` | From Neon, as above |
+| `JWT_SECRET` | `openssl rand -base64 48`. Rotating it signs everyone out. |
+| `TOTP_ENCRYPTION_KEY` | `openssl rand -base64 32`. **Never change it once anyone has enabled 2FA**: it encrypts their authenticator secrets. |
+| `RESEND_API_KEY` | A **send-only** Resend key |
+| `EMAIL_FROM` | `"Splitfy <no-reply@splitfy.app>"` |
+| `JWT_ISSUER`, `JWT_AUDIENCE` | `https://api.splitfy.app`, `splitfy-mobile` |
+| `PUBLIC_BASE_URL` | `https://splitfy.app` |
+
+Not set yet, so those features are off: `GOOGLE_CLIENT_IDS`, `APPLE_CLIENT_IDS`
+(social sign-in), `FCM_SERVICE_ACCOUNT_JSON` (push), `STORAGE_*` (receipt and cover
+uploads), `SENTRY_DSN` (error reporting), `ANDROID_CERT_SHA256` and `APPLE_APP_IDS`
+(invite links opening the app). The server starts without them.
+
+**Verifying a deploy.** The deploy log shows Flyway either applying migrations
+(`Successfully applied N migrations` on the first deploy or after a schema change)
+or reporting the schema up to date, then `Responding at …`. After that, check:
+
+```bash
+curl -s https://splitfy.onrender.com/ready
+```
+
+It should report `"status": "UP"` with `"database": "UP"`. A bad login should
+return `401 INVALID_CREDENTIALS`, which proves routing, the database and error
+handling end to end.
+
+**Pointing a debug build at staging.** Override the API host in the gitignored
+local config:
+
+```properties
+# app/androidApp/config.local.properties
+api.baseUrl.debug=https://splitfy.onrender.com
+```
+
+On iOS, set `API_SCHEME = https` and `API_HOST = splitfy.onrender.com` in
+`app/iosApp/Configuration/Local.xcconfig`. Sign up with an inbox you own: staging
+sends real email, and bounced test addresses hurt the sending domain's reputation.
+
 ## Releasing
 
 | Artifact | How |
@@ -230,10 +332,14 @@ Done:
 
 Remaining before a public release, roughly in order:
 
-1. **Infrastructure.** Choose hosting and managed PostgreSQL (with point-in-time
-   recovery) and stand up staging and production. Nothing is deployed yet.
-2. **Credentials.** Supply:
-   - Resend (with a verified domain)
+1. **Production capacity.** Staging runs on Render and Neon free tiers (see
+   [Environments](#environments)). Before real users:
+   - move both to paid plans: an always-on instance, and backups with
+     point-in-time recovery
+   - point `api.splitfy.app` at the service
+   - rotate `JWT_SECRET`, `TOTP_ENCRYPTION_KEY` and the database password, which
+     were shared during setup
+2. **Credentials.** Resend is configured. Still to supply:
    - Google and Apple client IDs
    - FCM and the APNs key
    - S3 or R2 storage
