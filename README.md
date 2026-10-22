@@ -9,6 +9,28 @@ the real API, and the full test suite is green. What stands between this and
 real users is infrastructure, credentials and store paperwork, not features. See
 [Launch status](#launch-status).
 
+## Screenshots
+
+The UI is one Compose Multiplatform codebase, so Android and iOS render the same
+screens. These are from the Android app against a local backend with sample data.
+
+| Onboarding | Home | A group | Who owes whom |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/images/android-onboarding.jpg" width="200" alt="Onboarding: Split the cost, keep the vibe"> | <img src="docs/images/android-home-light.jpg" width="200" alt="Home: overall balance and groups"> | <img src="docs/images/android-group-light.jpg" width="200" alt="Group detail: expense list with Settle up and Add expense"> | <img src="docs/images/android-balances-dark.jpg" width="200" alt="Group balances in dark mode with per-member bars"> |
+
+| Add an expense | Settle up | Activity | Security |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/images/android-add-expense-light.jpg" width="200" alt="Add expense form with category, payer and split"> | <img src="docs/images/android-settle-light.jpg" width="200" alt="Settle up: record payments from each member"> | <img src="docs/images/android-activity-dark.jpg" width="200" alt="Activity feed with open and paid debts"> | <img src="docs/images/android-security-dark.jpg" width="200" alt="Security: password, two-step verification, devices"> |
+
+<details>
+<summary>Dark mode, loading and launch</summary>
+
+| Home (dark) | Account (dark) | Loading skeletons | Splash (light / dark) |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/images/android-home-dark.jpg" width="200" alt="Home in dark mode; the yellow header keeps dark status bar icons"> | <img src="docs/images/android-account-dark.jpg" width="200" alt="Account settings in dark mode"> | <img src="docs/images/android-loading-dark.jpg" width="200" alt="Skeleton placeholders while Home loads"> | <img src="docs/images/android-splash-light.jpg" width="96" alt="Splash in light mode"> <img src="docs/images/android-splash-dark.jpg" width="96" alt="Splash in dark mode"> |
+
+</details>
+
 ## What it does
 
 - **Groups and expenses.** Split equally, by exact amounts, by percentage or by
