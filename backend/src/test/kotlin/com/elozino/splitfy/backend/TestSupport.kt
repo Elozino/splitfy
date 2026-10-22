@@ -89,7 +89,7 @@ fun ApplicationTestBuilder.useTestConfig(
             "database.maxPoolSize" to "2",
             "database.runMigrations" to "true",
             "jwt.secret" to "test-secret-that-is-long-enough-to-pass",
-            "jwt.issuer" to "https://test.splitfy.app",
+            "jwt.issuer" to "https://issuer.example.test",
             "jwt.audience" to "splitfy-test",
             "jwt.realm" to "splitfy",
             "jwt.accessTokenMinutes" to "15",

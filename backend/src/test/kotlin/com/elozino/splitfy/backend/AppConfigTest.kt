@@ -15,7 +15,7 @@ class AppConfigTest {
         "database.username" to "splitfy",
         "database.password" to "a-real-production-password",
         "jwt.secret" to "a-production-secret-that-is-long-enough",
-        "jwt.issuer" to "https://api.splitfy.app",
+        "jwt.issuer" to "https://splitfy.onrender.com",
         "jwt.audience" to "splitfy-mobile",
         "security.totpEncryptionKey" to "a-production-totp-key-that-is-long-enough",
         *overrides,

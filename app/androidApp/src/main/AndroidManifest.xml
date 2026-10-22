@@ -68,7 +68,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="splitfy.app" android:pathPrefix="/i/" />
+                <data android:scheme="https" android:host="splitfy.onrender.com" android:pathPrefix="/i/" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

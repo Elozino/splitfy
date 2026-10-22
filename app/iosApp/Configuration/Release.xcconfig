@@ -2,7 +2,7 @@
 
 // See Debug.xcconfig for why the URL is split in two.
 API_SCHEME = https
-API_HOST = api.splitfy.app
+API_HOST = splitfy.onrender.com
 
 // Sign in with Apple. Needs a paid developer team with the capability enabled for
 // the bundle id; personal teams cannot sign it, which is why Debug leaves it off.

@@ -20,7 +20,7 @@ class MigrateTest {
             "database.username" to database.username,
             "database.password" to database.password,
             "jwt.secret" to "test-secret-that-is-long-enough-to-pass",
-            "jwt.issuer" to "https://test.splitfy.app",
+            "jwt.issuer" to "https://issuer.example.test",
             "jwt.audience" to "splitfy-test",
         )
 

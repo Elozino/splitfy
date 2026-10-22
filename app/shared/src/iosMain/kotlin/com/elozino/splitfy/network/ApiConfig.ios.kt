@@ -13,7 +13,7 @@ import platform.Foundation.NSBundle
  */
 actual fun defaultApiBaseUrl(isDebug: Boolean): String =
     configuredApiBaseUrl()
-        ?: if (isDebug) "http://localhost:8080" else "https://api.splitfy.app"
+        ?: if (isDebug) "http://localhost:8080" else "https://splitfy.onrender.com"
 
 private fun configuredApiBaseUrl(): String? =
     (NSBundle.mainBundle.objectForInfoDictionaryKey("ApiBaseUrl") as? String)

@@ -141,14 +141,14 @@ class PasswordResetTest {
             auth = request.headers[HttpHeaders.Authorization]
             respond("""{"id":"email_1"}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
         }
-        val notifier = ResendOtpNotifier(HttpClient(engine) { install(ContentNegotiation) { json() } }, "re_test", "splitfy <no-reply@splitfy.app>")
+        val notifier = ResendOtpNotifier(HttpClient(engine) { install(ContentNegotiation) { json() } }, "re_test", "Splitfy <no-reply@example.test>")
 
         notifier.sendPasswordResetCode("ada@example.com", "123456")
 
         val body = Json.parseToJsonElement(captured!!).jsonObject
         assertEquals("Bearer re_test", auth)
         assertEquals("ada@example.com", body["to"]!!.jsonArray.single().jsonPrimitive.content)
-        assertEquals("splitfy <no-reply@splitfy.app>", body["from"]!!.jsonPrimitive.content)
+        assertEquals("Splitfy <no-reply@example.test>", body["from"]!!.jsonPrimitive.content)
         assertTrue("123456" in body["html"]!!.jsonPrimitive.content)
         assertTrue("123456" in body["text"]!!.jsonPrimitive.content)
     }

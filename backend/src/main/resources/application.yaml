@@ -28,7 +28,7 @@ jwt:
   # Override in every deployed environment. The app refuses to boot in PRODUCTION
   # while this default is still in place.
   secret: "$JWT_SECRET:local-development-secret-do-not-use-in-production"
-  issuer: "$JWT_ISSUER:https://api.splitfy.app"
+  issuer: "$JWT_ISSUER:https://splitfy.onrender.com"
   audience: "$JWT_AUDIENCE:splitfy-mobile"
   realm: "$JWT_REALM:splitfy"
   accessTokenMinutes: "$JWT_ACCESS_MINUTES:15"
@@ -51,7 +51,7 @@ email:
   # only logged, and the server refuses to start in PRODUCTION.
   resendApiKey: "$RESEND_API_KEY:"
   # Must be on a domain verified in Resend.
-  from: "$EMAIL_FROM:Splitfy <no-reply@splitfy.app>"
+  from: "$EMAIL_FROM:Splitfy <onboarding@resend.dev>"
 
 oauth:
   # Comma-separated OAuth client ids. Leaving one empty turns that provider off.
@@ -60,7 +60,7 @@ oauth:
 
 links:
   # Invite links are $PUBLIC_BASE_URL/i/<token>; that host must route to this API.
-  publicBaseUrl: "$PUBLIC_BASE_URL:https://splitfy.app"
+  publicBaseUrl: "$PUBLIC_BASE_URL:https://splitfy.onrender.com"
   androidPackage: "$ANDROID_PACKAGE:com.elozino.splitfy"
   # Comma-separated. Release signing certificate SHA-256 (keytool -list -v).
   androidCertSha256: "$ANDROID_CERT_SHA256:"

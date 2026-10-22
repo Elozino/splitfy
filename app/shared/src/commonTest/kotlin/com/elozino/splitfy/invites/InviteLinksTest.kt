@@ -13,24 +13,24 @@ class InviteLinksTest {
         assertEquals(token, InviteLinks.token.value)
         InviteLinks.clear()
         assertNull(settings.getStringOrNull("invites.pending_token"))
-        InviteLinks.open("https://splitfy.app/i/$token")
+        InviteLinks.open("https://splitfy.onrender.com/i/$token")
         assertEquals(token, settings.getStringOrNull("invites.pending_token"))
     }
 
     @Test fun acceptsWebAndAppLinks() {
-        assertEquals(token, InviteLinks.parse("https://splitfy.app/i/$token"))
+        assertEquals(token, InviteLinks.parse("https://splitfy.onrender.com/i/$token"))
         assertEquals(token, InviteLinks.parse("splitfy://invite/$token"))
-        assertEquals(token, InviteLinks.parse("https://splitfy.app/i/$token?source=share"))
+        assertEquals(token, InviteLinks.parse("https://splitfy.onrender.com/i/$token?source=share"))
     }
 
     @Test fun rejectsForeignHostsAndMalformedTokens() {
-        listOf("https://evil.test/i/$token", "https://splitfy.app.evil.test/i/$token", "http://splitfy.app/i/$token",
-            "https://splitfy.app/i/../auth", "splitfy://invite/short", "https://splitfy.app/i/$token/extra")
+        listOf("https://evil.test/i/$token", "https://splitfy.onrender.com.evil.test/i/$token", "http://splitfy.onrender.com/i/$token",
+            "https://splitfy.onrender.com/i/../auth", "splitfy://invite/short", "https://splitfy.onrender.com/i/$token/extra")
             .forEach { assertNull(InviteLinks.parse(it), it) }
     }
 
     @Test fun holdsLinkUntilExplicitlyDismissed() {
-        InviteLinks.open("https://splitfy.app/i/$token")
+        InviteLinks.open("https://splitfy.onrender.com/i/$token")
         InviteLinks.open("https://unrelated.test/")
         assertEquals(token, InviteLinks.token.value)
         InviteLinks.clear()

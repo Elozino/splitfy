@@ -193,7 +193,7 @@ class UploadsTest {
 
     @Test
     fun `a group cover only accepts its own cover keys and is served as a URL`() = testApplication {
-        useStorage(publicBaseUrl = "https://cdn.splitfy.app")
+        useStorage(publicBaseUrl = "https://cdn.example.test")
         val client = jsonClient()
         val owner = client.register("owner")
         val group = client.createGroup(owner.token)
@@ -213,7 +213,7 @@ class UploadsTest {
 
         val key = client.requestSlot(group, owner.token, UploadPurpose.GROUP_COVER).body<UploadSlot>().objectKey
         val updated = client.patchJson(byId, owner.token, UpdateGroupRequest(coverImageUrl = key)).body<Group>()
-        assertEquals("https://cdn.splitfy.app/$key", updated.coverImageUrl)
+        assertEquals("https://cdn.example.test/$key", updated.coverImageUrl)
         assertEquals(updated.coverImageUrl, client.get(byId) { bearerAuth(owner.token) }.body<Group>().coverImageUrl)
 
         val cleared = client.patchJson(byId, owner.token, UpdateGroupRequest(coverImageUrl = "")).body<Group>()
