@@ -36,7 +36,11 @@ fun Application.module() = configureApp(overrides = emptyList())
  */
 fun Application.configureApp(overrides: List<Module>) {
     val config = AppConfig.from(this)
-    log.info("Starting splitfy API in {} mode", config.environment)
+    log.info(
+        "Starting Splitfy API {} in {} mode",
+        config.observability.release.ifEmpty { "(unversioned)" },
+        config.environment,
+    )
 
     install(Koin) {
         slf4jLogger()

@@ -27,6 +27,28 @@ class AppConfigTest {
     }
 
     @Test
+    fun `a versioned image reports its own version`() {
+        val release = AppConfig.from(
+            config("observability.release" to "v1.2.0", "observability.gitCommit" to "4549b95e2d1f0a7c"),
+        ).observability.release
+        assertEquals("v1.2.0", release)
+    }
+
+    @Test
+    fun `an image built from source reports the deployed commit`() {
+        val release = AppConfig.from(
+            config("observability.release" to "dev", "observability.gitCommit" to "4549b95e2d1f0a7c8b6e"),
+        ).observability.release
+        assertEquals("4549b95e2d1f", release)
+    }
+
+    @Test
+    fun `with no version or commit the placeholder is kept`() {
+        assertEquals("dev", AppConfig.from(config("observability.release" to "dev")).observability.release)
+        assertEquals("", AppConfig.from(config()).observability.release)
+    }
+
+    @Test
     fun `production refuses the development database password`() {
         val error = assertFailsWith<IllegalArgumentException> {
             AppConfig.from(config("database.password" to AppConfig.INSECURE_DEV_DATABASE_PASSWORD))
