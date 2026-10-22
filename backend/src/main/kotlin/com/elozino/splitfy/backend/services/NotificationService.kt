@@ -158,7 +158,7 @@ class NotificationService(
         notify(
             userId = userId,
             category = NotificationCategory.SYSTEM,
-            title = "Welcome to splitfy, $displayName!",
+            title = "Welcome to Splitfy, $displayName!",
             message = "Create a group, add an expense, and we will keep everyone's balance straight.",
         )
         notify(

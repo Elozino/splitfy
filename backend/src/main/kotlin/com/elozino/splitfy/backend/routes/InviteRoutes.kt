@@ -95,7 +95,7 @@ private fun invitePage(groupName: String?, invitedBy: String?, token: String): S
         <!doctype html>
         <html lang="en"><head>
           <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-          <title>Join on splitfy</title>
+          <title>Join on Splitfy</title>
           <style>
             body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:48px 24px;text-align:center;color:#111;background:#fff}
             h1{font-size:22px;font-weight:600;margin:0 0 12px}p{color:#555;margin:0 0 28px}
@@ -103,8 +103,8 @@ private fun invitePage(groupName: String?, invitedBy: String?, token: String): S
           </style>
         </head><body>
           <h1>$heading</h1>
-          <p>splitfy keeps track of who owes what in a group.</p>
-          ${if (groupName != null) """<a class="btn" href="$appLink">Open in splitfy</a>""" else ""}
+          <p>Splitfy keeps track of who owes what in a group.</p>
+          ${if (groupName != null) """<a class="btn" href="$appLink">Open in Splitfy</a>""" else ""}
         </body></html>
     """.trimIndent()
 }

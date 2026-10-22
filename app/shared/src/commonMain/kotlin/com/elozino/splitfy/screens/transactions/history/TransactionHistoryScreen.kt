@@ -433,7 +433,7 @@ private fun ReceiptScreen(
                             tint = AppTheme.colors.brand
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("splitfy", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("Splitfy", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))
@@ -471,7 +471,7 @@ private fun ReceiptScreen(
                             .background(AppTheme.colors.field, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("splitfy: Safe & Trusted Transaction.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Text("Splitfy: Safe & Trusted Transaction.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
             }

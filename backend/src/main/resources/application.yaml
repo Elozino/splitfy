@@ -51,7 +51,7 @@ email:
   # only logged, and the server refuses to start in PRODUCTION.
   resendApiKey: "$RESEND_API_KEY:"
   # Must be on a domain verified in Resend.
-  from: "$EMAIL_FROM:splitfy <no-reply@splitfy.app>"
+  from: "$EMAIL_FROM:Splitfy <no-reply@splitfy.app>"
 
 oauth:
   # Comma-separated OAuth client ids. Leaving one empty turns that provider off.

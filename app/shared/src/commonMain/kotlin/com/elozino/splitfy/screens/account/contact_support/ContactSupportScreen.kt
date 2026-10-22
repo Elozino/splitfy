@@ -61,9 +61,9 @@ fun ContactSupportScreen(onNavigateBack: () -> Unit) {
         }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         val options = listOf(
-            SupportOption(Icons.Default.Email, "Email support", "Questions about using splitfy", "splitfy support request"),
-            SupportOption(Icons.Default.BugReport, "Report a problem", "Something isn't working as it should", "splitfy problem report"),
-            SupportOption(Icons.Default.PrivacyTip, "Privacy request", "Access, correct or export your data", "splitfy privacy request"),
+            SupportOption(Icons.Default.Email, "Email support", "Questions about using Splitfy", "Splitfy support request"),
+            SupportOption(Icons.Default.BugReport, "Report a problem", "Something isn't working as it should", "Splitfy problem report"),
+            SupportOption(Icons.Default.PrivacyTip, "Privacy request", "Access, correct or export your data", "Splitfy privacy request"),
         )
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             options.forEach { option ->

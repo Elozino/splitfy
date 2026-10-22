@@ -80,7 +80,7 @@ fun TwoFactorSignInScreen(
                 if (state.useRecoveryCode) {
                     "Enter one of the recovery codes you saved when you turned on two-step verification. Each code works once."
                 } else {
-                    "Open your authenticator app and enter the 6-digit code for splitfy."
+                    "Open your authenticator app and enter the 6-digit code for Splitfy."
                 },
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

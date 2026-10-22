@@ -75,7 +75,7 @@ class LinkedAccountsViewModel(
     /** Called with whatever the platform sign-in sheet returned. */
     fun onSignInResult(provider: OAuthProvider, result: SocialSignInResult) {
         when (result) {
-            SocialSignInResult.Cancelled -> _state.update { it.copy(busyProvider = null) }
+            SocialSignInResult.Cancelled -> _state.update { it.copy(busyProvider = null, errorMessage = null) }
             is SocialSignInResult.Failure -> _state.update { it.copy(busyProvider = null, errorMessage = result.message) }
             is SocialSignInResult.Success -> viewModelScope.launch {
                 _state.update { it.copy(busyProvider = provider, errorMessage = null) }

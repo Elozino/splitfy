@@ -240,7 +240,7 @@ class AccountSecurityTest {
     fun `enrolment only takes effect once a code proves the app has the secret`() = securityTest {
         val ada = verifiedAccount("ada@example.com")
         val setup = setup(ada)
-        assertTrue(setup.otpauthUri.startsWith("otpauth://totp/splitfy:ada%40example.com?secret=${setup.secret}"))
+        assertTrue(setup.otpauthUri.startsWith("otpauth://totp/Splitfy:ada%40example.com?secret=${setup.secret}"))
 
         // Pending: sign-in still issues tokens straight away.
         assertNotNull(login("ada@example.com").tokens)

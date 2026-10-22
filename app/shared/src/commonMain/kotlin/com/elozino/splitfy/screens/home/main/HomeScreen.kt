@@ -63,7 +63,7 @@ fun HomeScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "splitfy",
+                        text = "Splitfy",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = AppTheme.colors.onBrand

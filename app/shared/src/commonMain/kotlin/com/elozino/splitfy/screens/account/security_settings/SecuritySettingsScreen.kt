@@ -201,7 +201,7 @@ fun SecuritySettingsScreen(
                             SettingRow(
                                 icon = Icons.Default.Fingerprint,
                                 title = "App lock",
-                                subtitle = "Require ${biometrics.kind.label} to open splitfy",
+                                subtitle = "Require ${biometrics.kind.label} to open Splitfy",
                                 onClick = null,
                                 trailing = {
                                     Switch(

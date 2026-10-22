@@ -133,7 +133,7 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
                 Column(
                     modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("splitfy Premium", fontWeight = FontWeight.Bold, color = AppTheme.colors.brand)
+                    Text("Splitfy Premium", fontWeight = FontWeight.Bold, color = AppTheme.colors.brand)
                     Text(
                         "$49.99 / year",
                         fontSize = 36.sp,

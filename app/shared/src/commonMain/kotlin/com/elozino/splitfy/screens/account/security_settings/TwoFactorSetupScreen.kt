@@ -140,7 +140,7 @@ private fun AddToAppStep(
         ) {
             Image(
                 painter = rememberQrCodePainter(setup.otpauthUri),
-                contentDescription = "QR code to add splitfy to your authenticator app",
+                contentDescription = "QR code to add Splitfy to your authenticator app",
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -180,7 +180,7 @@ private fun AddToAppStep(
 
         Spacer(Modifier.height(24.dp))
         Text(
-            "2. Enter the 6-digit code the app shows for splitfy.",
+            "2. Enter the 6-digit code the app shows for Splitfy.",
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
