@@ -11,17 +11,18 @@ Existing members can accept again without duplicate memberships or use counts.
 
 ## Deployment
 
-The mobile apps currently claim `https://splitfy.app/i/*`. Set these backend values:
+The mobile apps currently claim `https://splitfy.onrender.com/i/*`, the Render host, until Splitfy
+has its own domain. Set these backend values:
 
-- `PUBLIC_BASE_URL=https://splitfy.app`
+- `PUBLIC_BASE_URL=https://splitfy.onrender.com`
 - `ANDROID_PACKAGE`: the installed application's package name
 - `ANDROID_CERT_SHA256`: comma-separated SHA-256 signing-certificate fingerprints;
   for Play-distributed builds use the Play app-signing certificate
 - `APPLE_APP_IDS`: comma-separated `TEAMID.bundle.identifier` values for signed apps
 
 Route `/i/*`, `/.well-known/assetlinks.json`, and
-`/.well-known/apple-app-site-association` on **splitfy.app** to the backend over
-HTTPS. These public paths must not require sign-in. Changing the invite hostname
+`/.well-known/apple-app-site-association` on the invite host to the backend over
+HTTPS. On `splitfy.onrender.com` the backend serves them directly. These public paths must not require sign-in. Changing the invite hostname
 also requires changing the Android manifest, iOS associated-domain entitlement,
 and the shared link parser.
 

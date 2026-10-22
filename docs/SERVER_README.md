@@ -26,7 +26,7 @@ while an insecure default is still in place (noted below).
 | `OTP_MINUTES` | `10` | Lifetime of a password-reset code. |
 | `RESEND_API_KEY` | empty | **Required in production.** Without it, reset codes are only logged. |
 | `TOTP_ENCRYPTION_KEY` | derived from `JWT_SECRET` | **Required in production**, at least 32 characters. Encrypts authenticator-app secrets at rest. |
-| `EMAIL_FROM` | `splitfy <no-reply@splitfy.app>` | Must be on a domain verified in Resend. |
+| `EMAIL_FROM` | `Splitfy <onboarding@resend.dev>` | Must be on a domain verified in your Resend account. The default is Resend's test sender, which only delivers to the account owner. |
 | `FCM_SERVICE_ACCOUNT_JSON` | empty | Firebase service-account key (the JSON itself). Optional: without it pushes are only logged. See `docs/PUSH_NOTIFICATIONS.md`. |
 | `FCM_SERVICE_ACCOUNT_PATH` | empty | Or a path to that key file. |
 | `PAYMENT_REMINDERS_ENABLED` | `true` | Daily reminder for debts older than `PAYMENT_REMINDER_AFTER_DAYS` (`3`), at most every `PAYMENT_REMINDER_EVERY_DAYS` (`7`) per group, run at `PAYMENT_REMINDER_HOUR_UTC` (`9`). |

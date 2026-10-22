@@ -72,8 +72,8 @@ class SigV4PresignerTest {
         assertEquals(early, late)
         assertTrue("X-Amz-Date=20260101T100000Z" in early!!)
 
-        val public = storage(publicBaseUrl = "https://cdn.splitfy.app").displayUrl("groups/g/covers/a.jpg")
-        assertEquals("https://cdn.splitfy.app/groups/g/covers/a.jpg", public)
+        val public = storage(publicBaseUrl = "https://cdn.example.test").displayUrl("groups/g/covers/a.jpg")
+        assertEquals("https://cdn.example.test/groups/g/covers/a.jpg", public)
     }
 
     private fun storage(now: Instant = NOW, publicBaseUrl: String? = null) = ObjectStorage(

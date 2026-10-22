@@ -16,7 +16,7 @@ info:
 servers:
   - url: http://localhost:8080
     description: Local
-  - url: https://api.splitfy.app
+  - url: https://splitfy.onrender.com
     description: Production
 
 security:

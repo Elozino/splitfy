@@ -92,7 +92,7 @@ Implemented locally on 2026-10-20, continuing the unfinished invite backend.
       V3 and V4 are already used by email verification and social identities.
 - [x] Member-only shared link creation/retrieval, owner/admin reset (revokes old links),
       public preview and authenticated, idempotent acceptance.
-- [x] Android App Links and iOS Universal Links for `https://splitfy.app/i/{token}`,
+- [x] Android App Links and iOS Universal Links for `https://splitfy.onrender.com/i/{token}` (the Render host until Splitfy owns a domain),
       with `splitfy://invite/{token}` fallback and a browser landing page.
 - [x] Share sheet from group detail; preview and join dialog; persist pending links
       through existing sign-in/sign-up flows and app restarts. Onboarding UI unchanged.

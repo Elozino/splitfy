@@ -8,8 +8,8 @@ class PiiScrubberTest {
     @Test
     fun emailsTokensAndQueryStringsAreRemoved() {
         assertEquals(
-            "GET https://api.splitfy.app/api/v1/users/search?[query] failed for [email]",
-            PiiScrubber.scrub("GET https://api.splitfy.app/api/v1/users/search?q=ada@example.com failed for ada@example.com"),
+            "GET https://splitfy.onrender.com/api/v1/users/search?[query] failed for [email]",
+            PiiScrubber.scrub("GET https://splitfy.onrender.com/api/v1/users/search?q=ada@example.com failed for ada@example.com"),
         )
         assertEquals("Authorization: Bearer [token]", PiiScrubber.scrub("Authorization: Bearer abc.def-ghi"))
         assertEquals("token [jwt] expired", PiiScrubber.scrub("token eyJhbGci.eyJzdWIi.sig expired"))

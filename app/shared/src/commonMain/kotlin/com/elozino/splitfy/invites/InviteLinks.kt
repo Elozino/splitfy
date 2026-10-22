@@ -26,7 +26,7 @@ object InviteLinks {
     fun clear() { pending.value = null; storage?.remove(KEY) }
 
     fun parse(url: String): String? {
-        val match = Regex("^(?:https://splitfy\\.app/i/|splitfy://invite/)([A-Za-z0-9_-]{22})(?:[?#].*)?$")
+        val match = Regex("^(?:https://splitfy\\.onrender\\.com/i/|splitfy://invite/)([A-Za-z0-9_-]{22})(?:[?#].*)?$")
             .matchEntire(url) ?: return null
         return match.groupValues[1]
     }

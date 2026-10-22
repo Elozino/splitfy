@@ -73,12 +73,12 @@ platform's secret store, never in the repository or the image.
 | `DATABASE_URL` | `jdbc:postgresql://db.example:5432/splitfy?sslmode=require` | JDBC form, not `postgres://`. |
 | `DATABASE_USER` / `DATABASE_PASSWORD` | | Secret. |
 | `JWT_SECRET` | 64 random characters | Secret. `openssl rand -base64 48`. Rotating it signs everyone out. |
-| `JWT_ISSUER` | `https://api.splitfy.app` | |
+| `JWT_ISSUER` | `https://splitfy.onrender.com` | |
 | `JWT_AUDIENCE` | `splitfy-mobile` | |
 | `RESEND_API_KEY` | `re_…` | Secret. See `docs/SERVER_README.md`. |
 | `TOTP_ENCRYPTION_KEY` | 32+ random characters | Secret. `openssl rand -base64 32`. Encrypts authenticator-app secrets; changing or losing it turns off two-step verification for everyone enrolled. |
-| `EMAIL_FROM` | `splitfy <no-reply@splitfy.app>` | Domain verified in Resend. |
-| `PUBLIC_BASE_URL` | `https://splitfy.app` | Host that serves invite links; see [Domains](#domains-and-tls). |
+| `EMAIL_FROM` | `Splitfy <onboarding@resend.dev>` | Resend's test sender, which only delivers to the Resend account owner. Switch to an address on your own verified domain before real users. |
+| `PUBLIC_BASE_URL` | `https://splitfy.onrender.com` | Host that serves invite links; see [Domains](#domains-and-tls). |
 | `ANDROID_CERT_SHA256` | `AA:BB:…` | Play **app signing** certificate fingerprint (Play Console → App integrity). |
 | `APPLE_APP_IDS` | `ABCDE12345.com.elozino.splitfy` | |
 
@@ -139,20 +139,20 @@ newer one has been applied.
 
 ## Domains and TLS
 
-Two hostnames, both HTTPS only:
+**Splitfy has no domain of its own yet.** `splitfy.app` belongs to an unrelated
+product and must not be used. Until a domain is bought, everything runs on the
+Render host, HTTPS only:
 
-| Host | Serves | Notes |
+| Host | Serves | Configured in |
 |---|---|---|
-| `api.splitfy.app` | the whole API | What the apps call (`api.baseUrl.release` in `app/androidApp/config.properties`, `API_HOST` in `app/iosApp/Configuration/Release.xcconfig`). |
-| `splitfy.app` | `/i/*`, `/.well-known/assetlinks.json`, `/.well-known/apple-app-site-association` | Invite links and app-link verification. These paths must reach the API. |
+| `splitfy.onrender.com` | The whole API, invite links (`/i/*`) and app-link verification (`/.well-known/assetlinks.json`, `/.well-known/apple-app-site-association`) | `api.baseUrl.release` in `app/androidApp/config.properties`; `API_HOST` in `app/iosApp/Configuration/Release.xcconfig`; the invite host in the Android manifest, the iOS entitlements and `InviteLinks.kt`; `PUBLIC_BASE_URL` and `JWT_ISSUER` on the server |
 
-The apps claim `https://splitfy.app/i/*` (Android intent filter, iOS associated
-domain), so the invite host is fixed unless you change those too
-(`docs/GROUP_INVITES.md`). If `splitfy.app` also hosts a marketing site, route
-just those paths to the API: a reverse-proxy rule, a rewrite on the static host
-(e.g. Netlify/Vercel/Cloudflare rewrites to `https://api.splitfy.app/i/:token`),
-or point the apex at the API if there is no site yet. The `.well-known` files must
-be served directly (no redirect) with a `200`.
+The backend serves the invite pages and the `.well-known` files itself, so one host
+covers both. **When a domain is bought,** change every place in that table in one
+release: typically `api.<domain>` for the API and `<domain>` for invite links,
+with `/i/*` and `/.well-known/*` routed to the API. Apps already installed keep
+calling the old host, so keep the Render URL working until they have updated. The
+`.well-known` files must be served directly (no redirect) with a `200`.
 
 The API runs behind the platform's TLS-terminating proxy and trusts
 `X-Forwarded-*` outside `LOCAL`. Do not expose it directly to the internet without
@@ -253,7 +253,7 @@ Not automated yet; archive from Xcode and upload to App Store Connect, then
 TestFlight. Before the first submission:
 
 - Set `TEAM_ID` (Local.xcconfig or CI), enable **Sign in with Apple** and
-  **Associated Domains** (`applinks:splitfy.app`) for the bundle id.
+  **Associated Domains** (`applinks:splitfy.onrender.com`) for the bundle id.
 - Add a **privacy manifest** (`PrivacyInfo.xcprivacy`) and fill in App Privacy in
   App Store Connect to match the Privacy Policy.
 - Account deletion is in Account → Security → Delete Account, which App Review
@@ -291,12 +291,12 @@ whether you want Git-push simplicity or full control, and who will be on call.
 ## What you need to provide
 
 - [ ] Hosting platform and a managed PostgreSQL with PITR, for staging and production.
-- [ ] DNS for `api.splitfy.app` and `splitfy.app`, with `/i/*` and `/.well-known/*` on `splitfy.app` routed to the API.
+- [ ] A domain Splitfy owns (see [Domains and TLS](#domains-and-tls)); until then everything runs on the Render host.
 - [ ] Production secrets: `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`, database credentials, `RESEND_API_KEY` (and a verified sending domain).
 - [ ] GHCR access for the host (make the package public, or a read-only token).
 - [ ] Sentry organisation with three projects (API, Android, iOS) and their DSNs.
 - [ ] Optional: `METRICS_TOKEN` and somewhere to scrape `/metrics`.
 - [ ] Android upload keystore and the four signing secrets; Play Console app with Play App Signing; the app-signing SHA-256 for `ANDROID_CERT_SHA256`.
 - [ ] Apple Developer team id, Sign in with Apple and Associated Domains capabilities, `APPLE_APP_IDS`, the Sentry Swift package added in Xcode.
-- [ ] A monitored `support@splitfy.app` inbox (the apps' Contact Support opens it).
+- [ ] A monitored support inbox (the apps' Contact Support opens `SupportContact.EMAIL`).
 - [ ] Legal review of the Terms of Service and Privacy Policy (`app/shared/.../screens/account/legal/LegalCopy.kt`), the bracketed items filled in, and `LEGAL_REVIEW_PENDING` set to `false`; publish the same text at a public URL for the store listings.

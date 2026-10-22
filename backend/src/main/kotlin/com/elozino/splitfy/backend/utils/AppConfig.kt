@@ -70,7 +70,7 @@ data class AppConfig(
     data class EmailConfig(
         /** Resend API key. Blank means "log codes instead", which production refuses. */
         val resendApiKey: String = "",
-        val from: String = "Splitfy <no-reply@splitfy.app>",
+        val from: String = "Splitfy <onboarding@resend.dev>",
     )
 
     data class OAuthConfig(
@@ -82,7 +82,7 @@ data class AppConfig(
 
     data class LinksConfig(
         /** Where invite links point. That host must route the invite and .well-known paths to this API. */
-        val publicBaseUrl: String = "https://splitfy.app",
+        val publicBaseUrl: String = "https://splitfy.onrender.com",
         val androidPackage: String = "com.elozino.splitfy",
         /** SHA-256 fingerprints of the release signing certificate(s), as `AA:BB:...`. */
         val androidCertSha256: Set<String> = emptySet(),
