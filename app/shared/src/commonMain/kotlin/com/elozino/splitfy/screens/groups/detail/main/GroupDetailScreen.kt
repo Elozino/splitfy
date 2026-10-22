@@ -1,6 +1,7 @@
 package com.elozino.splitfy.screens.groups.detail.main
 
 import com.elozino.splitfy.components.UserAvatar
+import com.elozino.splitfy.screens.expenses.emoji
 import com.elozino.splitfy.screens.groups.detail.shared.GroupActions
 import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
@@ -451,18 +452,6 @@ private fun Expense.toItem(state: GroupDetailState): ExpenseItemData {
         date = incurredAt.toString().take(10),
         emoji = category.emoji()
     )
-}
-
-internal fun ExpenseCategory.emoji(): String = when (this) {
-    ExpenseCategory.FOOD -> "🍱"
-    ExpenseCategory.TRANSPORT -> "🚕"
-    ExpenseCategory.ACCOMMODATION -> "🏨"
-    ExpenseCategory.GROCERIES -> "🛒"
-    ExpenseCategory.ENTERTAINMENT -> "🎟️"
-    ExpenseCategory.UTILITIES -> "💡"
-    ExpenseCategory.SHOPPING -> "🛍️"
-    ExpenseCategory.HEALTH -> "🩺"
-    ExpenseCategory.OTHER -> "🧾"
 }
 
 @Composable

@@ -8,7 +8,6 @@ import com.elozino.splitfy.domain.model.GroupMember
 import com.elozino.splitfy.domain.model.GroupRole
 import com.elozino.splitfy.domain.model.Money
 import com.elozino.splitfy.domain.model.SuggestedTransfer
-import com.elozino.splitfy.screens.groups.detail.main.emoji
 
 internal data class ExpenseItemData(
     val title: String,

@@ -34,6 +34,8 @@ import com.elozino.splitfy.PermissionStatus
 import com.elozino.splitfy.PermissionType
 import com.elozino.splitfy.checkPermission
 import com.elozino.splitfy.domain.model.ExpenseCategory
+import com.elozino.splitfy.screens.expenses.emoji
+import com.elozino.splitfy.screens.expenses.label
 import com.elozino.splitfy.rememberPermissionLauncher
 import com.preat.peekaboo.image.picker.ResizeOptions
 import androidx.compose.ui.layout.ContentScale
@@ -235,15 +237,16 @@ private fun ExpenseDetailsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            // The same emoji the expense list and detail show for this category.
                             Box(
-                                modifier = Modifier.size(24.dp).background(AppTheme.colors.positive, CircleShape),
+                                modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Text(state.category.emoji(), fontSize = 16.sp)
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = state.category.name.lowercase().replaceFirstChar { it.uppercase() },
+                                text = state.category.label(),
                                 fontWeight = FontWeight.Bold
                             )
                         }
