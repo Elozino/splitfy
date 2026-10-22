@@ -72,11 +72,16 @@ class SettlementRepository {
             .map { it.toSettlement() }
     }
 
-    suspend fun updateStatus(id: UUID, status: SettlementStatus): Settlement? = dbQuery {
-        SettlementsTable.update({ SettlementsTable.id eq id }) {
-            it[SettlementsTable.status] = status
+    /**
+     * Moves a settlement from [from] to [to] in a single conditional UPDATE, so the
+     * status check and the write can't be split by a concurrent request. Returns null
+     * when the row was no longer in [from]; the caller decides what that means.
+     */
+    suspend fun transition(id: UUID, from: SettlementStatus, to: SettlementStatus): Settlement? = dbQuery {
+        val updated = SettlementsTable.update({ (SettlementsTable.id eq id) and (SettlementsTable.status eq from) }) {
+            it[status] = to
         }
-        loadSettlement(id)
+        if (updated == 0) null else loadSettlement(id)
     }
 
     private fun loadSettlement(id: UUID): Settlement? =
