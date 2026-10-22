@@ -6,6 +6,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -152,16 +155,21 @@ fun NavSetup() {
             Route.Groups::class
         ) == true || currentDestination?.hasRoute(Route.Contact::class) == true || currentDestination?.hasRoute(Route.Account::class) == true)
 
+    // The tab to highlight. Held while the bar slides away so it doesn't flick to Home.
+    var selectedTab by remember { mutableIntStateOf(0) }
+    when {
+        currentDestination?.hasRoute(Route.Home::class) == true -> selectedTab = 0
+        currentDestination?.hasRoute(Route.Groups::class) == true -> selectedTab = 1
+        currentDestination?.hasRoute(Route.Contact::class) == true -> selectedTab = 2
+        currentDestination?.hasRoute(Route.Account::class) == true -> selectedTab = 3
+    }
+    // The bar's height, kept while it is hidden: tab screens reserve it themselves, so
+    // nothing resizes underneath a transition when the bar slides in or out.
+    var barHeight by remember { mutableStateOf(0.dp) }
+
     Scaffold(
         bottomBar = {
-            if (showBottomBar) {
-                val selectedTab = when {
-                    currentDestination.hasRoute(Route.Home::class) -> 0
-                    currentDestination.hasRoute(Route.Groups::class) -> 1
-                    currentDestination.hasRoute(Route.Contact::class) -> 2
-                    currentDestination.hasRoute(Route.Account::class) -> 3
-                    else -> 0
-                }
+            AnimatedVisibility(visible = showBottomBar, enter = Motion.barEnter, exit = Motion.barExit) {
                 MainBottomNavigation(selectedTab = selectedTab, onTabSelected = { index ->
                     val targetRoute = when (index) {
                         0 -> Route.Home
@@ -183,15 +191,22 @@ fun NavSetup() {
                     centerContentDescription = if (FeatureFlags.WALLET) "Scan" else "New group")
             }
         }) { innerPadding ->
+        val measuredBar = innerPadding.calculateBottomPadding()
+        if (measuredBar > 0.dp) barHeight = measuredBar
+        // Tab screens keep their last row clear of the bar (the final group, the last
+        // contact). Contacts hides the bar for its own detail view, which then needs none.
+        val tabBottomPadding = if (showBottomBarOverride) barHeight else 0.dp
+        val tabContent: @Composable (@Composable () -> Unit) -> Unit = { content ->
+            Box(Modifier.fillMaxSize().padding(bottom = tabBottomPadding)) { content() }
+        }
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.fillMaxSize()
-                // Reserve the bar's height so the last row of a tab screen — the final
-                // favourite, the last group — is not hidden underneath it. Only while the
-                // bar is actually shown: every other destination draws to the bottom edge
-                // and manages its own insets, and padding those would leave a dead strip.
-                .padding(bottom = if (showBottomBar) innerPadding.calculateBottomPadding() else 0.dp)
+            modifier = Modifier.fillMaxSize(),
+            enterTransition = Motion.enter,
+            exitTransition = Motion.exit,
+            popEnterTransition = Motion.popEnter,
+            popExitTransition = Motion.popExit,
         ) {
             composable<Route.Onboarding> {
                 OnboardingScreen(
@@ -271,7 +286,7 @@ fun NavSetup() {
                     onNavigateBack = { navController.popBackStack() },
                     onPasswordChanged = { navController.navigate(Route.Login) })
             }
-            composable<Route.Home> {
+            composable<Route.Home> { tabContent {
                 HomeScreen(
                     onNavigateToNotification = { navController.navigate(Route.Notification) },
                     onNavigateToActivity = { navController.navigate(Route.Activity) },
@@ -294,7 +309,7 @@ fun NavSetup() {
                         authViewModel.resendVerification()
                         navController.navigate(Route.VerifyEmail)
                     })
-            }
+            } }
             composable<Route.Pay> {
                 PayScreenWrapper(
                     onNavigateBack = { navController.popBackStack() })
@@ -326,13 +341,13 @@ fun NavSetup() {
                     onNavigateToRequest = { navController.navigate(Route.Request) }.takeIf { FeatureFlags.WALLET },
                     onNavigateToSettleUp = { groupId -> navController.navigate(Route.SettleUp(groupId)) })
             }
-            composable<Route.Groups> {
+            composable<Route.Groups> { tabContent {
                 GroupsScreen(
                     onNavigateToNewGroup = { navController.navigate(Route.NewGroup) },
                     onNavigateToGroupDetail = { groupId ->
                         navController.navigate(Route.GroupDetail(groupId))
                     })
-            }
+            } }
             composable<Route.NewGroup> {
                 NewGroupScreen(
                     viewModel = newGroupViewModel,
@@ -394,7 +409,7 @@ fun NavSetup() {
                 GroupSettingsScreen(
                     groupId = route.groupId, onNavigateBack = { navController.popBackStack() })
             }
-            composable<Route.Account> {
+            composable<Route.Account> { tabContent {
                 AccountScreen(
                     // Paid plans and payment methods depend on the wallet's payment provider.
                     onNavigateToUpgrade = { navController.navigate(Route.UpgradePlan) }.takeIf { FeatureFlags.WALLET },
@@ -409,7 +424,7 @@ fun NavSetup() {
                     onNavigateToAppearance = { navController.navigate(Route.AppAppearance) },
                     onNavigateToDataAnalytics = { navController.navigate(Route.DataAnalytics) },
                     onNavigateToHelpSupport = { navController.navigate(Route.HelpSupport) })
-            }
+            } }
             composable<Route.PersonalInfo> {
                 PersonalInfoScreen(onNavigateBack = { navController.popBackStack() })
             }
@@ -491,10 +506,10 @@ fun NavSetup() {
                 UpgradeSuccessScreen(
                     onDone = { navController.popBackStack() })
             }
-            composable<Route.Contact> {
+            composable<Route.Contact> { tabContent {
                 ContactScreen(
                     onVisibilityChanged = { visible -> showBottomBarOverride = visible })
-            }
+            } }
             composable<Route.Scan> {
                 ScanScreen(
                     onNavigateBack = { navController.popBackStack() })
