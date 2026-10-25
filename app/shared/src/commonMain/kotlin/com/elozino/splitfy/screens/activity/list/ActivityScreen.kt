@@ -13,6 +13,8 @@ import com.elozino.splitfy.ui.components.SkeletonBlock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -108,31 +110,35 @@ fun ActivityScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Tab Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    tabs.forEachIndexed { index, (filter, title) ->
-                        val isSelected = selectedTabIndex == index
-                        Button(
-                            onClick = { viewModel.onFilterChange(filter) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected) AppTheme.colors.brand else Color.Transparent,
-                                contentColor = if (isSelected) AppTheme.colors.onBrand else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(0.dp),
-                            elevation = null
-                        ) {
-                            Text(
-                                text = title,
-                                fontSize = 13.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
+                // Tab Row: across the width on a phone; on a wider window the pills keep
+                // their size at the start, rather than stretching into long bars.
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val fillWidth = activityFiltersFillWidth(maxWidth)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        tabs.forEachIndexed { index, (filter, title) ->
+                            val isSelected = selectedTabIndex == index
+                            Button(
+                                onClick = { viewModel.onFilterChange(filter) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isSelected) AppTheme.colors.brand else Color.Transparent,
+                                    contentColor = if (isSelected) AppTheme.colors.onBrand else MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = if (fillWidth) Modifier.weight(1f) else Modifier.widthIn(min = ActivityFilterMinWidth),
+                                contentPadding = if (fillWidth) PaddingValues(0.dp) else PaddingValues(horizontal = 16.dp),
+                                elevation = null
+                            ) {
+                                Text(
+                                    text = title,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            }
                         }
                     }
                 }

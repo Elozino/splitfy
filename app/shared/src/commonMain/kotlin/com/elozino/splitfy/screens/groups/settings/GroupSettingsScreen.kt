@@ -200,7 +200,7 @@ private fun EditGroupScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     // As the group's own cover: a quarter of a short window, 180dp otherwise.
-                    .height(minOf(180.dp, LocalWindowLayout.current.height / 4))
+                    .height(minOf(180.dp, LocalWindowLayout.current.usableHeight / 4))
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {

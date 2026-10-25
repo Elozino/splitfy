@@ -55,6 +55,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import org.koin.compose.viewmodel.koinViewModel
 import com.elozino.splitfy.adaptive.LocalWindowLayout
+import com.elozino.splitfy.adaptive.TabletopBottomBar
 import org.koin.core.parameter.parametersOf
 import com.elozino.splitfy.screens.expenses.add.label
 import com.elozino.splitfy.screens.groups.detail.shared.ExpenseItemData
@@ -89,8 +90,9 @@ fun GroupDetailScreen(
         resizeOptions = ResizeOptions(width = 2048, height = 2048, compressionQuality = 0.9),
         onResult = { images -> images.firstOrNull()?.let(viewModel::onCoverImage) },
     )
-    // A quarter of a short window (a phone on its side), 200dp otherwise.
-    val coverHeight = minOf(200.dp, LocalWindowLayout.current.height / 4)
+    // A quarter of a short window (a phone on its side, or the top half of a
+    // foldable standing half open), 200dp otherwise.
+    val coverHeight = minOf(200.dp, LocalWindowLayout.current.usableHeight / 4)
     // A short window can't spare a fixed cover and a bottom bar of actions on top of the
     // app's own bar: the cover gives its height to the tab's content as that scrolls,
     // and the actions move up beside the tabs.
@@ -176,11 +178,14 @@ fun GroupDetailScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             if (!compactHeight) {
-                GroupActionsBar(
-                    actions = state.actions,
-                    onAddExpense = onNavigateToAddExpense,
-                    onSettleUp = onNavigateToSettleUp,
-                )
+                // Below the fold when the device stands half open; unchanged otherwise.
+                TabletopBottomBar {
+                    GroupActionsBar(
+                        actions = state.actions,
+                        onAddExpense = onNavigateToAddExpense,
+                        onSettleUp = onNavigateToSettleUp,
+                    )
+                }
             }
         }
     ) { padding ->

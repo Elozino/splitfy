@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.elozino.splitfy.ui.components.MainNavigationRail
 import com.elozino.splitfy.screens.groups.list.GroupsListDetail
+import com.elozino.splitfy.screens.groups.list.groupDetailViewModelKey
+import com.elozino.splitfy.adaptive.paneScaffoldDirectiveFor
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import com.elozino.splitfy.adaptive.ReadableWidth
 import com.elozino.splitfy.adaptive.LocalWindowLayout
 import androidx.compose.runtime.mutableIntStateOf
@@ -93,6 +96,7 @@ import com.elozino.splitfy.screens.wallet.withdraw.WithdrawScreen
 import com.elozino.splitfy.ui.components.MainBottomNavigation
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @OptIn(androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -412,8 +416,17 @@ fun NavSetup() {
             composable<Route.Groups> {
                 // Which group the list-detail scaffold has open. Saved, and held here rather
                 // than inside the scaffold, so it survives folding and unfolding.
-                val groupsNavigator = rememberListDetailPaneScaffoldNavigator<String>()
+                val groupsNavigator = rememberListDetailPaneScaffoldNavigator<String>(
+                    scaffoldDirective = paneScaffoldDirectiveFor(currentWindowAdaptiveInfo()),
+                )
                 if (windowLayout.useTwoPanes) {
+                    // Unfolded (or widened) on a group opened full screen from this list: it
+                    // came back here, so open it beside the list.
+                    LaunchedEffect(Unit) {
+                        it.savedStateHandle.remove<String>(OPEN_IN_DETAIL_PANE)?.let { groupId ->
+                            groupsNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail, groupId)
+                        }
+                    }
                     tabContent(false) {
                         GroupsListDetail(
                             navigator = groupsNavigator,
@@ -468,8 +481,30 @@ fun NavSetup() {
             } }
             composable<Route.GroupDetail> { backStackEntry -> ReadableWidth {
                 val route: Route.GroupDetail = backStackEntry.toRoute()
+                // Opened from the Groups list (or by folding with it open beside the list).
+                val groupsEntry = remember(backStackEntry) {
+                    navController.previousBackStackEntry?.takeIf { it.destination.hasRoute(Route.Groups::class) }
+                }
+                // Unfolded with the group open: hand it back to the list, which shows it
+                // beside itself, rather than stretching one group across the whole window.
+                if (windowLayout.useTwoPanes && groupsEntry != null) {
+                    LaunchedEffect(Unit) {
+                        if (navController.currentBackStackEntry == backStackEntry) {
+                            groupsEntry.savedStateHandle[OPEN_IN_DETAIL_PANE] = route.groupId
+                            navController.popBackStack()
+                        }
+                    }
+                }
                 GroupDetailScreen(
                     groupId = route.groupId,
+                    // Shared with the list-detail pane, so a fold change keeps the tab and data.
+                    viewModel = if (groupsEntry != null) {
+                        koinViewModel(viewModelStoreOwner = groupsEntry, key = groupDetailViewModelKey(route.groupId)) {
+                            parametersOf(route.groupId)
+                        }
+                    } else {
+                        koinViewModel { parametersOf(route.groupId) }
+                    },
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToAddExpense = {
                         navController.navigate(Route.AddExpense(route.groupId))
@@ -608,7 +643,8 @@ fun NavSetup() {
                 UpgradeSuccessScreen(
                     onDone = { navController.popBackStack() })
             } }
-            composable<Route.Contact> { tabContent(true) {
+            // Two panes: Contacts takes the full width for its list-detail layout.
+            composable<Route.Contact> { tabContent(!windowLayout.useTwoPanes) {
                 ContactScreen(
                     onVisibilityChanged = { visible -> showBottomBarOverride = visible })
             } }
@@ -620,3 +656,6 @@ fun NavSetup() {
         }
     }
 }
+
+/** Set on the Groups entry by a full-screen group handing itself back to the list-detail layout. */
+private const val OPEN_IN_DETAIL_PANE = "openInDetailPane"

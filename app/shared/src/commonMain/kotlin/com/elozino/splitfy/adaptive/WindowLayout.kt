@@ -21,6 +21,9 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -32,7 +35,9 @@ import androidx.compose.ui.unit.dp
  *   bottom bar for compact widths and for short windows (a phone on its side), and a
  *   rail for medium and wider ones;
  * - panes: [calculatePaneScaffoldDirective] allows two side by side on expanded
- *   widths and accounts for hinges on foldables.
+ *   widths and accounts for hinges on foldables ([paneScaffoldDirectiveFor] adds
+ *   two panes for a foldable held like a book);
+ * - posture: where a half-open foldable standing on a table folds ([tabletopFold]).
  *
  * [width] and [height] are the window's actual size, for the few places that scale
  * with it.
@@ -45,21 +50,38 @@ data class WindowLayout(
     val useNavigationRail: Boolean,
     /** Room for a list and its detail side by side. */
     val useTwoPanes: Boolean,
+    /**
+     * The fold, in window pixels, while a foldable stands half open on a table; null
+     * otherwise. Content goes above it and controls below ([TabletopBottomBar]).
+     */
+    val tabletopFold: Rect? = null,
+    /**
+     * The height content can use: the top half above the fold in tabletop posture, the
+     * whole window otherwise. Size headers and images from this, not [height].
+     */
+    val usableHeight: Dp = height,
 )
 
 val LocalWindowLayout = staticCompositionLocalOf {
     WindowLayout(width = 360.dp, height = 800.dp, useNavigationRail = false, useTwoPanes = false)
 }
 
-/** The layout Google's adaptive rules give for [info], in a window of [width] × [height]. */
+/**
+ * The layout Google's adaptive rules give for [info], in a window of [width] × [height].
+ * [density] turns a tabletop fold's pixel bounds into [WindowLayout.usableHeight]; a
+ * caller with no fold in [info] can leave it out.
+ */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-fun windowLayoutFor(info: WindowAdaptiveInfo, width: Dp, height: Dp): WindowLayout {
+fun windowLayoutFor(info: WindowAdaptiveInfo, width: Dp, height: Dp, density: Density = Density(1f)): WindowLayout {
     val navigation = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(info)
+    val fold = info.windowPosture.tabletopFold
     return WindowLayout(
         width = width,
         height = height,
         useNavigationRail = navigation.isRail(),
-        useTwoPanes = calculatePaneScaffoldDirective(info).maxHorizontalPartitions > 1,
+        useTwoPanes = paneScaffoldDirectiveFor(info).maxHorizontalPartitions > 1,
+        tabletopFold = fold,
+        usableHeight = fold?.let { with(density) { it.top.toDp() } }?.coerceAtMost(height) ?: height,
     )
 }
 
@@ -73,7 +95,7 @@ private fun NavigationSuiteType.isRail(): Boolean =
 fun ProvideWindowLayout(content: @Composable () -> Unit) {
     val info = currentWindowAdaptiveInfo()
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalWindowLayout provides windowLayoutFor(info, maxWidth, maxHeight)) {
+        CompositionLocalProvider(LocalWindowLayout provides windowLayoutFor(info, maxWidth, maxHeight, LocalDensity.current)) {
             content()
         }
     }
