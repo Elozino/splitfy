@@ -1,5 +1,10 @@
 package com.elozino.splitfy.screens.groups.detail.main
 
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
+import com.elozino.splitfy.screens.common.currentHeight
+import com.elozino.splitfy.screens.common.rememberCollapsingHeaderState
+import com.elozino.splitfy.screens.common.rememberCompactHeight
 import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.screens.expenses.emoji
 import com.elozino.splitfy.screens.groups.detail.shared.GroupActions
@@ -85,6 +90,14 @@ fun GroupDetailScreen(
         resizeOptions = ResizeOptions(width = 2048, height = 2048, compressionQuality = 0.9),
         onResult = { images -> images.firstOrNull()?.let(viewModel::onCoverImage) },
     )
+    // A quarter of a short window (a phone on its side, or the top half of a
+    // foldable standing half open), 200dp otherwise.
+    val coverHeight = minOf(200.dp, LocalWindowLayout.current.usableHeight / 4)
+    // A short window can't spare a fixed cover and a bottom bar of actions on top of the
+    // app's own bar: the cover gives its height to the tab's content as that scrolls,
+    // and the actions move up beside the tabs.
+    val compactHeight = rememberCompactHeight()
+    val cover = rememberCollapsingHeaderState(coverHeight)
 
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
@@ -164,13 +177,15 @@ fun GroupDetailScreen(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            // Below the fold when the device stands half open; unchanged otherwise.
-            TabletopBottomBar {
-                GroupActionsBar(
-                    actions = state.actions,
-                    onAddExpense = onNavigateToAddExpense,
-                    onSettleUp = onNavigateToSettleUp,
-                )
+            if (!compactHeight) {
+                // Below the fold when the device stands half open; unchanged otherwise.
+                TabletopBottomBar {
+                    GroupActionsBar(
+                        actions = state.actions,
+                        onAddExpense = onNavigateToAddExpense,
+                        onSettleUp = onNavigateToSettleUp,
+                    )
+                }
             }
         }
     ) { padding ->
@@ -179,14 +194,13 @@ fun GroupDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .then(if (compactHeight) Modifier.nestedScroll(cover.connection) else Modifier)
             ) {
                 // Group Header Image
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // A quarter of a short window (a phone on its side, or the top half of a
-                        // foldable standing half open), 200dp otherwise.
-                        .height(minOf(200.dp, LocalWindowLayout.current.usableHeight / 4))
+                        .height(if (compactHeight) cover.currentHeight() else coverHeight)
                         .then(if (state.isFirstLoad) Modifier.shimmer() else Modifier.background(MaterialTheme.colorScheme.surfaceVariant))
                 ) {
                     state.group?.coverImageUrl?.let { url ->
@@ -221,31 +235,41 @@ fun GroupDetailScreen(
                 }
 
                 // Tabs
-                SecondaryScrollableTabRow(
-                    selectedTabIndex = state.selectedTab,
-                    containerColor = MaterialTheme.colorScheme.background,
-                    edgePadding = 24.dp,
-                    indicator = {
-                        TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier.tabIndicatorOffset(state.selectedTab, true),
-                            color = AppTheme.colors.brand
-                        )
-                    },
-                    divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = state.selectedTab == index,
-                            onClick = { viewModel.onTabSelected(index) },
-                            text = {
-                                Text(
-                                    text = title,
-                                    fontWeight = if (state.selectedTab == index) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 13.sp
-                                )
-                            },
-                            selectedContentColor = MaterialTheme.colorScheme.onSurface,
-                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SecondaryScrollableTabRow(
+                        modifier = Modifier.weight(1f),
+                        selectedTabIndex = state.selectedTab,
+                        containerColor = MaterialTheme.colorScheme.background,
+                        edgePadding = 24.dp,
+                        indicator = {
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier.tabIndicatorOffset(state.selectedTab, true),
+                                color = AppTheme.colors.brand
+                            )
+                        },
+                        divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = state.selectedTab == index,
+                                onClick = { viewModel.onTabSelected(index) },
+                                text = {
+                                    Text(
+                                        text = title,
+                                        fontWeight = if (state.selectedTab == index) FontWeight.Bold else FontWeight.Medium,
+                                        fontSize = 13.sp
+                                    )
+                                },
+                                selectedContentColor = MaterialTheme.colorScheme.onSurface,
+                                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    if (compactHeight) {
+                        GroupActionsInline(
+                            actions = state.actions,
+                            onAddExpense = onNavigateToAddExpense,
+                            onSettleUp = onNavigateToSettleUp,
                         )
                     }
                 }
@@ -334,6 +358,41 @@ private fun GroupActionsBar(
                     Text("Add expense", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
                 }
             }
+        }
+    }
+}
+
+/**
+ * [GroupActionsBar]'s actions for a short window, at the end of the tab row: smaller
+ * buttons, and no celebration line, so the tab's content keeps the height.
+ */
+@Composable
+private fun GroupActionsInline(
+    actions: GroupActions,
+    onAddExpense: () -> Unit,
+    onSettleUp: () -> Unit,
+) {
+    if (actions == GroupActions.None) return
+    Row(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (actions == GroupActions.AddAndSettle) {
+            OutlinedButton(
+                onClick = onSettleUp,
+                shape = RoundedCornerShape(100.dp),
+                border = BorderStroke(1.dp, AppTheme.colors.brand)
+            ) {
+                Text("Settle up", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+            }
+        }
+        Button(
+            onClick = onAddExpense,
+            shape = RoundedCornerShape(100.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
+        ) {
+            Text("Add expense", color = AppTheme.colors.onBrand, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -619,7 +678,7 @@ private fun TotalsList(state: GroupDetailState) {
         }
         return
     }
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+    FillOrScrollColumn(modifier = Modifier.fillMaxSize().padding(24.dp)) {
         Text("All time", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(16.dp))
         

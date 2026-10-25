@@ -1,6 +1,15 @@
 package com.elozino.splitfy.screens.auth.landing
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
+import com.elozino.splitfy.screens.common.rememberSideBySide
+import com.elozino.splitfy.api.dto.OAuthProvider
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -75,6 +84,23 @@ fun AuthScreen(
         if (state.twoFactorChallenge != null) onTwoFactorRequired()
     }
 
+    val onSocial: (OAuthProvider) -> Unit = { provider ->
+        viewModel.consumeError()
+        scope.launch { viewModel.onSocialSignIn(provider, socialSignIn.signIn(provider)) }
+    }
+
+    if (rememberSideBySide()) {
+        AuthLandingSideBySide(
+            providers = socialSignIn.providers,
+            isSubmitting = state.isSubmitting,
+            errorMessage = state.errorMessage,
+            onSocial = onSocial,
+            onNavigateToRegister = onNavigateToRegister,
+            onNavigateToLogin = onNavigateToLogin,
+        )
+        return
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -115,25 +141,7 @@ fun AuthScreen(
         ) {
             Spacer(modifier = Modifier.height(60.dp))
 
-            Text(
-                text = "Let's get started!",
-                fontWeight = FontWeight.Bold,
-                fontSize = 32.sp,
-                textAlign = TextAlign.Center,
-                lineHeight = 40.sp,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "With Splitfy, expenses and bill splitting are easier than ever before",
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
-                lineHeight = 24.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            AuthLandingIntro()
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -149,10 +157,7 @@ fun AuthScreen(
                     AuthButton(
                         option = provider.authOption(),
                         enabled = !state.isSubmitting,
-                        onClick = {
-                            viewModel.consumeError()
-                            scope.launch { viewModel.onSocialSignIn(provider, socialSignIn.signIn(provider)) }
-                        }
+                        onClick = { onSocial(provider) }
                     )
                 }
                 item {
@@ -164,6 +169,83 @@ fun AuthScreen(
                     AuthFieldError(state.errorMessage)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AuthLandingIntro() {
+    Text(
+        text = "Let's get started!",
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp,
+        textAlign = TextAlign.Center,
+        lineHeight = 40.sp,
+        color = MaterialTheme.colorScheme.onBackground
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Text(
+        text = "With Splitfy, expenses and bill splitting are easier than ever before",
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        textAlign = TextAlign.Center,
+        lineHeight = 24.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+/**
+ * A phone on its side: the welcome beside every way in, which scroll on their own,
+ * instead of a pinned bottom bar that would leave no room for the providers.
+ */
+@Composable
+private fun AuthLandingSideBySide(
+    providers: List<OAuthProvider>,
+    isSubmitting: Boolean,
+    errorMessage: String?,
+    onSocial: (OAuthProvider) -> Unit,
+    onNavigateToRegister: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(32.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            AuthLandingIntro()
+        }
+        FillOrScrollColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .padding(vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        ) {
+            providers.forEach { provider ->
+                AuthButton(
+                    option = provider.authOption(),
+                    enabled = !isSubmitting,
+                    onClick = { onSocial(provider) }
+                )
+            }
+            if (isSubmitting) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = AppTheme.colors.brand)
+                }
+            }
+            AuthFieldError(errorMessage)
+            authOptions.find { it.title == "Sign up" }?.let { AuthButton(option = it, onClick = onNavigateToRegister) }
+            authOptions.find { it.title == "Log in" }?.let { AuthButton(option = it, onClick = onNavigateToLogin) }
         }
     }
 }

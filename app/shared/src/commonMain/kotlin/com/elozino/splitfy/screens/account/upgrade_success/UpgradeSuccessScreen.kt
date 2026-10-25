@@ -1,6 +1,7 @@
 package com.elozino.splitfy.screens.account.upgrade_success
 
 
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
 import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.background
@@ -110,7 +111,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun UpgradeSuccessScreen(onDone: () -> Unit) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
+        FillOrScrollColumn(
             modifier = Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(modifier = Modifier.fillMaxWidth()) {

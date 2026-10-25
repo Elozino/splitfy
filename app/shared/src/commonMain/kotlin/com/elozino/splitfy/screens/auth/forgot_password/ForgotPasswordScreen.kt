@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.auth.forgot_password
 
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.elozino.splitfy.screens.auth.shared.AuthFormLayout
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -55,39 +57,37 @@ fun ForgotPasswordScreen(
             }
         }
     ) { padding ->
-        Column(
+        AuthFormLayout(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 24.dp)
+                .consumeWindowInsets(padding)
+                .padding(horizontal = 24.dp),
+            header = { titleSize ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Reset your password",
+                        fontSize = titleSize,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "🔑",
+                        fontSize = titleSize
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Please enter your email and we will send an OTP code in the next step to reset your password.",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 24.sp
+                )
+            },
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Reset your password",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "🔑",
-                    fontSize = 32.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Please enter your email and we will send an OTP code in the next step to reset your password.",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 24.sp
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             AuthTextField(
                 value = email,
                 onValueChange = viewModel::onEmailChange,

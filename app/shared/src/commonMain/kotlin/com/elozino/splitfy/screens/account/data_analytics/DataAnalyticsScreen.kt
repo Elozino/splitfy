@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.data_analytics
 
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
@@ -80,7 +81,7 @@ fun DataAnalyticsScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
+        FillOrScrollColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth().clickable(enabled = !state.isExporting, onClick = viewModel::downloadData),
                 horizontalArrangement = Arrangement.SpaceBetween,
