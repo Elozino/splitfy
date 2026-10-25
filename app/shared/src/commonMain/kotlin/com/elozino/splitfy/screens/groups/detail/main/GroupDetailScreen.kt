@@ -50,6 +50,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import org.koin.compose.viewmodel.koinViewModel
 import com.elozino.splitfy.adaptive.LocalWindowLayout
+import com.elozino.splitfy.adaptive.TabletopBottomBar
 import org.koin.core.parameter.parametersOf
 import com.elozino.splitfy.screens.expenses.add.label
 import com.elozino.splitfy.screens.groups.detail.shared.ExpenseItemData
@@ -163,11 +164,14 @@ fun GroupDetailScreen(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            GroupActionsBar(
-                actions = state.actions,
-                onAddExpense = onNavigateToAddExpense,
-                onSettleUp = onNavigateToSettleUp,
-            )
+            // Below the fold when the device stands half open; unchanged otherwise.
+            TabletopBottomBar {
+                GroupActionsBar(
+                    actions = state.actions,
+                    onAddExpense = onNavigateToAddExpense,
+                    onSettleUp = onNavigateToSettleUp,
+                )
+            }
         }
     ) { padding ->
         RefreshableBox(isRefreshing = state.isRefreshing, onRefresh = viewModel::refresh, indicatorPadding = padding) {
@@ -180,8 +184,9 @@ fun GroupDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // A quarter of a short window (a phone on its side), 200dp otherwise.
-                        .height(minOf(200.dp, LocalWindowLayout.current.height / 4))
+                        // A quarter of a short window (a phone on its side, or the top half of a
+                        // foldable standing half open), 200dp otherwise.
+                        .height(minOf(200.dp, LocalWindowLayout.current.usableHeight / 4))
                         .then(if (state.isFirstLoad) Modifier.shimmer() else Modifier.background(MaterialTheme.colorScheme.surfaceVariant))
                 ) {
                     state.group?.coverImageUrl?.let { url ->
