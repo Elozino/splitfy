@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.FeatureFlags
+import com.elozino.splitfy.adaptive.readableWidth
 import com.elozino.splitfy.ui.components.SkeletonBlock
 import com.elozino.splitfy.ui.components.SkeletonList
 import com.elozino.splitfy.ui.components.SkeletonListItem
@@ -130,7 +131,7 @@ fun HomeScreen(
                     )
                     ActivitySection(
                         state = state,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).readableWidth(),
                         onViewAllClick = onNavigateToActivity
                     )
                 } else {
@@ -143,7 +144,7 @@ fun HomeScreen(
                     GroupsSection(
                         state = state,
                         onRetry = viewModel::load,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).readableWidth(),
                         onViewAllClick = onNavigateToGroups,
                         onGroupClick = onNavigateToGroupDetail,
                         onNewGroupClick = onNavigateToNewGroup,
@@ -168,7 +169,7 @@ fun BalanceHeader(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .readableWidth()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -393,7 +394,7 @@ fun PositionHeader(
     Surface(color = AppTheme.colors.brand) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .readableWidth()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

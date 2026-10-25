@@ -17,6 +17,7 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.ImageLoader
 import coil3.svg.SvgDecoder
 import com.elozino.splitfy.navigation.NavSetup
+import com.elozino.splitfy.adaptive.ProvideWindowLayout
 import com.elozino.splitfy.security.AppLockGate
 import com.elozino.splitfy.ui.theme.AppTheme
 import org.koin.compose.KoinContext
@@ -44,7 +45,7 @@ fun App() {
             CompositionLocalProvider(LocalStatusBarAppearance provides statusBar) {
                 SystemBarsEffect(darkTheme = isAppInDarkTheme, darkStatusBarIcons = statusBarIconsDark(statusBar))
                 AppLockGate {
-                    NavSetup()
+                    ProvideWindowLayout { NavSetup() }
                 }
             }
         }

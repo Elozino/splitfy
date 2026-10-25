@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -35,7 +36,9 @@ import org.koin.compose.viewmodel.koinViewModel
 fun GroupsScreen(
     viewModel: GroupsViewModel = koinViewModel(),
     onNavigateToNewGroup: () -> Unit,
-    onNavigateToGroupDetail: (String) -> Unit
+    onNavigateToGroupDetail: (String) -> Unit,
+    /** Off beside the navigation rail, whose own New group button would duplicate it. */
+    showNewGroupButton: Boolean = true,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -50,7 +53,8 @@ fun GroupsScreen(
         errorMessage = state.errorMessage,
         onRetry = viewModel::load,
         onCreateGroupClick = onNavigateToNewGroup,
-        onGroupClick = { item -> onNavigateToGroupDetail(item.id) }
+        onGroupClick = { item -> onNavigateToGroupDetail(item.id) },
+        showNewGroupButton = showNewGroupButton,
     )
 }
 
@@ -74,7 +78,8 @@ private fun GroupsListScreen(
     errorMessage: String?,
     onRetry: () -> Unit,
     onCreateGroupClick: () -> Unit,
-    onGroupClick: (GroupItemData) -> Unit
+    onGroupClick: (GroupItemData) -> Unit,
+    showNewGroupButton: Boolean = true,
 ) {
     var isSearching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
@@ -107,7 +112,7 @@ private fun GroupsListScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            FloatingActionButton(
+            if (showNewGroupButton) FloatingActionButton(
                 onClick = onCreateGroupClick,
                 containerColor = AppTheme.colors.brand,
                 contentColor = AppTheme.colors.onBrand,
@@ -293,9 +298,24 @@ fun GroupItem(data: GroupItemData, onClick: () -> Unit) {
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = data.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = data.members, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // One line, so a long name never runs into the amount beside it.
+                Text(
+                    text = data.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = data.members,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
+
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(horizontalAlignment = Alignment.End) {
                 if (data.isSettled) {
