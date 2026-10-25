@@ -608,7 +608,8 @@ fun NavSetup() {
                 UpgradeSuccessScreen(
                     onDone = { navController.popBackStack() })
             } }
-            composable<Route.Contact> { tabContent(true) {
+            // Two panes: Contacts takes the full width for its list-detail layout.
+            composable<Route.Contact> { tabContent(!windowLayout.useTwoPanes) {
                 ContactScreen(
                     onVisibilityChanged = { visible -> showBottomBarOverride = visible })
             } }
