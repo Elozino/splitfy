@@ -6,6 +6,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.elozino.splitfy.ui.components.MainNavigationRail
+import com.elozino.splitfy.screens.groups.list.GroupsListDetail
+import com.elozino.splitfy.adaptive.ReadableWidth
+import com.elozino.splitfy.adaptive.LocalWindowLayout
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.layout.Box
 import androidx.compose.animation.AnimatedVisibility
@@ -76,6 +94,7 @@ import com.elozino.splitfy.ui.components.MainBottomNavigation
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun NavSetup() {
     val navController = rememberNavController()
@@ -167,54 +186,103 @@ fun NavSetup() {
     // nothing resizes underneath a transition when the bar slides in or out.
     var barHeight by remember { mutableStateOf(0.dp) }
 
+    val windowLayout = LocalWindowLayout.current
+    val navigateToTab: (Int) -> Unit = { index ->
+        val targetRoute = when (index) {
+            0 -> Route.Home
+            1 -> Route.Groups
+            2 -> Route.Contact
+            3 -> Route.Account
+            else -> Route.Home
+        }
+        navController.navigate(targetRoute) {
+            popUpTo(navController.graph.startDestinationId) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+    val onPrimaryAction = { navController.navigate(if (FeatureFlags.WALLET) Route.Scan else Route.NewGroup) }
+    val primaryIcon = if (FeatureFlags.WALLET) Icons.Default.QrCodeScanner else Icons.Default.Add
+    val primaryDescription = if (FeatureFlags.WALLET) "Scan" else "New group"
+    // Wide windows (tablets, unfolded foldables) navigate from a side rail. Unlike the
+    // bottom bar it stays on every signed-in screen, so the content beside it never
+    // changes width mid-transition; only the camera and the sign-in flow go full screen.
+    val showRail = windowLayout.useNavigationRail && isAuthenticated && currentDestination != null &&
+        listOf(
+            Route.Onboarding::class, Route.Auth::class, Route.Login::class, Route.Signup::class,
+            Route.VerifyEmail::class, Route.TwoFactorSignIn::class, Route.ForgotPassword::class,
+            Route.Otp::class, Route.NewPassword::class, Route.Scan::class,
+        ).none { currentDestination.hasRoute(it) }
+
     Scaffold(
         bottomBar = {
-            AnimatedVisibility(visible = showBottomBar, enter = Motion.barEnter, exit = Motion.barExit) {
-                MainBottomNavigation(selectedTab = selectedTab, onTabSelected = { index ->
-                    val targetRoute = when (index) {
-                        0 -> Route.Home
-                        1 -> Route.Groups
-                        2 -> Route.Contact
-                        3 -> Route.Account
-                        else -> Route.Home
-                    }
-                    navController.navigate(targetRoute) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }, onCenterClick = {
-                    navController.navigate(if (FeatureFlags.WALLET) Route.Scan else Route.NewGroup)
-                }, centerIcon = if (FeatureFlags.WALLET) Icons.Default.QrCodeScanner else Icons.Default.Add,
-                    centerContentDescription = if (FeatureFlags.WALLET) "Scan" else "New group")
+            AnimatedVisibility(
+                visible = showBottomBar && !windowLayout.useNavigationRail,
+                enter = Motion.barEnter,
+                exit = Motion.barExit,
+            ) {
+                MainBottomNavigation(
+                    selectedTab = selectedTab,
+                    onTabSelected = navigateToTab,
+                    onCenterClick = onPrimaryAction,
+                    centerIcon = primaryIcon,
+                    centerContentDescription = primaryDescription,
+                )
             }
         }) { innerPadding ->
         val measuredBar = innerPadding.calculateBottomPadding()
         if (measuredBar > 0.dp) barHeight = measuredBar
         // Tab screens keep their last row clear of the bar (the final group, the last
         // contact). Contacts hides the bar for its own detail view, which then needs none.
-        val tabBottomPadding = if (showBottomBarOverride) barHeight else 0.dp
-        val tabContent: @Composable (@Composable () -> Unit) -> Unit = { content ->
-            Box(Modifier.fillMaxSize().padding(bottom = tabBottomPadding)) { content() }
+        // Beside a rail there is no bar to clear.
+        val tabBottomPadding = if (showBottomBarOverride && !windowLayout.useNavigationRail) barHeight else 0.dp
+        // [readable] centres the tab in a column on wide windows; Home lays itself out.
+        val tabContent: @Composable (Boolean, @Composable () -> Unit) -> Unit = { readable, content ->
+            Box(Modifier.fillMaxSize().padding(bottom = tabBottomPadding)) {
+                if (readable) ReadableWidth(content) else content()
+            }
+        }
+        Row(Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = showRail,
+            enter = fadeIn() + expandHorizontally(),
+            exit = fadeOut() + shrinkHorizontally(),
+        ) {
+            MainNavigationRail(
+                selectedTab = selectedTab,
+                onTabSelected = navigateToTab,
+                onCenterClick = onPrimaryAction,
+                centerIcon = primaryIcon,
+                centerContentDescription = primaryDescription,
+                compact = windowLayout.height < 480.dp,
+            )
         }
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                // The rail already pads for the start-side system bars and cutout; without
+                // this, a screen beside it would pad for them a second time.
+                .then(
+                    if (showRail) Modifier.consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Start))
+                    else Modifier
+                ),
             enterTransition = Motion.enter,
             exitTransition = Motion.exit,
             popEnterTransition = Motion.popEnter,
             popExitTransition = Motion.popExit,
         ) {
-            composable<Route.Onboarding> {
+            composable<Route.Onboarding> { ReadableWidth {
                 OnboardingScreen(
                     onNavigateToAuth = {
                         navController.navigate(Route.Auth)
                     })
-            }
-            composable<Route.Auth> {
+            } }
+            composable<Route.Auth> { ReadableWidth {
                 AuthScreen(
                     viewModel = authViewModel,
                     onNavigateToRegister = { navController.navigate(Route.Signup) },
@@ -225,8 +293,8 @@ fun NavSetup() {
                         }
                     },
                     onTwoFactorRequired = { navController.navigate(Route.TwoFactorSignIn) })
-            }
-            composable<Route.TwoFactorSignIn> {
+            } }
+            composable<Route.TwoFactorSignIn> { ReadableWidth {
                 TwoFactorSignInScreen(
                     viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
@@ -235,8 +303,8 @@ fun NavSetup() {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
                     })
-            }
-            composable<Route.Signup> {
+            } }
+            composable<Route.Signup> { ReadableWidth {
                 SignUpScreen(
                     viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
@@ -247,8 +315,8 @@ fun NavSetup() {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
                     })
-            }
-            composable<Route.VerifyEmail> {
+            } }
+            composable<Route.VerifyEmail> { ReadableWidth {
                 val signedInEmail = (sessionState as? SessionState.SignedIn)?.user?.email
                 VerifyEmailScreen(
                     viewModel = authViewModel,
@@ -258,8 +326,8 @@ fun NavSetup() {
                             popUpTo(navController.graph.id) { inclusive = true }
                         }
                     })
-            }
-            composable<Route.Login> {
+            } }
+            composable<Route.Login> { ReadableWidth {
                 LoginScreen(
                     viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
@@ -267,26 +335,26 @@ fun NavSetup() {
                     onNavigateToForgotPassword = { navController.navigate(Route.ForgotPassword) },
                     onLoginSuccess = { navController.navigate(Route.Home) },
                     onTwoFactorRequired = { navController.navigate(Route.TwoFactorSignIn) })
-            }
-            composable<Route.ForgotPassword> {
+            } }
+            composable<Route.ForgotPassword> { ReadableWidth {
                 ForgotPasswordScreen(
                     viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onOtpSent = { navController.navigate(Route.Otp) })
-            }
-            composable<Route.Otp> {
+            } }
+            composable<Route.Otp> { ReadableWidth {
                 OtpScreen(
                     viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onOtpVerified = { navController.navigate(Route.NewPassword) })
-            }
-            composable<Route.NewPassword> {
+            } }
+            composable<Route.NewPassword> { ReadableWidth {
                 NewPasswordScreen(
                     viewModel = authViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onPasswordChanged = { navController.navigate(Route.Login) })
-            }
-            composable<Route.Home> { tabContent {
+            } }
+            composable<Route.Home> { tabContent(false) {
                 HomeScreen(
                     onNavigateToNotification = { navController.navigate(Route.Notification) },
                     onNavigateToActivity = { navController.navigate(Route.Activity) },
@@ -310,51 +378,85 @@ fun NavSetup() {
                         navController.navigate(Route.VerifyEmail)
                     })
             } }
-            composable<Route.Pay> {
+            composable<Route.Pay> { ReadableWidth {
                 PayScreenWrapper(
                     onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.Request> {
+            } }
+            composable<Route.Request> { ReadableWidth {
                 RequestScreenWrapper(
                     onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.TopUp> {
+            } }
+            composable<Route.TopUp> { ReadableWidth {
                 TopUpScreen(
                     onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.Withdraw> {
+            } }
+            composable<Route.Withdraw> { ReadableWidth {
                 WithdrawScreen(
                     onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.TransactionHistory> {
+            } }
+            composable<Route.TransactionHistory> { ReadableWidth {
                 TransactionHistoryScreen(
                     onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.Notification> {
+            } }
+            composable<Route.Notification> { ReadableWidth {
                 NotificationScreen(
                     onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.Activity> {
+            } }
+            composable<Route.Activity> { ReadableWidth {
                 ActivityScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToPay = { navController.navigate(Route.Pay) }.takeIf { FeatureFlags.WALLET },
                     onNavigateToRequest = { navController.navigate(Route.Request) }.takeIf { FeatureFlags.WALLET },
                     onNavigateToSettleUp = { groupId -> navController.navigate(Route.SettleUp(groupId)) })
-            }
-            composable<Route.Groups> { tabContent {
-                GroupsScreen(
-                    onNavigateToNewGroup = { navController.navigate(Route.NewGroup) },
-                    onNavigateToGroupDetail = { groupId ->
-                        navController.navigate(Route.GroupDetail(groupId))
-                    })
             } }
-            composable<Route.NewGroup> {
+            composable<Route.Groups> {
+                // Which group the list-detail scaffold has open. Saved, and held here rather
+                // than inside the scaffold, so it survives folding and unfolding.
+                val groupsNavigator = rememberListDetailPaneScaffoldNavigator<String>()
+                if (windowLayout.useTwoPanes) {
+                    tabContent(false) {
+                        GroupsListDetail(
+                            navigator = groupsNavigator,
+                            onNavigateToNewGroup = { navController.navigate(Route.NewGroup) },
+                            onNavigateToAddExpense = { navController.navigate(Route.AddExpense(it)) },
+                            onNavigateToSettleUp = { navController.navigate(Route.SettleUp(it)) },
+                            onNavigateToSettings = { navController.navigate(Route.GroupSettings(it)) },
+                            onNavigateToInvite = { navController.navigate(Route.ShareInvite(it)) },
+                            onNavigateToExpenseDetail = { groupId, expenseId ->
+                                navController.navigate(Route.ExpenseDetail(groupId, expenseId))
+                            },
+                        )
+                    }
+                } else {
+                    tabContent(true) {
+                        GroupsScreen(
+                            onNavigateToNewGroup = { navController.navigate(Route.NewGroup) },
+                            onNavigateToGroupDetail = { groupId ->
+                                navController.navigate(Route.GroupDetail(groupId))
+                            },
+                            showNewGroupButton = !windowLayout.useNavigationRail,
+                        )
+                    }
+                    // Folded (or narrowed) with a group open beside the list: keep it open,
+                    // full screen, instead of dropping the user back on the list.
+                    LaunchedEffect(Unit) {
+                        val open = groupsNavigator.currentDestination
+                            ?.takeIf { it.pane == ListDetailPaneScaffoldRole.Detail }
+                            ?.contentKey
+                        if (open != null) {
+                            groupsNavigator.navigateBack()
+                            navController.navigate(Route.GroupDetail(open))
+                        }
+                    }
+                }
+            }
+            composable<Route.NewGroup> { ReadableWidth {
                 NewGroupScreen(
                     viewModel = newGroupViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onContinue = { navController.navigate(Route.SelectParticipants) })
-            }
-            composable<Route.SelectParticipants> {
+            } }
+            composable<Route.SelectParticipants> { ReadableWidth {
                 SelectParticipantsScreen(
                     viewModel = newGroupViewModel,
                     onNavigateBack = { navController.popBackStack() },
@@ -363,8 +465,8 @@ fun NavSetup() {
                             popUpTo(Route.Groups) { inclusive = true }
                         }
                     })
-            }
-            composable<Route.GroupDetail> { backStackEntry ->
+            } }
+            composable<Route.GroupDetail> { backStackEntry -> ReadableWidth {
                 val route: Route.GroupDetail = backStackEntry.toRoute()
                 GroupDetailScreen(
                     groupId = route.groupId,
@@ -382,34 +484,34 @@ fun NavSetup() {
                     onNavigateToExpenseDetail = { expenseId ->
                         navController.navigate(Route.ExpenseDetail(route.groupId, expenseId))
                     })
-            }
-            composable<Route.ShareInvite> { backStackEntry ->
+            } }
+            composable<Route.ShareInvite> { backStackEntry -> ReadableWidth {
                 val route: Route.ShareInvite = backStackEntry.toRoute()
                 com.elozino.splitfy.invites.ShareInviteScreen(route.groupId) { navController.popBackStack() }
-            }
-            composable<Route.SettleUp> { backStackEntry ->
+            } }
+            composable<Route.SettleUp> { backStackEntry -> ReadableWidth {
                 val route: Route.SettleUp = backStackEntry.toRoute()
                 SettleUpScreen(groupId = route.groupId, onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.AddExpense> { backStackEntry ->
+            } }
+            composable<Route.AddExpense> { backStackEntry -> ReadableWidth {
                 val route: Route.AddExpense = backStackEntry.toRoute()
                 AddExpenseScreen(
                     groupId = route.groupId, onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.ExpenseDetail> { backStackEntry ->
+            } }
+            composable<Route.ExpenseDetail> { backStackEntry -> ReadableWidth {
                 val route: Route.ExpenseDetail = backStackEntry.toRoute()
                 ExpenseDetailScreen(
                     groupId = route.groupId,
                     expenseId = route.expenseId,
                     onNavigateBack = { navController.popBackStack() },
                 )
-            }
-            composable<Route.GroupSettings> { backStackEntry ->
+            } }
+            composable<Route.GroupSettings> { backStackEntry -> ReadableWidth {
                 val route: Route.GroupSettings = backStackEntry.toRoute()
                 GroupSettingsScreen(
                     groupId = route.groupId, onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.Account> { tabContent {
+            } }
+            composable<Route.Account> { tabContent(true) {
                 AccountScreen(
                     // Paid plans and payment methods depend on the wallet's payment provider.
                     onNavigateToUpgrade = { navController.navigate(Route.UpgradePlan) }.takeIf { FeatureFlags.WALLET },
@@ -425,71 +527,71 @@ fun NavSetup() {
                     onNavigateToDataAnalytics = { navController.navigate(Route.DataAnalytics) },
                     onNavigateToHelpSupport = { navController.navigate(Route.HelpSupport) })
             } }
-            composable<Route.PersonalInfo> {
+            composable<Route.PersonalInfo> { ReadableWidth {
                 PersonalInfoScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.NotificationSettings> {
+            } }
+            composable<Route.NotificationSettings> { ReadableWidth {
                 NotificationSettingsScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.SecuritySettings> {
+            } }
+            composable<Route.SecuritySettings> { ReadableWidth {
                 SecuritySettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToChangePassword = { hasPassword -> navController.navigate(Route.ChangePassword(hasPassword)) },
                     onNavigateToDevices = { navController.navigate(Route.Devices) },
                     onNavigateToTwoFactorSetup = { navController.navigate(Route.TwoFactorSetup) })
-            }
-            composable<Route.ChangePassword> { backStackEntry ->
+            } }
+            composable<Route.ChangePassword> { backStackEntry -> ReadableWidth {
                 val route: Route.ChangePassword = backStackEntry.toRoute()
                 ChangePasswordScreen(hasPassword = route.hasPassword, onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.Devices> {
+            } }
+            composable<Route.Devices> { ReadableWidth {
                 DevicesScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.TwoFactorSetup> {
+            } }
+            composable<Route.TwoFactorSetup> { ReadableWidth {
                 TwoFactorSetupScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.BillingSubscriptions> {
+            } }
+            composable<Route.BillingSubscriptions> { ReadableWidth {
                 BillingSubscriptionsScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.LinkedAccounts> {
+            } }
+            composable<Route.LinkedAccounts> { ReadableWidth {
                 LinkedAccountsScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.DataAnalytics> {
+            } }
+            composable<Route.DataAnalytics> { ReadableWidth {
                 DataAnalyticsScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.AppAppearance> {
+            } }
+            composable<Route.AppAppearance> { ReadableWidth {
                 AppAppearanceScreen(onNavigateBack = { navController.popBackStack() })
-            }
+            } }
             // Not linked from App Appearance until the app ships translations.
-            composable<Route.AppLanguage> {
+            composable<Route.AppLanguage> { ReadableWidth {
                 AppLanguageScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.HelpSupport> {
+            } }
+            composable<Route.HelpSupport> { ReadableWidth {
                 HelpSupportScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToFAQ = { navController.navigate(Route.FAQ) },
                     onNavigateToContactSupport = { navController.navigate(Route.ContactSupport) },
                     onNavigateToPrivacyPolicy = { navController.navigate(Route.PrivacyPolicy) },
                     onNavigateToTermsOfService = { navController.navigate(Route.TermsOfService) })
-            }
-            composable<Route.FAQ> {
+            } }
+            composable<Route.FAQ> { ReadableWidth {
                 FAQScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.ContactSupport> {
+            } }
+            composable<Route.ContactSupport> { ReadableWidth {
                 ContactSupportScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.PrivacyPolicy> {
+            } }
+            composable<Route.PrivacyPolicy> { ReadableWidth {
                 PrivacyPolicyScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.TermsOfService> {
+            } }
+            composable<Route.TermsOfService> { ReadableWidth {
                 TermsOfServiceScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.UpgradePlan> {
+            } }
+            composable<Route.UpgradePlan> { ReadableWidth {
                 UpgradePlanScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToPayment = { navController.navigate(Route.PaymentMethods) })
-            }
-            composable<Route.PaymentMethods> {
+            } }
+            composable<Route.PaymentMethods> { ReadableWidth {
                 PaymentMethodsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToAddPayment = { navController.navigate(Route.AddPaymentMethod) },
@@ -498,15 +600,15 @@ fun NavSetup() {
                             popUpTo(Route.UpgradePlan) { inclusive = true }
                         }
                     })
-            }
-            composable<Route.AddPaymentMethod> {
+            } }
+            composable<Route.AddPaymentMethod> { ReadableWidth {
                 AddPaymentMethodScreen(onNavigateBack = { navController.popBackStack() })
-            }
-            composable<Route.UpgradeSuccess> {
+            } }
+            composable<Route.UpgradeSuccess> { ReadableWidth {
                 UpgradeSuccessScreen(
                     onDone = { navController.popBackStack() })
-            }
-            composable<Route.Contact> { tabContent {
+            } }
+            composable<Route.Contact> { tabContent(true) {
                 ContactScreen(
                     onVisibilityChanged = { visible -> showBottomBarOverride = visible })
             } }
@@ -514,6 +616,7 @@ fun NavSetup() {
                 ScanScreen(
                     onNavigateBack = { navController.popBackStack() })
             }
+        }
         }
     }
 }

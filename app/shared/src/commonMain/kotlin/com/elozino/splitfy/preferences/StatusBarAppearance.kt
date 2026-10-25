@@ -16,6 +16,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 
@@ -59,7 +60,8 @@ val LocalStatusBarAppearance = staticCompositionLocalOf<StatusBarAppearance?> { 
 /**
  * Marks this element as drawing [color] behind the status bar while it reaches the
  * top of the screen (an app bar drawn under the bar, a full-screen camera). Has no
- * effect once it scrolls or moves away from the top.
+ * effect once it scrolls or moves away from the top, or while it doesn't span the
+ * full width (a centred column or a screen beside the navigation rail).
  */
 fun Modifier.statusBarBackground(color: Color): Modifier = composed {
     val appearance = LocalStatusBarAppearance.current ?: return@composed this
@@ -67,7 +69,15 @@ fun Modifier.statusBarBackground(color: Color): Modifier = composed {
     DisposableEffect(appearance, key) { onDispose { appearance.remove(key) } }
     onGloballyPositioned { coordinates ->
         val bounds = coordinates.boundsInRoot()
-        appearance.place(key, color, bounds.top, bounds.bottom)
+        // Only an area spanning the full width decides the icons. On a tablet a centred
+        // column or a side rail leaves other colours under parts of the status bar, and
+        // the theme background is the safer guess there.
+        val rootWidth = coordinates.findRootCoordinates().size.width
+        if (bounds.left <= 0.5f && bounds.right >= rootWidth - 0.5f) {
+            appearance.place(key, color, bounds.top, bounds.bottom)
+        } else {
+            appearance.remove(key)
+        }
     }
 }
 

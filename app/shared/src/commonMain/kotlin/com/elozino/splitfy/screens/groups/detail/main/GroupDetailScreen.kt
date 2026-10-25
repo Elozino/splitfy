@@ -49,6 +49,7 @@ import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import org.koin.compose.viewmodel.koinViewModel
+import com.elozino.splitfy.adaptive.LocalWindowLayout
 import org.koin.core.parameter.parametersOf
 import com.elozino.splitfy.screens.expenses.add.label
 import com.elozino.splitfy.screens.groups.detail.shared.ExpenseItemData
@@ -179,7 +180,8 @@ fun GroupDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
+                        // A quarter of a short window (a phone on its side), 200dp otherwise.
+                        .height(minOf(200.dp, LocalWindowLayout.current.height / 4))
                         .then(if (state.isFirstLoad) Modifier.shimmer() else Modifier.background(MaterialTheme.colorScheme.surfaceVariant))
                 ) {
                     state.group?.coverImageUrl?.let { url ->

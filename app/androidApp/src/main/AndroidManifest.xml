@@ -58,6 +58,7 @@
             android:exported="true"
             android:theme="@style/Theme.Splitfy.Starting"
             android:enableOnBackInvokedCallback="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density|uiMode|keyboardHidden"
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
