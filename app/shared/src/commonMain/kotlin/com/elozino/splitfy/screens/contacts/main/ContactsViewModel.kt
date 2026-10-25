@@ -87,6 +87,28 @@ class ContactsViewModel(
         it.copy(selectedContact = contact, currentStep = ContactStep.DETAIL)
     }
 
+    /**
+     * Opens [contact] beside the list, leaving the list as it was (search included), for
+     * a window wide enough to show both.
+     */
+    fun showContact(contact: ContactData) = _state.update { it.copy(selectedContact = contact) }
+
+    /** Closes the open contact, back to the list or search it was opened from. */
+    fun closeContact() = _state.update {
+        it.copy(
+            selectedContact = null,
+            currentStep = if (it.currentStep == ContactStep.DETAIL) ContactStep.LIST else it.currentStep,
+        )
+    }
+
+    /**
+     * The window narrowed to one pane: a contact open beside the list moves to its own
+     * screen rather than disappearing behind the list.
+     */
+    fun onSinglePane() = _state.update {
+        it.copy(currentStep = contactStepInOnePane(it.currentStep, hasSelection = it.selectedContact != null))
+    }
+
     fun clearSelectedContact() = _state.update {
         it.copy(selectedContact = null, currentStep = ContactStep.LIST, isDeleteSuccessVisible = false)
     }

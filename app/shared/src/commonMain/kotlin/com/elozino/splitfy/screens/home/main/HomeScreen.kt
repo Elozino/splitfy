@@ -5,6 +5,7 @@ import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.components.LoadErrorState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,7 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.FeatureFlags
+import com.elozino.splitfy.adaptive.LocalWindowLayout
 import com.elozino.splitfy.adaptive.readableWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.elozino.splitfy.ui.components.SkeletonBlock
 import com.elozino.splitfy.ui.components.SkeletonList
 import com.elozino.splitfy.ui.components.SkeletonListItem
@@ -120,35 +124,62 @@ fun HomeScreen(
                 if (state.user?.emailVerified == false) {
                     VerifyEmailBanner(onClick = onNavigateToVerifyEmail)
                 }
-                if (FeatureFlags.WALLET) {
-                    BalanceHeader(
-                        state = state,
-                        onSendClick = onNavigateToPay,
-                        onRequestClick = onNavigateToRequest,
-                        onTopUpClick = onNavigateToTopUp,
-                        onWithdrawClick = onNavigateToWithdraw,
-                        onHistoryClick = onNavigateToTransactionHistory
-                    )
-                    ActivitySection(
-                        state = state,
-                        modifier = Modifier.weight(1f).readableWidth(),
-                        onViewAllClick = onNavigateToActivity
-                    )
+                val windowLayout = LocalWindowLayout.current
+                val summaryBeside = homeSummaryBesideList(windowLayout)
+                val header: @Composable (Modifier) -> Unit = { modifier ->
+                    if (FeatureFlags.WALLET) {
+                        BalanceHeader(
+                            state = state,
+                            modifier = modifier,
+                            onSendClick = onNavigateToPay,
+                            onRequestClick = onNavigateToRequest,
+                            onTopUpClick = onNavigateToTopUp,
+                            onWithdrawClick = onNavigateToWithdraw,
+                            onHistoryClick = onNavigateToTransactionHistory
+                        )
+                    } else {
+                        PositionHeader(
+                            state = state,
+                            modifier = modifier,
+                            onNewGroupClick = onNavigateToNewGroup,
+                            onGroupsClick = onNavigateToGroups,
+                            onActivityClick = onNavigateToActivity,
+                        )
+                    }
+                }
+                val list: @Composable (Modifier) -> Unit = { modifier ->
+                    if (FeatureFlags.WALLET) {
+                        ActivitySection(
+                            state = state,
+                            modifier = modifier.readableWidth(),
+                            onViewAllClick = onNavigateToActivity
+                        )
+                    } else {
+                        GroupsSection(
+                            state = state,
+                            onRetry = viewModel::load,
+                            modifier = modifier.readableWidth(),
+                            onViewAllClick = onNavigateToGroups,
+                            onGroupClick = onNavigateToGroupDetail,
+                            onNewGroupClick = onNavigateToNewGroup,
+                        )
+                    }
+                }
+                if (summaryBeside) {
+                    Row(Modifier.weight(1f).fillMaxWidth()) {
+                        header(
+                            Modifier
+                                .width(homeSummaryWidth(windowLayout.width))
+                                .fillMaxHeight()
+                                // The yellow runs the full height; the summary scrolls if it must.
+                                .background(AppTheme.colors.brand)
+                                .verticalScroll(rememberScrollState())
+                        )
+                        list(Modifier.weight(1f).verticalScroll(rememberScrollState()))
+                    }
                 } else {
-                    PositionHeader(
-                        state = state,
-                        onNewGroupClick = onNavigateToNewGroup,
-                        onGroupsClick = onNavigateToGroups,
-                        onActivityClick = onNavigateToActivity,
-                    )
-                    GroupsSection(
-                        state = state,
-                        onRetry = viewModel::load,
-                        modifier = Modifier.weight(1f).readableWidth(),
-                        onViewAllClick = onNavigateToGroups,
-                        onGroupClick = onNavigateToGroupDetail,
-                        onNewGroupClick = onNavigateToNewGroup,
-                    )
+                    header(Modifier)
+                    list(Modifier.weight(1f))
                 }
             }
         }
@@ -158,6 +189,7 @@ fun HomeScreen(
 @Composable
 fun BalanceHeader(
     state: HomeState,
+    modifier: Modifier = Modifier,
     onSendClick: () -> Unit = {},
     onRequestClick: () -> Unit = {},
     onTopUpClick: () -> Unit = {},
@@ -165,6 +197,7 @@ fun BalanceHeader(
     onHistoryClick: () -> Unit = {}
 ) {
     Surface(
+        modifier = modifier,
         color = AppTheme.colors.brand
     ) {
         Column(
@@ -386,12 +419,13 @@ private fun RecentEntryRow(entry: LedgerEntry) {
 @Composable
 fun PositionHeader(
     state: HomeState,
+    modifier: Modifier = Modifier,
     onNewGroupClick: () -> Unit,
     onGroupsClick: () -> Unit,
     onActivityClick: () -> Unit,
 ) {
     val net = state.netPosition
-    Surface(color = AppTheme.colors.brand) {
+    Surface(modifier = modifier, color = AppTheme.colors.brand) {
         Column(
             modifier = Modifier
                 .readableWidth()
