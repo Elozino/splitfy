@@ -1,5 +1,13 @@
 package com.elozino.splitfy.screens.expenses.add
 
+import com.elozino.splitfy.screens.common.rememberCompactHeight
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.elozino.splitfy.screens.common.rememberSideBySide
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.BoxWithConstraints
+import com.elozino.splitfy.screens.common.rememberActionBarMetrics
+import androidx.compose.foundation.layout.navigationBarsPadding
 import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.preferences.statusBarBackground
 import com.elozino.splitfy.newClientRequestId
@@ -151,16 +159,17 @@ private fun ExpenseDetailsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
+            val bar = rememberActionBarMetrics()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                    .padding(horizontal = 24.dp, vertical = bar.verticalPadding),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
                     onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.weight(1f).height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
@@ -169,7 +178,7 @@ private fun ExpenseDetailsScreen(
                 Button(
                     onClick = onContinue,
                     enabled = state.canSave,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.weight(1f).height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
@@ -185,7 +194,9 @@ private fun ExpenseDetailsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .consumeWindowInsets(padding)
+                .imePadding(),
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
@@ -476,7 +487,10 @@ private fun ReceiptCaptureScreen(
         modifier = Modifier.statusBarBackground(Color.Black),
         containerColor = Color.Black
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // A receipt-shaped 2:3 guide, 450dp tall where there's room, shorter on a phone on its side.
+            val frameHeight = minOf(450.dp, maxHeight * 0.7f)
+            val sideBySide = rememberSideBySide()
             if (permission == PermissionStatus.GRANTED) {
                 PeekabooCamera(state = cameraState, modifier = Modifier.fillMaxSize())
             } else {
@@ -502,19 +516,13 @@ private fun ReceiptCaptureScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .width(300.dp)
-                    .height(450.dp)
+                    .width(frameHeight * 2 / 3)
+                    .height(frameHeight)
                     .border(2.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
             )
             
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = 60.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            // Beside the guide on a short window, where under it would cover it.
+            val controls: @Composable () -> Unit = {
                 IconButton(onClick = onOpenGallery) {
                     Icon(Icons.Default.Image, contentDescription = "Choose from photos", tint = Color.White, modifier = Modifier.size(32.dp))
                 }
@@ -532,6 +540,25 @@ private fun ReceiptCaptureScreen(
                 IconButton(onClick = { cameraState.toggleCamera() }) {
                     Icon(Icons.Default.Cached, contentDescription = "Flip", tint = Color.White, modifier = Modifier.size(32.dp))
                 }
+            }
+            if (sideBySide) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .padding(end = 48.dp),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) { controls() }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(bottom = 60.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) { controls() }
             }
         }
     }
@@ -569,16 +596,17 @@ private fun SplitWithScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
+            val bar = rememberActionBarMetrics()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp, vertical = bar.verticalPadding),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
                     onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.weight(1f).height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
@@ -587,7 +615,7 @@ private fun SplitWithScreen(
                 Button(
                     onClick = onDone,
                     enabled = state.splitError == null,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.weight(1f).height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
@@ -596,15 +624,19 @@ private fun SplitWithScreen(
             }
         }
     ) { padding ->
+        // A short window keeps the chips and the running total but trims the space around them.
+        val compact = rememberCompactHeight()
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .consumeWindowInsets(padding)
+                .imePadding()
         ) {
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                    .padding(vertical = if (compact) 8.dp else 16.dp),
                 contentPadding = PaddingValues(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -651,7 +683,7 @@ private fun SplitWithScreen(
                 }
             }
 
-            SplitSummaryFooter(state)
+            SplitSummaryFooter(state, compact)
         }
     }
 }
@@ -754,9 +786,9 @@ private fun SplitTextField(value: String, onValueChange: (String) -> Unit) {
 }
 
 @Composable
-private fun SplitSummaryFooter(state: AddExpenseState) {
+private fun SplitSummaryFooter(state: AddExpenseState, compact: Boolean) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(24.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = if (compact) 8.dp else 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // The error comes straight from the shared calculator, so what blocks Save

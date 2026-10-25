@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +24,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elozino.splitfy.ui.generated.resources.UiRes
 import com.elozino.splitfy.ui.generated.resources.app_name
+import com.elozino.splitfy.screens.common.rememberSideBySide
 import com.elozino.splitfy.ui.theme.AppTheme
 import kotlin.math.absoluteValue
 import kotlinx.coroutines.launch
@@ -73,6 +77,7 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState { onboardingSlides.size }
     val scope = rememberCoroutineScope()
     val isLastPage = pagerState.currentPage == onboardingSlides.lastIndex
+    val sideBySide = rememberSideBySide()
 
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
         Box(
@@ -85,7 +90,7 @@ fun OnboardingScreen(
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.safeDrawing),
             ) {
-                OnboardingHeader(onSkip = onNavigateToAuth)
+                OnboardingHeader(onSkip = onNavigateToAuth, compact = sideBySide)
 
                 HorizontalPager(
                     state = pagerState,
@@ -97,6 +102,7 @@ fun OnboardingScreen(
                     OnboardingPage(
                         slide = onboardingSlides[page],
                         pageOffset = pageOffset,
+                        sideBySide = sideBySide,
                     )
                 }
 
@@ -104,6 +110,7 @@ fun OnboardingScreen(
                     pageCount = onboardingSlides.size,
                     currentPage = pagerState.currentPage,
                     isLastPage = isLastPage,
+                    sideBySide = sideBySide,
                     onContinue = {
                         scope.launch {
                             if (isLastPage) {
@@ -120,11 +127,11 @@ fun OnboardingScreen(
 }
 
 @Composable
-private fun OnboardingHeader(onSkip: () -> Unit) {
+private fun OnboardingHeader(onSkip: () -> Unit, compact: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
+            .height(if (compact) 52.dp else 64.dp)
             .padding(horizontal = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -175,7 +182,12 @@ private fun OnboardingHeader(onSkip: () -> Unit) {
 private fun OnboardingPage(
     slide: OnboardingState,
     pageOffset: Float,
+    sideBySide: Boolean,
 ) {
+    if (sideBySide) {
+        OnboardingPageSideBySide(slide, pageOffset)
+        return
+    }
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -223,6 +235,54 @@ private fun OnboardingPage(
                 lineHeight = 23.sp,
                 fontWeight = FontWeight.Normal,
                 textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/** A phone on its side: the hero on the left, the words beside it, so neither is cut off. */
+@Composable
+private fun OnboardingPageSideBySide(
+    slide: OnboardingState,
+    pageOffset: Float,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HeroArtwork(
+            slide = slide,
+            pageOffset = pageOffset,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Text(
+                text = slide.title,
+                modifier = Modifier.graphicsLayer {
+                    alpha = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f) * 0.35f
+                },
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 28.sp,
+                lineHeight = 31.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.7).sp,
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = slide.subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 16.sp,
+                lineHeight = 23.sp,
+                fontWeight = FontWeight.Normal,
             )
         }
     }
@@ -343,8 +403,25 @@ private fun OnboardingFooter(
     pageCount: Int,
     currentPage: Int,
     isLastPage: Boolean,
+    sideBySide: Boolean,
     onContinue: () -> Unit,
 ) {
+    if (sideBySide) {
+        // One row instead of two: the dots under the hero, the button under the words.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                PagerIndicator(pageCount = pageCount, currentPage = currentPage)
+            }
+            Spacer(Modifier.width(24.dp))
+            ContinueButton(isLastPage, onContinue, Modifier.weight(1f).height(52.dp))
+        }
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -353,29 +430,36 @@ private fun OnboardingFooter(
     ) {
         PagerIndicator(pageCount = pageCount, currentPage = currentPage)
         Spacer(Modifier.height(18.dp))
-        Button(
-            onClick = onContinue,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp),
-            shape = RoundedCornerShape(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = AppTheme.colors.brand,
-                contentColor = AppTheme.colors.onBrand,
-            ),
-        ) {
-            Text(
-                text = if (isLastPage) "Start splitting" else "Continue",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.width(10.dp))
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        ContinueButton(isLastPage, onContinue, Modifier.fillMaxWidth().height(58.dp))
+    }
+}
+
+@Composable
+private fun ContinueButton(
+    isLastPage: Boolean,
+    onContinue: () -> Unit,
+    modifier: Modifier,
+) {
+    Button(
+        onClick = onContinue,
+        modifier = modifier,
+        shape = RoundedCornerShape(50.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = AppTheme.colors.brand,
+            contentColor = AppTheme.colors.onBrand,
+        ),
+    ) {
+        Text(
+            text = if (isLastPage) "Start splitting" else "Continue",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.width(10.dp))
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 

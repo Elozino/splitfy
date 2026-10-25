@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.auth.new_password
 
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.elozino.splitfy.screens.auth.shared.AuthFormLayout
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -68,39 +70,37 @@ fun NewPasswordScreen(
             }
         }
     ) { padding ->
-        Column(
+        AuthFormLayout(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 24.dp)
+                .consumeWindowInsets(padding)
+                .padding(horizontal = 24.dp),
+            header = { titleSize ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Create new password",
+                        fontSize = titleSize,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "🔒",
+                        fontSize = titleSize
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "You're almost there! Please create a new password for your Splitfy account.",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 24.sp
+                )
+            },
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Create new password",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "🔒",
-                    fontSize = 32.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "You're almost there! Please create a new password for your Splitfy account.",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 24.sp
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             AuthTextField(
                 value = newPassword,
                 onValueChange = viewModel::onNewPasswordChange,

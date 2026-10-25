@@ -1,5 +1,8 @@
 package com.elozino.splitfy.screens.account.add_payment_method
 
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.elozino.splitfy.screens.common.rememberActionBarMetrics
 import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.personal_info.FieldError
@@ -132,7 +135,8 @@ fun AddPaymentMethodScreen(
             }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
         )
     }, containerColor = MaterialTheme.colorScheme.background, bottomBar = {
-        Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
+        val bar = rememberActionBarMetrics()
+        Box(modifier = Modifier.navigationBarsPadding().padding(horizontal = 24.dp, vertical = bar.verticalPadding)) {
             Button(
                 onClick = {
                     viewModel.addCard(state.cardNumber, state.cardExpiry, state.cardCvv, state.cardHolder)
@@ -140,7 +144,7 @@ fun AddPaymentMethodScreen(
                 enabled = !state.isSaving && state.cardNumber.isNotBlank() &&
                     state.cardExpiry.isNotBlank() && state.cardCvv.isNotBlank() &&
                     state.cardHolder.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(bar.buttonHeight),
                 shape = RoundedCornerShape(100.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {
@@ -152,7 +156,7 @@ fun AddPaymentMethodScreen(
             }
         }
     }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
+        FillOrScrollColumn(modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).padding(horizontal = 24.dp)) {
             Spacer(modifier = Modifier.height(24.dp))
             InfoField("Account Holder Name", state.cardHolder, onValueChange = viewModel::onCardHolderChange)
             InfoField("Card Number", state.cardNumber, onValueChange = viewModel::onCardNumberChange)

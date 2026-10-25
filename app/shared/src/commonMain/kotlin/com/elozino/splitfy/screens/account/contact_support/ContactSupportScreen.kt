@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.contact_support
 
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
 import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.foundation.clickable
@@ -65,7 +66,7 @@ fun ContactSupportScreen(onNavigateBack: () -> Unit) {
             SupportOption(Icons.Default.BugReport, "Report a problem", "Something isn't working as it should", "Splitfy problem report"),
             SupportOption(Icons.Default.PrivacyTip, "Privacy request", "Access, correct or export your data", "Splitfy privacy request"),
         )
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
+        FillOrScrollColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             options.forEach { option ->
                 Row(
                     modifier = Modifier.fillMaxWidth()

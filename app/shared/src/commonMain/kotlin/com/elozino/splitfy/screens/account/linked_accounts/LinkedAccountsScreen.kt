@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.linked_accounts
 
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -90,7 +91,7 @@ fun LinkedAccountsScreen(
                 CircularProgressIndicator(color = AppTheme.colors.brand)
             }
             loadError != null -> LoadErrorState(loadError, onRetry = viewModel::load, modifier = Modifier.padding(padding))
-            else -> Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
+            else -> FillOrScrollColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
                 Text(
                     "Sign in to Splitfy with these accounts as well as your email.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

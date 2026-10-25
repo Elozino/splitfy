@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.billing_subscriptions
 
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
 import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.upgrade_success.benefitListShort
@@ -124,7 +125,7 @@ fun BillingSubscriptionsScreen(onNavigateBack: () -> Unit) {
             )
         }, containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
+        FillOrScrollColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),

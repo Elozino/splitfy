@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.account.payment_methods
 
+import com.elozino.splitfy.screens.common.rememberActionBarMetrics
 import androidx.compose.material3.MaterialTheme
 import com.elozino.splitfy.ui.theme.AppTheme
 import com.elozino.splitfy.screens.account.shared.AccountViewModel
@@ -154,14 +155,15 @@ fun PaymentMethodsScreen(
             }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
         )
     }, containerColor = MaterialTheme.colorScheme.background, bottomBar = {
-        Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
+        val bar = rememberActionBarMetrics()
+        Box(modifier = Modifier.navigationBarsPadding().padding(horizontal = 24.dp, vertical = bar.verticalPadding)) {
             Button(
                 onClick = {
                     if (state.paymentStep == 0) viewModel.setPaymentStep(1)
                     else viewModel.setPaymentProcessing(true)
                 },
                 enabled = state.selectedPaymentMethodId != null,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(bar.buttonHeight),
                 shape = RoundedCornerShape(100.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
             ) {

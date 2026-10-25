@@ -1,5 +1,10 @@
 package com.elozino.splitfy.screens.groups.settings
 
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.elozino.splitfy.adaptive.LocalWindowLayout
+import com.elozino.splitfy.screens.common.rememberActionBarMetrics
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -63,6 +68,7 @@ fun GroupSettingsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
+                        .verticalScroll(rememberScrollState())
                         .padding(horizontal = 24.dp)
                 ) {
                     if (state.canManage) {
@@ -153,16 +159,17 @@ private fun EditGroupScreen(
             )
         },
         bottomBar = {
+            val bar = rememberActionBarMetrics()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp, vertical = bar.verticalPadding),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
                     onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.weight(1f).height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
@@ -170,7 +177,7 @@ private fun EditGroupScreen(
                 }
                 Button(
                     onClick = viewModel::save,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.weight(1f).height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
@@ -183,6 +190,8 @@ private fun EditGroupScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .consumeWindowInsets(padding)
+                .imePadding()
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -190,7 +199,8 @@ private fun EditGroupScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    // As the group's own cover: a quarter of a short window, 180dp otherwise.
+                    .height(minOf(180.dp, LocalWindowLayout.current.height / 4))
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {

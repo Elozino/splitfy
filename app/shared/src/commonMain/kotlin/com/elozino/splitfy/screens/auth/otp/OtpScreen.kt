@@ -1,5 +1,13 @@
 package com.elozino.splitfy.screens.auth.otp
 
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.Dp
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
+import com.elozino.splitfy.screens.common.rememberSideBySide
 import androidx.compose.foundation.background
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.material3.MaterialTheme
@@ -160,25 +168,46 @@ private fun CodeEntryScreen(
             }
         }
     ) { padding ->
-        Column(
+        CodeEntryLayout(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 24.dp)
+                .consumeWindowInsets(padding)
+                .padding(horizontal = 24.dp),
+            keypad = { keySize, rowSpacing ->
+                NumberKeyboard(
+                    onNumberClick = { num ->
+                        if (code.length < OTP_LENGTH) {
+                            val updated = code + num
+                            onCodeChange(updated)
+                            // Verify automatically once the code is complete.
+                            if (updated.length == OTP_LENGTH) onComplete()
+                        }
+                    },
+                    onDeleteClick = { onCodeChange(code.dropLast(1)) },
+                    keySize = keySize,
+                    rowSpacing = rowSpacing,
+                )
+            },
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Half the width beside the keypad, on a short screen: a smaller title that
+            // wraps to two lines, and tighter gaps, so the code boxes stay in view.
+            val sideBySide = rememberSideBySide()
+            val titleSize = if (sideBySide) 26.sp else 32.sp
+            val gap = if (sideBySide) 24.dp else 48.dp
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = title,
-                    fontSize = 32.sp,
+                    fontSize = titleSize,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = emoji,
-                    fontSize = 32.sp
+                    fontSize = titleSize
                 )
             }
 
@@ -199,7 +228,7 @@ private fun CodeEntryScreen(
                 lineHeight = 24.sp
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(gap))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -214,7 +243,7 @@ private fun CodeEntryScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(gap))
 
             Text(
                 text = "Didn't receive email?",
@@ -239,21 +268,42 @@ private fun CodeEntryScreen(
             )
 
             footer()
+        }
+    }
+}
 
+/**
+ * The code, its explanation and a number pad. Stacked with the pad pinned to the bottom,
+ * or, on a phone in landscape, the pad beside the code with smaller keys so all four
+ * rows fit the short screen.
+ */
+@Composable
+fun CodeEntryLayout(
+    modifier: Modifier,
+    keypad: @Composable (keySize: Dp, rowSpacing: Dp) -> Unit,
+    details: @Composable ColumnScope.() -> Unit,
+) {
+    if (rememberSideBySide()) {
+        Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+            FillOrScrollColumn(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                details()
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState()),
+                contentAlignment = Alignment.Center,
+            ) {
+                keypad(52.dp, 6.dp)
+            }
+        }
+    } else {
+        FillOrScrollColumn(modifier = modifier) {
+            details()
             Spacer(modifier = Modifier.weight(1f))
-
-            NumberKeyboard(
-                onNumberClick = { num ->
-                    if (code.length < OTP_LENGTH) {
-                        val updated = code + num
-                        onCodeChange(updated)
-                        // Verify automatically once the code is complete.
-                        if (updated.length == OTP_LENGTH) onComplete()
-                    }
-                },
-                onDeleteClick = { onCodeChange(code.dropLast(1)) }
-            )
-
+            keypad(64.dp, 16.dp)
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -298,7 +348,9 @@ fun OtpBox(
 fun NumberKeyboard(
     onNumberClick: (String) -> Unit,
     onDeleteClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    keySize: Dp = 64.dp,
+    rowSpacing: Dp = 16.dp,
 ) {
     val numbers = listOf(
         listOf("1", "2", "3"),
@@ -309,7 +361,7 @@ fun NumberKeyboard(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(rowSpacing)
     ) {
         numbers.forEach { row ->
             Row(
@@ -319,7 +371,7 @@ fun NumberKeyboard(
                 row.forEach { char ->
                     Box(
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(keySize)
                             .clickable {
                                 if (char == "⌫") onDeleteClick()
                                 else if (char != "*") onNumberClick(char)
