@@ -3,6 +3,9 @@ package com.elozino.splitfy.screens.groups.list
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import com.elozino.splitfy.adaptive.LocalWindowLayout
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -16,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
@@ -75,6 +79,12 @@ fun GroupsListDetail(
         modifier = Modifier.background(MaterialTheme.colorScheme.background),
         listPane = {
             AnimatedPane {
+                // Tabletop: the list stays above the fold, like the detail beside it.
+                val windowLayout = LocalWindowLayout.current
+                Box(
+                    if (windowLayout.tabletopFold != null) Modifier.fillMaxWidth().height(windowLayout.usableHeight)
+                    else Modifier.fillMaxSize()
+                ) {
                 GroupsScreen(
                     onNavigateToNewGroup = onNavigateToNewGroup,
                     onNavigateToGroupDetail = { groupId ->
@@ -82,7 +92,10 @@ fun GroupsListDetail(
                     },
                     // Two panes only appear beside the rail, which has its own New group button.
                     showNewGroupButton = false,
+                    selectedGroupId = navigator.currentDestination
+                        ?.takeIf { it.pane == ListDetailPaneScaffoldRole.Detail }?.contentKey,
                 )
+                }
             }
         },
         detailPane = {
@@ -94,6 +107,8 @@ fun GroupsListDetail(
                     GroupDetailScreen(
                         groupId = groupId,
                         onNavigateBack = { closeGroup() },
+                        // With the list beside it, the detail needs no back arrow.
+                        showBackButton = navigator.scaffoldValue[ListDetailPaneScaffoldRole.List] != PaneAdaptedValue.Expanded,
                         onNavigateToAddExpense = { onNavigateToAddExpense(groupId) },
                         onNavigateToSettleUp = { onNavigateToSettleUp(groupId) },
                         onNavigateToSettings = { onNavigateToSettings(groupId) },

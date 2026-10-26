@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.material3.adaptive.separatingVerticalHingeBounds
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
@@ -26,6 +27,16 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 
 /**
  * How the app lays itself out in the current window, decided by Google's Material 3
@@ -60,6 +71,11 @@ data class WindowLayout(
      * whole window otherwise. Size headers and images from this, not [height].
      */
     val usableHeight: Dp = height,
+    /**
+     * A vertical fold that splits the screen (a foldable held open like a book), in
+     * window pixels; null otherwise. Single-column screens keep off it ([ReadableWidth]).
+     */
+    val bookFold: Rect? = null,
 )
 
 val LocalWindowLayout = staticCompositionLocalOf {
@@ -82,6 +98,7 @@ fun windowLayoutFor(info: WindowAdaptiveInfo, width: Dp, height: Dp, density: De
         useTwoPanes = paneScaffoldDirectiveFor(info).maxHorizontalPartitions > 1,
         tabletopFold = fold,
         usableHeight = fold?.let { with(density) { it.top.toDp() } }?.coerceAtMost(height) ?: height,
+        bookFold = info.windowPosture.separatingVerticalHingeBounds.firstOrNull(),
     )
 }
 
@@ -107,15 +124,48 @@ val ReadableMaxWidth = 720.dp
 /**
  * Centres [content] in a column no wider than [ReadableMaxWidth], so forms and lists
  * don't stretch edge to edge on a tablet. On a phone it changes nothing.
+ *
+ * On a foldable held like a book, a centred column would run across the hinge, so it
+ * moves to the larger side of the fold instead ([bookSide]), as Google advises.
  */
 @Composable
 fun ReadableWidth(content: @Composable () -> Unit) {
-    Box(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.TopCenter,
+    val fold = LocalWindowLayout.current.bookFold
+    var containerStart by remember { mutableFloatStateOf(0f) }
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .onGloballyPositioned { containerStart = it.positionInWindow().x },
     ) {
-        Box(Modifier.widthIn(max = ReadableMaxWidth).fillMaxHeight()) { content() }
+        val width = constraints.maxWidth.toFloat()
+        val side = fold?.let { bookSide(containerStart, width, it.left, it.right) } ?: (0f..width)
+        val density = LocalDensity.current
+        Box(
+            Modifier
+                .offset { IntOffset(side.start.roundToInt(), 0) }
+                .width(with(density) { (side.endInclusive - side.start).toDp() })
+                .fillMaxHeight(),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            Box(Modifier.widthIn(max = ReadableMaxWidth).fillMaxHeight()) { content() }
+        }
     }
+}
+
+/**
+ * The part of a container (starting [containerStart] px from the window's left edge,
+ * [containerWidth] px wide) a single column should use, in container pixels: all of
+ * it, or the larger side of a hinge from [foldLeft] to [foldRight] (window pixels)
+ * that crosses it.
+ */
+fun bookSide(containerStart: Float, containerWidth: Float, foldLeft: Float, foldRight: Float): ClosedFloatingPointRange<Float> {
+    val hingeStart = foldLeft - containerStart
+    val hingeEnd = foldRight - containerStart
+    if (hingeEnd <= 0f || hingeStart >= containerWidth) return 0f..containerWidth
+    val before = hingeStart.coerceAtLeast(0f)
+    val after = (containerWidth - hingeEnd).coerceAtLeast(0f)
+    return if (before >= after) 0f..before else hingeEnd.coerceAtMost(containerWidth)..containerWidth
 }
 
 /**

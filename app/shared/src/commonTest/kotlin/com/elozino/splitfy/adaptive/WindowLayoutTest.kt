@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.computeWindowSizeClass
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -60,5 +61,22 @@ class WindowLayoutTest {
         val tablet = layoutFor(widthDp = 1280, heightDp = 800)
         assertTrue(tablet.useNavigationRail)
         assertTrue(tablet.useTwoPanes)
+    }
+
+    @Test
+    fun `a single column moves to the larger side of a book hinge`() {
+        // Container 80..2000 px in the window (after the rail); hinge at 1038..1096 is
+        // 958..1016 inside it: 958 px before, 904 after, so the column takes the left.
+        assertEquals(0f..958f, bookSide(containerStart = 80f, containerWidth = 1920f, foldLeft = 1038f, foldRight = 1096f))
+        // Hinge near the left: the right side is larger.
+        assertEquals(440f..1920f, bookSide(containerStart = 80f, containerWidth = 1920f, foldLeft = 500f, foldRight = 520f))
+        // Hinge near the right: the left side is larger.
+        assertEquals(0f..1500f, bookSide(containerStart = 0f, containerWidth = 1920f, foldLeft = 1500f, foldRight = 1520f))
+    }
+
+    @Test
+    fun `a hinge outside the container leaves the column alone`() {
+        assertEquals(0f..800f, bookSide(containerStart = 1100f, containerWidth = 800f, foldLeft = 1038f, foldRight = 1096f))
+        assertEquals(0f..800f, bookSide(containerStart = 0f, containerWidth = 800f, foldLeft = 900f, foldRight = 920f))
     }
 }

@@ -67,6 +67,8 @@ import com.elozino.splitfy.screens.groups.detail.shared.GroupDetailViewModel
 fun GroupDetailScreen(
     groupId: String,
     onNavigateBack: () -> Unit,
+    /** Off in the detail pane while the list is beside it: Back (the gesture) still closes it. */
+    showBackButton: Boolean = true,
     onNavigateToAddExpense: () -> Unit,
     onNavigateToSettleUp: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -129,8 +131,10 @@ fun GroupDetailScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    if (showBackButton) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
                     }
                 },
                 actions = {
