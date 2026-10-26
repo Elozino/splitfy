@@ -1,5 +1,9 @@
 package com.elozino.splitfy.screens.groups.create.participants
 
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.elozino.splitfy.screens.common.rememberActionBarMetrics
+import androidx.compose.foundation.layout.navigationBarsPadding
 import com.elozino.splitfy.components.UserAvatar
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
@@ -64,15 +68,16 @@ fun SelectParticipantsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
+            val bar = rememberActionBarMetrics()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 32.dp),
+                    .then(if (bar.compact) Modifier.navigationBarsPadding().padding(horizontal = 24.dp, vertical = bar.verticalPadding) else Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 32.dp)),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
                     onClick = onNavigateBack,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.weight(1f).height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     border = BorderStroke(1.dp, AppTheme.colors.brand)
                 ) {
@@ -81,7 +86,7 @@ fun SelectParticipantsScreen(
                 Button(
                     onClick = viewModel::create,
                     enabled = !state.isSaving,
-                    modifier = Modifier.weight(1f).height(56.dp),
+                    modifier = Modifier.weight(1f).height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
@@ -94,7 +99,7 @@ fun SelectParticipantsScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 24.dp)

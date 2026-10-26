@@ -4,6 +4,7 @@ import com.elozino.splitfy.ui.components.RefreshableBox
 import com.elozino.splitfy.ui.components.LoadErrorState
 import com.elozino.splitfy.ui.components.SkeletonListItem
 import com.elozino.splitfy.ui.components.SkeletonList
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -39,6 +41,8 @@ fun GroupsScreen(
     onNavigateToGroupDetail: (String) -> Unit,
     /** Off beside the navigation rail, whose own New group button would duplicate it. */
     showNewGroupButton: Boolean = true,
+    /** The group open beside the list, highlighted. Only set in the two-pane layout. */
+    selectedGroupId: String? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -55,6 +59,7 @@ fun GroupsScreen(
         onCreateGroupClick = onNavigateToNewGroup,
         onGroupClick = { item -> onNavigateToGroupDetail(item.id) },
         showNewGroupButton = showNewGroupButton,
+        selectedGroupId = selectedGroupId,
     )
 }
 
@@ -80,6 +85,7 @@ private fun GroupsListScreen(
     onCreateGroupClick: () -> Unit,
     onGroupClick: (GroupItemData) -> Unit,
     showNewGroupButton: Boolean = true,
+    selectedGroupId: String? = null,
 ) {
     var isSearching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
@@ -184,7 +190,7 @@ private fun GroupsListScreen(
                         }
                     }
                     items(shown, key = { it.id }) { group ->
-                        GroupItem(group, onClick = { onGroupClick(group) })
+                        GroupItem(group, selected = group.id == selectedGroupId, onClick = { onGroupClick(group) })
                     }
                 }
             }
@@ -270,13 +276,22 @@ private fun EmptyGroupsState(onCreateClick: () -> Unit, padding: PaddingValues) 
 }
 
 @Composable
-fun GroupItem(data: GroupItemData, onClick: () -> Unit) {
+fun GroupItem(data: GroupItemData, selected: Boolean = false, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        // The group open in the detail pane, so the list shows which one you're reading.
+        colors = CardDefaults.cardColors(
+            // Opaque: a translucent tint would let the card's shadow show through as a dark band.
+            containerColor = if (selected) {
+                AppTheme.colors.brand.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.surface)
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        ),
+        border = if (selected) BorderStroke(1.5.dp, AppTheme.colors.brand) else null,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(

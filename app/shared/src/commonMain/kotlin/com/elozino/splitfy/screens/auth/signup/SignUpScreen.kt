@@ -1,5 +1,7 @@
 package com.elozino.splitfy.screens.auth.signup
 
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.elozino.splitfy.screens.auth.shared.AuthFormLayout
 import androidx.compose.foundation.clickable
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.material3.MaterialTheme
@@ -92,39 +94,37 @@ fun SignUpScreen(
             }
         }
     ) { padding ->
-        Column(
+        AuthFormLayout(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 24.dp)
+                .consumeWindowInsets(padding)
+                .padding(horizontal = 24.dp),
+            header = { titleSize ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Create an account",
+                        fontSize = titleSize,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "✨",
+                        fontSize = titleSize
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Join Splitfy today and start splitting bills with ease.",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 24.sp
+                )
+            },
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Create an account",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "✨",
-                    fontSize = 32.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Join Splitfy today and start splitting bills with ease.",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 24.sp
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             AuthTextField(
                 value = fullName,
                 onValueChange = viewModel::onDisplayNameChange,

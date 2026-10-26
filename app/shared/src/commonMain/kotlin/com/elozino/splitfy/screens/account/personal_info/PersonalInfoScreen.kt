@@ -1,5 +1,8 @@
 package com.elozino.splitfy.screens.account.personal_info
 
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.consumeWindowInsets
+import com.elozino.splitfy.screens.common.rememberActionBarMetrics
 import com.elozino.splitfy.ui.theme.AppTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
@@ -104,11 +107,12 @@ fun PersonalInfoScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            Box(modifier = Modifier.navigationBarsPadding().padding(24.dp)) {
+            val bar = rememberActionBarMetrics()
+            Box(modifier = Modifier.navigationBarsPadding().padding(horizontal = 24.dp, vertical = bar.verticalPadding)) {
                 Button(
                     onClick = viewModel::save,
                     enabled = !state.isSaving && state.user != null,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(bar.buttonHeight),
                     shape = RoundedCornerShape(100.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppTheme.colors.brand)
                 ) {
@@ -121,7 +125,7 @@ fun PersonalInfoScreen(
             }
         }
     ) { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp)) {
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding().padding(horizontal = 24.dp)) {
             item {
                 Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(

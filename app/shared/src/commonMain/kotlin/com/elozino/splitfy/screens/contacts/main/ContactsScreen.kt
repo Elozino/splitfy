@@ -22,6 +22,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -31,21 +35,101 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elozino.splitfy.api.dto.Contact
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldDefaults
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.layout.calculateThreePaneScaffoldValue
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.backhandler.BackHandler
+import com.elozino.splitfy.adaptive.LocalWindowLayout
+import com.elozino.splitfy.adaptive.ReadableWidth
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ContactScreen(
     onVisibilityChanged: (Boolean) -> Unit,
     viewModel: ContactsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val searchQuery = state.query
+    val twoPanes = LocalWindowLayout.current.useTwoPanes
+    val layout = contactsLayoutFor(state.currentStep, twoPanes)
 
-    LaunchedEffect(state.currentStep) {
-        onVisibilityChanged(state.currentStep == ContactStep.LIST)
+    LaunchedEffect(layout) {
+        onVisibilityChanged(layout.showsBottomBar())
     }
+    LaunchedEffect(twoPanes) {
+        if (!twoPanes) viewModel.onSinglePane()
+    }
+    // Back closes a contact shown on its own, as its arrow does, rather than leaving Contacts.
+    BackHandler(enabled = layout == ContactsLayout.Single(ContactStep.DETAIL), onBack = viewModel::closeContact)
 
-    when (state.currentStep) {
+    when (layout) {
+        is ContactsLayout.Single -> {
+            // Beside the rail the caller leaves the width to Contacts, for the two panes;
+            // a single screen there still reads best as a column.
+            if (twoPanes) ReadableWidth { ContactStepScreen(state, layout.step, viewModel) }
+            else ContactStepScreen(state, layout.step, viewModel)
+        }
+        is ContactsLayout.ListDetail -> ContactsListDetail(state, layout.listStep, viewModel)
+    }
+}
+
+/**
+ * Contacts as Google's list-detail canonical layout, like Groups: the list (or its
+ * search) beside the open contact. Which contact is open lives in [ContactsViewModel],
+ * so it survives the window narrowing (the contact then takes the screen) and widening.
+ */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalComposeUiApi::class)
+@Composable
+private fun ContactsListDetail(
+    state: ContactsState,
+    listStep: ContactStep,
+    viewModel: ContactsViewModel,
+) {
+    val selected = state.selectedContact
+    BackHandler(enabled = selected != null, onBack = viewModel::closeContact)
+
+    val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfo())
+    ListDetailPaneScaffold(
+        directive = directive,
+        value = calculateThreePaneScaffoldValue(
+            maxHorizontalPartitions = directive.maxHorizontalPartitions,
+            adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
+            currentDestination = ThreePaneScaffoldDestinationItem(ListDetailPaneScaffoldRole.Detail, selected?.id),
+        ),
+        modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+        listPane = {
+            AnimatedPane {
+                ContactStepScreen(state, listStep, viewModel, onContactClick = viewModel::showContact)
+            }
+        },
+        detailPane = {
+            AnimatedPane {
+                if (selected == null) {
+                    NoContactSelected()
+                } else {
+                    ContactStepScreen(state, ContactStep.DETAIL, viewModel)
+                }
+            }
+        },
+    )
+}
+
+/** One step of Contacts, full screen or in a pane. [onContactClick] opens a row. */
+@Composable
+private fun ContactStepScreen(
+    state: ContactsState,
+    step: ContactStep,
+    viewModel: ContactsViewModel,
+    onContactClick: (ContactData) -> Unit = viewModel::selectContact,
+) {
+    when (step) {
         ContactStep.LIST -> ContactListScreen(
             contacts = state.contacts.map { it.toData() },
             favorites = state.favorites.map { it.toData() },
@@ -61,32 +145,38 @@ fun ContactScreen(
             },
             onSearchClick = { viewModel.navigateTo(ContactStep.SEARCH) },
             onAddContactClick = { viewModel.navigateTo(ContactStep.ADD_CONTACT) },
-            onContactClick = viewModel::selectContact,
+            onContactClick = onContactClick,
+            selectedContactId = state.selectedContact?.id,
         )
         ContactStep.SEARCH -> SearchContactScreen(
-            query = searchQuery,
+            query = state.query,
             onQueryChange = viewModel::onQueryChange,
             results = state.contacts.map { it.toData() },
             directoryResults = state.directoryResults.map { user ->
                 ContactData(user.id.value, user.displayName, user.email)
             },
             onNavigateBack = { viewModel.navigateTo(ContactStep.LIST) },
-            onContactClick = viewModel::selectContact,
+            onContactClick = onContactClick,
+            selectedContactId = state.selectedContact?.id,
         )
-        ContactStep.DETAIL -> ContactDetailScreen(
-            contact = state.selectedContact!!,
-            isDeleteDialogVisible = state.isDeleteDialogVisible,
-            isDeleteSuccessVisible = state.isDeleteSuccessVisible,
-            onDeleteClick = { viewModel.setDeleteDialogVisible(true) },
-            onDeleteDismiss = { viewModel.setDeleteDialogVisible(false) },
-            onDeleteConfirm = viewModel::confirmDelete,
-            onToggleFavorite = {
-                state.contacts.firstOrNull { it.userId.value == state.selectedContact?.id }
-                    ?.let(viewModel::toggleFavorite)
-            },
-            onNavigateBack = { viewModel.navigateTo(ContactStep.LIST) },
-            onDeleteSuccess = viewModel::clearSelectedContact,
-        )
+        ContactStep.DETAIL -> {
+            // The contact can close underneath (a delete), so read it once rather than with !!.
+            val contact = state.selectedContact ?: return
+            ContactDetailScreen(
+                contact = contact,
+                isDeleteDialogVisible = state.isDeleteDialogVisible,
+                isDeleteSuccessVisible = state.isDeleteSuccessVisible,
+                onDeleteClick = { viewModel.setDeleteDialogVisible(true) },
+                onDeleteDismiss = { viewModel.setDeleteDialogVisible(false) },
+                onDeleteConfirm = viewModel::confirmDelete,
+                onToggleFavorite = {
+                    state.contacts.firstOrNull { it.userId.value == contact.id }
+                        ?.let(viewModel::toggleFavorite)
+                },
+                onNavigateBack = viewModel::closeContact,
+                onDeleteSuccess = viewModel::clearSelectedContact,
+            )
+        }
         ContactStep.ADD_CONTACT -> AddContactScreen(
             name = state.newContactName,
             email = state.newContactEmail,
@@ -103,6 +193,37 @@ fun ContactScreen(
                 viewModel.setAddSuccessVisible(false)
                 viewModel.navigateTo(ContactStep.LIST)
             },
+        )
+    }
+}
+
+/** The detail pane before a contact is picked. */
+@Composable
+private fun NoContactSelected() {
+    Column(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            Icons.Default.Person,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(56.dp),
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Select a contact",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Their details show here.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -139,6 +260,8 @@ private fun ContactListScreen(
     onSearchClick: () -> Unit,
     onAddContactClick: () -> Unit,
     onContactClick: (ContactData) -> Unit,
+    /** The contact open beside the list, highlighted in it. */
+    selectedContactId: String? = null,
 ) {
     val tabs = listOf("All Contacts", "Favorites")
     val visible = if (selectedTab == 1) favorites else contacts
@@ -257,7 +380,8 @@ private fun ContactListScreen(
                             ContactListItem(
                                 contact = contact,
                                 onClick = { onContactClick(contact) },
-                                onToggleFavorite = { onToggleFavorite(contact) }
+                                onToggleFavorite = { onToggleFavorite(contact) },
+                                isSelected = contact.id == selectedContactId,
                             )
                         }
                     }
@@ -290,10 +414,24 @@ private fun ContactListItem(
     contact: ContactData,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit = {},
+    isSelected: Boolean = false,
 ) {
+    val highlight = AppTheme.colors.brand.copy(alpha = 0.2f)
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            // Drawn a little outside the row, so selecting one doesn't shift the list.
+            .then(
+                if (isSelected) Modifier.drawBehind {
+                    val inset = 8.dp.toPx()
+                    drawRoundRect(
+                        color = highlight,
+                        topLeft = Offset(-inset, -inset),
+                        size = Size(size.width + 2 * inset, size.height + 2 * inset),
+                        cornerRadius = CornerRadius(12.dp.toPx()),
+                    )
+                } else Modifier
+            )
             .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -324,7 +462,8 @@ private fun SearchContactScreen(
     results: List<ContactData>,
     directoryResults: List<ContactData>,
     onNavigateBack: () -> Unit,
-    onContactClick: (ContactData) -> Unit
+    onContactClick: (ContactData) -> Unit,
+    selectedContactId: String? = null,
 ) {
     Scaffold(
         topBar = {
@@ -382,7 +521,7 @@ private fun SearchContactScreen(
                 )
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     items(results, key = { it.id }) { contact ->
-                        ContactListItem(contact, onClick = { onContactClick(contact) })
+                        ContactListItem(contact, onClick = { onContactClick(contact) }, isSelected = contact.id == selectedContactId)
                     }
                 }
             } else {
@@ -396,7 +535,7 @@ private fun SearchContactScreen(
                             )
                         }
                         items(results, key = { it.id }) { contact ->
-                            ContactListItem(contact, onClick = { onContactClick(contact) })
+                            ContactListItem(contact, onClick = { onContactClick(contact) }, isSelected = contact.id == selectedContactId)
                         }
                     }
 
@@ -411,7 +550,7 @@ private fun SearchContactScreen(
                             )
                         }
                         items(directoryResults, key = { "directory-" + it.id }) { contact ->
-                            ContactListItem(contact, onClick = { onContactClick(contact) })
+                            ContactListItem(contact, onClick = { onContactClick(contact) }, isSelected = contact.id == selectedContactId)
                         }
                     }
 

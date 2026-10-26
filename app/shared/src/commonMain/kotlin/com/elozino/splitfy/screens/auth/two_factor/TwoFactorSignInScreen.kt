@@ -1,5 +1,6 @@
 package com.elozino.splitfy.screens.auth.two_factor
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elozino.splitfy.screens.auth.otp.CodeEntryLayout
 import com.elozino.splitfy.screens.auth.otp.NumberKeyboard
 import com.elozino.splitfy.screens.auth.otp.OtpBox
 import com.elozino.splitfy.screens.auth.shared.AuthViewModel
@@ -70,8 +72,30 @@ fun TwoFactorSignInScreen(
             }
         },
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp),
+        CodeEntryLayout(
+            modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).padding(horizontal = 24.dp),
+            keypad = { keySize, rowSpacing ->
+                if (state.useRecoveryCode) {
+                    PrimaryButton(
+                        text = if (state.isSubmitting) "Checking…" else "Verify",
+                        onClick = viewModel::verifyTwoFactor,
+                        enabled = state.canSubmitTwoFactor,
+                    )
+                } else {
+                    NumberKeyboard(
+                        onNumberClick = { digit ->
+                            if (state.isSubmitting) return@NumberKeyboard
+                            val updated = state.twoFactorCode + digit
+                            viewModel.onTwoFactorCodeChange(updated)
+                            // Verify as soon as the sixth digit lands, as the email-code screens do.
+                            if (updated.length == 6) viewModel.verifyTwoFactor()
+                        },
+                        onDeleteClick = { viewModel.onTwoFactorCodeChange(state.twoFactorCode.dropLast(1)) },
+                        keySize = keySize,
+                        rowSpacing = rowSpacing,
+                    )
+                }
+            },
         ) {
             Spacer(Modifier.height(16.dp))
             Text("Two-step verification", fontSize = 28.sp, fontWeight = FontWeight.Bold)
@@ -118,27 +142,6 @@ fun TwoFactorSignInScreen(
                 Text(if (state.useRecoveryCode) "Use your authenticator app instead" else "Lost your phone? Use a recovery code")
             }
 
-            Spacer(Modifier.weight(1f))
-
-            if (state.useRecoveryCode) {
-                PrimaryButton(
-                    text = if (state.isSubmitting) "Checking…" else "Verify",
-                    onClick = viewModel::verifyTwoFactor,
-                    enabled = state.canSubmitTwoFactor,
-                )
-            } else {
-                NumberKeyboard(
-                    onNumberClick = { digit ->
-                        if (state.isSubmitting) return@NumberKeyboard
-                        val updated = state.twoFactorCode + digit
-                        viewModel.onTwoFactorCodeChange(updated)
-                        // Verify as soon as the sixth digit lands, as the email-code screens do.
-                        if (updated.length == 6) viewModel.verifyTwoFactor()
-                    },
-                    onDeleteClick = { viewModel.onTwoFactorCodeChange(state.twoFactorCode.dropLast(1)) },
-                )
-            }
-            Spacer(Modifier.height(24.dp))
         }
     }
 }

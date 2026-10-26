@@ -28,6 +28,14 @@
 	<string>This app requires photo library access to select QR codes for payments.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Face ID unlocks Splitfy when App lock is on.</string>
+	<!-- One window only: a second iPad window would share the session, app lock and
+	     invite/push routing with the first, which nothing is built for. Resizable windows
+	     and Split View don't depend on this. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

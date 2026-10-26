@@ -1,5 +1,8 @@
 package com.elozino.splitfy.screens.groups.detail.expense
 
+import com.elozino.splitfy.screens.common.rememberSideBySide
+import com.elozino.splitfy.screens.common.FillOrScrollColumn
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -94,16 +97,10 @@ fun ExpenseDetailScreen(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+        // The amount and who paid, above the breakdown; beside it on a phone on its side.
+        val header: @Composable (Modifier) -> Unit = { modifier ->
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.4f)
-                    .background(AppTheme.colors.brand),
+                modifier = modifier.background(AppTheme.colors.brand),
                 contentAlignment = Alignment.Center
             ) {
                 if (expense == null) Column(
@@ -144,11 +141,10 @@ fun ExpenseDetailScreen(
                     )
                 }
             }
-            
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.6f)
+        }
+        val details: @Composable (Modifier) -> Unit = { modifier ->
+            FillOrScrollColumn(
+                modifier = modifier
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(24.dp)
             ) {
@@ -161,7 +157,7 @@ fun ExpenseDetailScreen(
                             SkeletonBlock(Modifier.width(80.dp).height(14.dp), RoundedCornerShape(6.dp))
                         }
                     }
-                    return@Column
+                    return@FillOrScrollColumn
                 }
                 DetailRow("Total", expense.total.toPlainString())
                 DetailRow("Your share", yourShare?.toPlainString() ?: "-")
@@ -190,9 +186,9 @@ fun ExpenseDetailScreen(
                         value = share.amount.toPlainString()
                     )
                 }
-                
+            
                 Spacer(modifier = Modifier.weight(1f))
-                
+            
                 val isOpening = state.openingReceiptFor == expenseId
                 Button(
                     onClick = { viewModel.openReceipt(expenseId) },
@@ -211,6 +207,21 @@ fun ExpenseDetailScreen(
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+        }
+        if (rememberSideBySide()) {
+            Row(modifier = Modifier.fillMaxSize().padding(padding)) {
+                header(Modifier.weight(0.4f).fillMaxHeight())
+                details(Modifier.weight(0.6f).fillMaxHeight())
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                header(Modifier.fillMaxWidth().weight(0.4f))
+                details(Modifier.fillMaxWidth().weight(0.6f))
             }
         }
     }
